@@ -192,10 +192,39 @@ For workflow files (workflows/*.md):
 - [ ] No `.yml`, `.yaml`, or `.lock.yml` files included
 - [ ] Follows [GitHub Agentic Workflows specification](https://github.github.com/gh-aw/reference/workflow-structure/)
 
-## Contributing
-
 This is a community-driven project. Contributions are welcome! Please see:
 - [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community standards
 - [SECURITY.md](SECURITY.md) for security policies
+
+## Project Statistics
+
+- **Skills**: 61+ specialized skills across various domains
+- **Rules**: 96+ coding standards and best practices
+- **Workflows**: 7+ agentic workflows for automation
+- **Knowledge**: 5+ comprehensive guides and migration documents
+- **Frameworks**: ASP.NET Boilerplate, ABP.IO, Angular, Blazor, and more
+- **Languages**: C#, TypeScript, Python, PowerShell, and others
+- **IDE Support**: VS Code, Windsurf, Cursor, Devin, Claude, Gemini
+
+## Featured Content
+
+### ABP.IO Framework Support
+- Complete project creation skills with CLI integration
+- Migration guides from ASP.NET Boilerplate
+- Architecture patterns and best practices
+- Template selection and configuration guidance
+
+### Development Excellence
+- Code review standards and patterns
+- Performance optimization strategies
+- Security best practices and guidelines
+- Testing frameworks and methodologies
+
+### Knowledge Base
+- Implementation patterns and templates
+- Coding standards compendium
+- Migration strategies and guides
+- Architectural decision records
+- ABP.IO framework comprehensive guide
 

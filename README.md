@@ -59,6 +59,7 @@ Install skills, rules, and knowledge for your preferred IDE:
 - **Skills**: 
   - `create-aspnetboilerplate-project` - Traditional ASP.NET Boilerplate setup
   - `create-abp-io-template` - Modern ABP.IO CLI-based creation
+  - `create-abp-project` - ABP.IO project creation with template selection
   - `migrate-aspnetboilerplate-to-abp` - Complete migration guidance
 - **Knowledge**: `aspnetboilerplate-to-abp-migration-guide.md`
 
@@ -127,15 +128,23 @@ Cleanup script to remove backup files created during installation:
 - **Framework Upgrades**: Step-by-step upgrade instructions
 - **Best Practices**: Modern development patterns and conventions
 
+### Framework Documentation
+- **ABP.IO Framework Guide**: Comprehensive ABP.IO framework documentation
+- **Architecture Patterns**: DDD patterns and clean architecture principles
+- **Development Tools**: CLI, Suite, and Studio usage guides
+
 ## 🎨 Featured Skills
 
 ### Project Creation
 - **create-abp-project**: ABP.IO project creation with template selection
+- **create-abp-io-template**: Modern ABP.IO CLI-based template creation
+- **create-aspnetboilerplate-project**: Traditional ASP.NET Boilerplate setup
 - **create-implementation-plan**: Structured planning for development work
 - **create-github-action-workflow-specification**: CI/CD workflow specifications
 
 ### Code Generation
 - **csharp-async**: C# async programming best practices
+- **migrate-aspnetboilerplate-to-abp**: Complete ASP.NET Boilerplate to ABP.IO migration
 - **github-issues**: GitHub issue management automation
 - **web-design-reviewer**: Web design review and optimization
 
@@ -210,10 +219,10 @@ This is a community-driven project. Join us in:
 
 ## 📊 Statistics
 
-- **Skills**: 57+ specialized skills
-- **Rules**: 96+ coding standards
-- **Workflows**: 7+ automation workflows  
-- **Knowledge**: 4+ comprehensive guides
+- **Skills**: 61+ specialized skills
+- **Rules**: 96+ coding standards  
+- **Workflows**: 7+ automation workflows
+- **Knowledge**: 5+ comprehensive guides and migration documents
 - **IDE Support**: 6+ major IDEs and CLIs
 
 ## 📄 License
