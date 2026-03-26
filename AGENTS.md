@@ -8,7 +8,7 @@ The agents-skills repository is a community-driven collection of custom agents a
 - **rules** - Coding standards and best practices applied to specific file patterns
 - **Skills** - Self-contained folders with instructions and bundled resources for specialized tasks
 - **Workflows** - [Agentic Workflows](https://github.github.com/gh-aw) for AI-powered repository automation in GitHub Actions
-- **knowledge** - Memory of knowsource for agent
+- **knowledge** - Memory and knowledge base for AI agents, containing patterns, standards, migration guides, and comprehensive documentation that enhances agent capabilities and provides contextual information for Windsurf Cascade and other AI development tools
 
 ## Repository Structure
 
@@ -18,14 +18,39 @@ The agents-skills repository is a community-driven collection of custom agents a
 ├── rules/     	      # Coding standards and guidelines (.instructions.md files)
 ├── skills/           # Agent Skills folders (each with SKILL.md and optional bundled assets)
 ├── workflows/        # Agentic Workflows (.md files for GitHub Actions automation)
-└── knowledge/        # Memory of knowsources for agent
+├── knowledge/        # Memory and knowledge base for AI agents with patterns, standards, and guides
+├── install.sh        # Installation script for skills, rules, and knowledge
+└── rm-backup.sh      # Script to remove backup files created during installation
 ```
 
 ## Development Workflow
 
 ### Working with Agents, rules, Skills, and knowledge
 
-All agent files (`*.agent.md`) and instruction files (`*.instructions.md`) must include proper markdown front matter. Agent Skills are folders containing a `SKILL.md` file with frontmatter and optional bundled assets. configuration file:
+All agent files (`*.agent.md`) and instruction files (`*.instructions.md`) must include proper markdown front matter. Agent Skills are folders containing a `SKILL.md` file with frontmatter and optional bundled assets. The knowledge folder contains memory documents, patterns, standards, and comprehensive guides that serve as contextual information for AI agents, particularly enhancing Windsurf Cascade's capabilities with established best practices and migration strategies.
+
+#### Installation and Setup
+
+Use the provided installation scripts to set up skills, rules, and knowledge across different IDEs:
+
+```bash
+# Install for all IDEs/CLIs
+./install.sh --all
+
+# Install for specific IDEs
+./install.sh --vscode --cursor --devin
+
+# Clean up backups
+./rm-backup.sh
+```
+
+Supported IDEs/CLIs:
+- VS Code (GitHub Copilot)
+- Windsurf (Cascade)
+- Cursor
+- Devin / Devin Review / Devin CLI
+- Claude Code
+- Gemini CLI (Google)
 
 #### Agent Files (*.agent.md)
 - Must have `description` field (wrapped in single quotes)
@@ -56,6 +81,14 @@ All agent files (`*.agent.md`) and instruction files (`*.instructions.md`) must 
 - File names should be lower case with words separated by hyphens
 - Only `.md` files are accepted — `.yml`, `.yaml`, and `.lock.yml` files are blocked by CI
 - Follow the [GitHub Agentic Workflows specification](https://github.github.com/gh-aw/reference/workflow-structure/)
+
+#### Knowledge Files (knowledge/*)
+- Memory documents and guides for AI agent reference and contextual enhancement
+- Markdown files with comprehensive documentation including patterns, standards, and migration guides
+- Serves as knowledge base for Windsurf Cascade and other AI development tools
+- Provides established best practices, architectural patterns, and framework-specific guidance
+- File names should be descriptive and use kebab-case
+- No specific front matter required but recommended for consistency
 
 ### Adding New Resources
 
