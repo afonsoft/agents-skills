@@ -534,7 +534,36 @@ clean_aapanel() {
             done
         fi
         
-        # 7. Limpar cache do Nginx/Apache
+        # 7. Limpar logs do Nginx
+        log_info "Limpando logs do Nginx..."
+        local nginx_log_dirs=(
+            "/www/server/nginx/logs"
+            "/var/log/nginx"
+            "/usr/local/nginx/logs"
+        )
+        
+        for nginx_log_dir in "${nginx_log_dirs[@]}"; do
+            if [ -d "$nginx_log_dir" ]; then
+                local nginx_logs=$(find "$nginx_log_dir" -name "*.log" -type f 2>/dev/null || true)
+                if [ -n "$nginx_logs" ]; then
+                    local nginx_count=$(echo "$nginx_logs" | wc -l)
+                    local nginx_size=$(echo "$nginx_logs" | xargs du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
+                    
+                    log_info "Logs Nginx encontrados: $nginx_count arquivos ($nginx_size)"
+                    
+                    if [ "$DRY_RUN" = true ]; then
+                        log_warning "DRY RUN: Logs Nginx ($nginx_size) seriam limpos"
+                        echo "$nginx_logs" | head -3 | sed 's/^/  /'
+                        [ "$nginx_count" -gt 3 ] && echo "  ... e $((nginx_count - 3)) mais"
+                    else
+                        echo "$nginx_logs" | xargs truncate -s 0 2>/dev/null || log_warning "Erro ao limpar logs Nginx"
+                        log_success "Logs Nginx limpos: $nginx_count arquivos ($nginx_size)"
+                    fi
+                fi
+            fi
+        done
+        
+        # 8. Limpar cache do Nginx/Apache
         local web_cache_dirs=(
             "/www/server/nginx/proxy_temp"
             "/www/server/nginx/fastcgi_temp"
@@ -559,7 +588,40 @@ clean_aapanel() {
             fi
         done
         
-        # 8. Limpar logs de PHP
+        # 9. Limpar sessões PHP
+        log_info "Limpando sessões PHP..."
+        local session_dirs=(
+            "/tmp"
+            "/var/tmp"
+            "/www/server/php/tmp"
+            "/var/lib/php/sessions"
+            "/var/lib/php5/sessions"
+            "/var/lib/php7/sessions"
+            "/var/lib/php8/sessions"
+        )
+        
+        for session_dir in "${session_dirs[@]}"; do
+            if [ -d "$session_dir" ]; then
+                local php_sessions=$(find "$session_dir" -name "sess_*" -type f 2>/dev/null || true)
+                if [ -n "$php_sessions" ]; then
+                    local session_count=$(echo "$php_sessions" | wc -l)
+                    local session_size=$(echo "$php_sessions" | xargs du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
+                    
+                    log_info "Sessões PHP encontradas: $session_count arquivos ($session_size) em $session_dir"
+                    
+                    if [ "$DRY_RUN" = true ]; then
+                        log_warning "DRY RUN: Sessões PHP ($session_size) seriam removidas"
+                        echo "$php_sessions" | head -3 | sed 's/^/  /'
+                        [ "$session_count" -gt 3 ] && echo "  ... e $((session_count - 3)) mais"
+                    else
+                        echo "$php_sessions" | xargs rm -f 2>/dev/null || log_warning "Erro ao remover sessões PHP"
+                        log_success "Sessões PHP removidas: $session_count arquivos ($session_size)"
+                    fi
+                fi
+            fi
+        done
+        
+        # 10. Limpar logs de PHP
         local php_log_dirs=(
             "/www/server/php/*/var/log"
             "/var/log/php"

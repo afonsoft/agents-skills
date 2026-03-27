@@ -118,10 +118,13 @@ docker/
 /www/
 ├── server/panel/logs/        # Logs do painel
 ├── wwwlogs/                  # Logs de sites
+├── server/nginx/logs/        # Logs do Nginx
 ├── backup/                   # Backups antigos
 ├── server/mysql/             # Binary logs
 ├── server/panel/recycle_bin/ # Lixeira
-└── server/*/cache/           # Cache web/PHP
+├── server/*/cache/           # Cache web/PHP
+├── tmp/                      # Sessões PHP (sess_*)
+└── var/lib/php*/sessions/    # Sessões PHP
 ```
 
 ## 📈 Exemplo de Output
@@ -237,10 +240,12 @@ O script agora inclui limpeza completa para servidores com aaPanel:
 #### **O que é limpo no aaPanel:**
 - **Logs do Painel**: error.log, request.log, access.log, panel.log
 - **Logs de Sites**: Todos os logs em /www/wwwlogs/
+- **Logs Nginx**: Todos os logs em /www/server/nginx/logs/
 - **Binary Logs MySQL/MariaDB**: mysql-bin.*, relay-bin.*
 - **Backups Antigos**: Arquivos com mais de 7 dias
 - **Lixeira**: recycle_bin do painel e sistema
 - **Cache Web**: Nginx/Apache proxy, fastcgi, uwsgi cache
+- **Sessões PHP**: Arquivos sess_* em /tmp e diretórios de sessões
 - **Logs PHP**: Logs de todas as versões PHP instaladas
 - **Análise de Espaço**: Top 10 maiores consumidores em /www
 
@@ -252,6 +257,16 @@ echo "" > /www/server/panel/logs/request.log
 
 # Limpar logs de sites
 truncate -s 0 /www/wwwlogs/*.log
+
+# Limpar logs do Nginx
+truncate -s 0 /www/server/nginx/logs/*.log
+
+# Remover todos os logs do painel
+rm -rf /www/server/panel/logs/*
+
+# Remover sessões PHP
+find /tmp -name "sess_*" -type f -delete
+find /var/lib/php/sessions -name "sess_*" -type f -delete
 
 # Remover binary logs (cuidado!)
 rm -f /www/server/mysql/mysql-bin.*
