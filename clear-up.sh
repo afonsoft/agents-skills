@@ -357,6 +357,239 @@ clean_snap() {
     fi
 }
 
+# Limpeza do aaPanel
+clean_aapanel() {
+    if [ -d "/www/server/panel" ]; then
+        log_info "=== Limpando aaPanel ==="
+        
+        # 1. Limpar logs do painel
+        log_info "Limpando logs do aaPanel..."
+        local panel_logs=(
+            "/www/server/panel/logs/error.log"
+            "/www/server/panel/logs/request.log"
+            "/www/server/panel/logs/access.log"
+            "/www/server/panel/logs/panel.log"
+        )
+        
+        for log_file in "${panel_logs[@]}"; do
+            if [ -f "$log_file" ]; then
+                local size=$(get_size "$log_file")
+                log_info "Limpando log do painel: $(basename "$log_file") ($size)"
+                
+                if [ "$DRY_RUN" = true ]; then
+                    log_warning "DRY RUN: Log $log_file ($size) seria limpo"
+                else
+                    > "$log_file" 2>/dev/null || log_warning "Não foi possível limpar $log_file"
+                    log_success "Log limpo: $(basename "$log_file")"
+                fi
+            fi
+        done
+        
+        # 2. Limpar logs de sites individuais
+        if [ -d "/www/wwwlogs" ]; then
+            local site_logs_size=$(get_size "/www/wwwlogs")
+            log_info "Logs de sites: $site_logs_size"
+            
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: Logs de sites em /www/wwwlogs seriam limpos"
+            else
+                # Limpar logs de acesso e erro dos sites
+                find "/www/wwwlogs" -name "*.log" -type f -exec truncate -s 0 {} \; 2>/dev/null || log_warning "Erro ao limpar logs de sites"
+                log_success "Logs de sites limpos"
+            fi
+        fi
+        
+        # 3. Limpar Binary Logs do MySQL/MariaDB
+        local mysql_dirs=(
+            "/www/server/mysql"
+            "/www/server/mariadb"
+            "/var/lib/mysql"
+            "/usr/local/mysql"
+        )
+        
+        for mysql_dir in "${mysql_dirs[@]}"; do
+            if [ -d "$mysql_dir" ]; then
+                log_info "Verificando MySQL/MariaDB em: $mysql_dir"
+                
+                # Limpar binary logs
+                local binary_logs=$(find "$mysql_dir" -name "mysql-bin.*" -type f 2>/dev/null || true)
+                if [ -n "$binary_logs" ]; then
+                    local binary_count=$(echo "$binary_logs" | wc -l)
+                    local binary_size=$(echo "$binary_logs" | xargs du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
+                    
+                    log_info "Binary logs encontrados: $binary_count arquivos ($binary_size)"
+                    
+                    if [ "$DRY_RUN" = true ]; then
+                        log_warning "DRY RUN: Binary logs ($binary_size) seriam removidos"
+                        echo "$binary_logs" | head -3 | sed 's/^/  /'
+                        [ "$binary_count" -gt 3 ] && echo "  ... e $((binary_count - 3)) mais"
+                    else
+                        echo "$binary_logs" | xargs rm -f 2>/dev/null || log_warning "Erro ao remover binary logs"
+                        log_success "Binary logs removidos: $binary_count arquivos ($binary_size)"
+                    fi
+                fi
+                
+                # Limpar relay logs
+                local relay_logs=$(find "$mysql_dir" -name "relay-bin.*" -type f 2>/dev/null || true)
+                if [ -n "$relay_logs" ]; then
+                    if [ "$DRY_RUN" = false ]; then
+                        echo "$relay_logs" | xargs rm -f 2>/dev/null || log_warning "Erro ao remover relay logs"
+                        log_success "Relay logs removidos"
+                    fi
+                fi
+                
+                # Limpar logs de erro do MySQL
+                local mysql_error_logs=(
+                    "$mysql_dir/data/mysql-error.log"
+                    "$mysql_dir/logs/error.log"
+                    "$mysql_dir/var/mysql.err"
+                )
+                
+                for error_log in "${mysql_error_logs[@]}"; do
+                    if [ -f "$error_log" ]; then
+                        local size=$(get_size "$error_log")
+                        log_info "Limpando log de erro MySQL: $(basename "$error_log") ($size)"
+                        
+                        if [ "$DRY_RUN" = false ]; then
+                            > "$error_log" 2>/dev/null || log_warning "Não foi possível limpar $error_log"
+                        fi
+                    fi
+                done
+                
+                break
+            fi
+        done
+        
+        # 4. Remover backups antigos
+        local backup_dirs=(
+            "/www/backup"
+            "/www/server/panel/backup"
+            "/backup"
+        )
+        
+        for backup_dir in "${backup_dirs[@]}"; do
+            if [ -d "$backup_dir" ]; then
+                log_info "Verificando backups em: $backup_dir"
+                
+                # Encontrar backups com mais de 7 dias
+                local old_backups=$(find "$backup_dir" -type f -mtime +7 2>/dev/null || true)
+                if [ -n "$old_backups" ]; then
+                    local backup_count=$(echo "$old_backups" | wc -l)
+                    local backup_size=$(echo "$old_backups" | xargs du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
+                    
+                    log_info "Backups antigos encontrados: $backup_count arquivos ($backup_size)"
+                    
+                    if [ "$DRY_RUN" = true ]; then
+                        log_warning "DRY RUN: Backups antigos ($backup_size) seriam removidos"
+                        echo "$old_backups" | head -3 | sed 's/^/  /'
+                        [ "$backup_count" -gt 3 ] && echo "  ... e $((backup_count - 3)) mais"
+                    else
+                        if [ "$INTERACTIVE" = true ]; then
+                            echo -n "Remover $backup_count backups antigos ($backup_size)? (y/N): "
+                            read -r response
+                            if [[ "$response" =~ ^[Yy]$ ]]; then
+                                echo "$old_backups" | xargs rm -f 2>/dev/null || log_warning "Erro ao remover backups antigos"
+                                log_success "Backups antigos removidos: $backup_count arquivos ($backup_size)"
+                            else
+                                log_info "Pulando remoção de backups antigos"
+                            fi
+                        else
+                            echo "$old_backups" | xargs rm -f 2>/dev/null || log_warning "Erro ao remover backups antigos"
+                            log_success "Backups antigos removidos: $backup_count arquivos ($backup_size)"
+                        fi
+                    fi
+                else
+                    log_verbose "Nenhum backup antigo encontrado em $backup_dir"
+                fi
+            fi
+        done
+        
+        # 5. Limpar lixeira do aaPanel
+        local trash_dirs=(
+            "/www/server/panel/recycle_bin"
+            "/www/recycle_bin"
+            "/.local/share/Trash/files"
+        )
+        
+        for trash_dir in "${trash_dirs[@]}"; do
+            if [ -d "$trash_dir" ]; then
+                local trash_size=$(get_size "$trash_dir")
+                log_info "Lixeira encontrada: $trash_dir ($trash_size)"
+                
+                if [ "$DRY_RUN" = true ]; then
+                    log_warning "DRY RUN: Lixeira $trash_dir ($trash_size) seria esvaziada"
+                else
+                    rm -rf "$trash_dir"/* 2>/dev/null || log_warning "Erro ao esvaziar lixeira $trash_dir"
+                    log_success "Lixeira esvaziada: $trash_dir"
+                fi
+            fi
+        done
+        
+        # 6. Identificar maiores consumidores de espaço
+        log_info "Analisando maiores consumidores de espaço em /www..."
+        if [ -d "/www" ]; then
+            echo "Top 10 diretórios que mais consomem espaço em /www:"
+            du -h /www --max-depth=2 2>/dev/null | sort -hr | head -n 10 | while read -r line; do
+                echo "  $line"
+            done
+        fi
+        
+        # 7. Limpar cache do Nginx/Apache
+        local web_cache_dirs=(
+            "/www/server/nginx/proxy_temp"
+            "/www/server/nginx/fastcgi_temp"
+            "/www/server/nginx/uwsgi_temp"
+            "/www/server/nginx/scgi_temp"
+            "/www/server/apache2/cache"
+            "/var/cache/nginx"
+            "/var/cache/apache2"
+        )
+        
+        for cache_dir in "${web_cache_dirs[@]}"; do
+            if [ -d "$cache_dir" ]; then
+                local cache_size=$(get_size "$cache_dir")
+                log_info "Cache web encontrado: $cache_dir ($cache_size)"
+                
+                if [ "$DRY_RUN" = true ]; then
+                    log_warning "DRY RUN: Cache web $cache_dir ($cache_size) seria limpo"
+                else
+                    rm -rf "$cache_dir"/* 2>/dev/null || log_warning "Erro ao limpar cache $cache_dir"
+                    log_success "Cache web limpo: $(basename "$cache_dir")"
+                fi
+            fi
+        done
+        
+        # 8. Limpar logs de PHP
+        local php_log_dirs=(
+            "/www/server/php/*/var/log"
+            "/var/log/php"
+            "/usr/local/php*/var/log"
+        )
+        
+        for php_log_dir in "${php_log_dirs[@]}"; do
+            # Expandir wildcard
+            for expanded_dir in $php_log_dir; do
+                if [ -d "$expanded_dir" ]; then
+                    local php_logs=$(find "$expanded_dir" -name "*.log" -type f 2>/dev/null || true)
+                    if [ -n "$php_logs" ]; then
+                        log_info "Limpando logs PHP em: $expanded_dir"
+                        
+                        if [ "$DRY_RUN" = false ]; then
+                            echo "$php_logs" | xargs truncate -s 0 2>/dev/null || log_warning "Erro ao limpar logs PHP"
+                            log_success "Logs PHP limpos"
+                        fi
+                    fi
+                fi
+            done
+        done
+        
+        log_success "Limpeza do aaPanel concluída"
+        
+    else
+        log_verbose "aaPanel não encontrado (/www/server/panel não existe)"
+    fi
+}
+
 # Limpeza de journal do systemd
 clean_journal() {
     if command -v journalctl >/dev/null 2>&1; then
@@ -433,6 +666,9 @@ run_cleanup() {
     echo
     
     clean_snap
+    echo
+    
+    clean_aapanel
     echo
     
     clean_journal

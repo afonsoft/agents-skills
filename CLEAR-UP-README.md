@@ -14,6 +14,7 @@ Script completo para limpeza de disco em sistemas Ubuntu/Linux que remove logs, 
 - **Kernels antigos**: Remoção segura de kernels não utilizados
 - **Docker**: Containers, imagens, volumes, redes e build cache não utilizados
 - **Snap**: Versões antigas de snap packages
+- **aaPanel**: Logs, backups, lixeira, cache e binary logs
 - **Journal do systemd**: Logs do sistema limitados
 
 ### 🛡️ **Segurança**
@@ -110,6 +111,17 @@ docker/
 ├── volumes/          # Volumes não utilizados
 ├── networks/         # Redes não utilizadas
 └── builder/          # Build cache e histórico
+```
+
+### 5. **aaPanel (se instalado)**
+```
+/www/
+├── server/panel/logs/        # Logs do painel
+├── wwwlogs/                  # Logs de sites
+├── backup/                   # Backups antigos
+├── server/mysql/             # Binary logs
+├── server/panel/recycle_bin/ # Lixeira
+└── server/*/cache/           # Cache web/PHP
 ```
 
 ## 📈 Exemplo de Output
@@ -218,7 +230,53 @@ docker builder prune -af
 - **Segurança**: Remove artefatos de builds anteriores
 - **Consistência**: Fresh builds sem resíduos
 
-## �🛠️ Personalização
+## 🖥️ aaPanel Cleaning
+
+O script agora inclui limpeza completa para servidores com aaPanel:
+
+#### **O que é limpo no aaPanel:**
+- **Logs do Painel**: error.log, request.log, access.log, panel.log
+- **Logs de Sites**: Todos os logs em /www/wwwlogs/
+- **Binary Logs MySQL/MariaDB**: mysql-bin.*, relay-bin.*
+- **Backups Antigos**: Arquivos com mais de 7 dias
+- **Lixeira**: recycle_bin do painel e sistema
+- **Cache Web**: Nginx/Apache proxy, fastcgi, uwsgi cache
+- **Logs PHP**: Logs de todas as versões PHP instaladas
+- **Análise de Espaço**: Top 10 maiores consumidores em /www
+
+#### **Comandos Manuais Equivalentes:**
+```bash
+# Limpar logs do painel
+echo "" > /www/server/panel/logs/error.log
+echo "" > /www/server/panel/logs/request.log
+
+# Limpar logs de sites
+truncate -s 0 /www/wwwlogs/*.log
+
+# Remover binary logs (cuidado!)
+rm -f /www/server/mysql/mysql-bin.*
+
+# Esvaziar lixeira
+rm -rf /www/server/panel/recycle_bin/*
+
+# Analisar espaço
+du -h /www --max-depth=2 | sort -hr | head -n 10
+```
+
+#### **Segurança Específica para aaPanel:**
+- **Backups**: Requer confirmação antes de remover (padrão: 7+ dias)
+- **Binary Logs**: Avisado sobre impacto na replicação
+- **Logs Ativos**: Apenas limpa conteúdo, preserva arquivos
+- **Cache Web**: Remoção segura, não afeta funcionamento
+
+#### **O que NÃO é removido:**
+- Configurações do painel
+- Sites e arquivos de usuário
+- Certificados SSL
+- Bancos de dados (apenas logs)
+- Backups recentes (< 7 dias)
+
+## 🛠️ Personalização
 
 ### Adicionar Novos Padrões
 Edite o script e adicione novas chamadas `remove_files()`:
@@ -248,12 +306,14 @@ fi
 - **Temporários**: 100MB - 500MB
 - **Cache Apps**: 300MB - 1.5GB
 - **Docker**: 1GB - 5GB (se usado)
-- **Total**: 2GB - 10GB
+- **aaPanel**: 2GB - 8GB (se instalado)
+- **Total**: 4GB - 18GB
 
 ### Tempo de Execução
 - **Desktop normal**: 2-5 minutos
 - **Server**: 5-15 minutos
 - **Com Docker**: 10-20 minutos
+- **Com aaPanel**: 15-25 minutos
 
 ## 🔄 Automação
 
