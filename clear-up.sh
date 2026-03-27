@@ -569,6 +569,7 @@ clean_aapanel() {
             "/www/server/nginx/fastcgi_temp"
             "/www/server/nginx/uwsgi_temp"
             "/www/server/nginx/scgi_temp"
+            "/www/server/nginx/src"
             "/www/server/apache2/cache"
             "/var/cache/nginx"
             "/var/cache/apache2"

@@ -124,7 +124,7 @@ docker/
 ├── server/mysql/             # Binary logs e testes
 ├── server/pgsql/              # Testes PostgreSQL
 ├── server/panel/recycle_bin/ # Lixeira
-├── server/*/cache/           # Cache web/PHP
+├── server/*/cache/           # Cache web/PHP (incluindo nginx/src)
 ├── tmp/                      # Sessões PHP (sess_*)
 ├── var/lib/php*/sessions/    # Sessões PHP
 ├── var/lib/mysql/mysql-test/  # Testes MySQL
@@ -248,7 +248,7 @@ O script agora inclui limpeza completa para servidores com aaPanel:
 - **Binary Logs MySQL/MariaDB**: mysql-bin.*, relay-bin.*
 - **Backups Antigos**: Arquivos com mais de 7 dias
 - **Lixeira**: recycle_bin do painel e sistema
-- **Cache Web**: Nginx/Apache proxy, fastcgi, uwsgi cache
+- **Cache Web**: Nginx/Apache proxy, fastcgi, uwsgi cache e src
 - **Sessões PHP**: Arquivos sess_* em /tmp e diretórios de sessões
 - **Arquivos de Instalação**: .rpm, .zip, .tar.gz do painel
 - **Diretórios de Teste**: mysql-test, pgsql/test e variantes
@@ -273,6 +273,9 @@ rm -rf /www/server/panel/logs/*
 # Remover sessões PHP
 find /tmp -name "sess_*" -type f -delete
 find /var/lib/php/sessions -name "sess_*" -type f -delete
+
+# Remover diretório src do Nginx
+rm -rf /www/server/nginx/src
 
 # Remover arquivos de instalação do painel
 rm -rf /www/server/panel/install/*.rpm
