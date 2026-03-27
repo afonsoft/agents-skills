@@ -121,7 +121,7 @@ Cleanup script to remove backup files created during installation:
 
 ### clear-up-linux.sh
 
-Comprehensive Linux system cleanup script with aaPanel support:
+Comprehensive Linux system cleanup script with aaPanel and BleachBit support:
 ```bash
 # Basic cleanup
 sudo ./clear-up-linux.sh
