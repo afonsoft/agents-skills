@@ -403,6 +403,38 @@ clean_aapanel() {
             fi
         fi
         
+        # 3. Limpar logs do PostgreSQL aaPanel
+        log_info "Limpando logs do PostgreSQL aaPanel..."
+        local pgsql_log_dirs=(
+            "/www/server/pgsql/data"
+            "/www/server/pgsql/logs"
+            "/var/lib/pgsql/data"
+            "/var/log/pgsql"
+            "/usr/local/pgsql/data"
+            "/usr/local/pgsql/logs"
+        )
+        
+        for pgsql_log_dir in "${pgsql_log_dirs[@]}"; do
+            if [ -d "$pgsql_log_dir" ]; then
+                local pgsql_logs=$(find "$pgsql_log_dir" -name "*.log" -type f 2>/dev/null || true)
+                if [ -n "$pgsql_logs" ]; then
+                    local pgsql_count=$(echo "$pgsql_logs" | wc -l)
+                    local pgsql_size=$(echo "$pgsql_logs" | xargs du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
+                    
+                    log_info "Logs PostgreSQL encontrados: $pgsql_count arquivos ($pgsql_size) em $pgsql_log_dir"
+                    
+                    if [ "$DRY_RUN" = true ]; then
+                        log_warning "DRY RUN: Logs PostgreSQL ($pgsql_size) seriam limpos"
+                        echo "$pgsql_logs" | head -3 | sed 's/^/  /'
+                        [ "$pgsql_count" -gt 3 ] && echo "  ... e $((pgsql_count - 3)) mais"
+                    else
+                        echo "$pgsql_logs" | xargs truncate -s 0 2>/dev/null || log_warning "Erro ao limpar logs PostgreSQL"
+                        log_success "Logs PostgreSQL limpos: $pgsql_count arquivos ($pgsql_size)"
+                    fi
+                fi
+            fi
+        done
+        
         # 3. Limpar Binary Logs do MySQL/MariaDB
         local mysql_dirs=(
             "/www/server/mysql"

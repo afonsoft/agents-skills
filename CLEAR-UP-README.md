@@ -119,6 +119,8 @@ docker/
 /www/
 ├── server/panel/logs/        # Logs do painel
 ├── wwwlogs/                  # Logs de sites
+├── server/pgsql/data/          # 🆕 Logs do PostgreSQL (data)
+├── server/pgsql/logs/          # 🆕 Logs do PostgreSQL (logs)
 ├── server/nginx/logs/        # Logs do Nginx
 ├── server/panel/install/     # Arquivos de instalação
 ├── backup/                   # Backups antigos
@@ -246,6 +248,7 @@ O script agora inclui limpeza completa para servidores com aaPanel:
 #### **O que é limpo no aaPanel:**
 - **Logs do Painel**: error.log, request.log, access.log, panel.log
 - **Logs de Sites**: Todos os logs em /www/wwwlogs/
+- **Logs PostgreSQL**: Todos os logs do PostgreSQL aaPanel
 - **Logs Nginx**: Todos os logs em /www/server/nginx/logs/
 - **Binary Logs MySQL/MariaDB**: mysql-bin.*, relay-bin.*
 - **Backups Antigos**: Arquivos com mais de 7 dias
@@ -266,6 +269,12 @@ echo "" > /www/server/panel/logs/request.log
 
 # Limpar logs de sites
 truncate -s 0 /www/wwwlogs/*.log
+
+# Limpar logs do PostgreSQL aaPanel
+find /www/server/pgsql/data -name "*.log" -type f -exec truncate -s 0 {} \;
+find /www/server/pgsql/logs -name "*.log" -type f -exec truncate -s 0 {} \;
+find /var/lib/pgsql/data -name "*.log" -type f -exec truncate -s 0 {} \;
+find /var/log/pgsql -name "*.log" -type f -exec truncate -s 0 {} \;
 
 # Limpar logs do Nginx
 truncate -s 0 /www/server/nginx/logs/*.log
