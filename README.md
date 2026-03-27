@@ -10,6 +10,7 @@ A community-driven collection of custom agents, skills, rules, and knowledge des
 - **⚡ Workflows** - Agentic workflows for GitHub Actions automation
 - **🧠 Knowledge** - Memory documents, patterns, and migration guides
 - **🛠️ Installation Scripts** - Easy setup across multiple IDEs and CLIs
+- **🧹 Utility Scripts** - System maintenance and cleanup tools
 
 ## 📁 Repository Structure
 
@@ -21,7 +22,9 @@ agents-skills/
 ├── workflows/        # Agentic workflows for automation
 ├── knowledge/        # Memory documents and guides
 ├── install.sh        # Installation script for all IDEs
-└── rm-backup.sh      # Cleanup script for backups
+├── rm-backup.sh      # Cleanup script for backups
+├── clear-up-linux.sh # Linux system cleanup script
+└── git-cleanup-repos.sh # Git repository maintenance script
 ```
 
 ## 🎯 Quick Start
@@ -115,6 +118,49 @@ Cleanup script to remove backup files created during installation:
 ```bash
 ./rm-backup.sh
 ```
+
+### clear-up-linux.sh
+
+Comprehensive Linux system cleanup script with aaPanel support:
+```bash
+# Basic cleanup
+sudo ./clear-up-linux.sh
+
+# With BleachBit deep cleaning
+sudo ./clear-up-linux.sh --bleachbit
+
+# Dry run simulation
+sudo ./clear-up-linux.sh --dry-run --verbose
+```
+
+**Features:**
+- System logs, APT cache, temporary files cleanup
+- Docker containers, images, volumes, and build cache
+- aaPanel comprehensive cleaning (16 categories)
+- PostgreSQL logs, MySQL binary logs, web cache
+- BleachBit integration for deep cleaning
+- Journal cleanup (1-day retention)
+- Interactive and batch modes
+
+### git-cleanup-repos.sh
+
+Git repository maintenance and cleanup script:
+```bash
+# Make executable and run
+chmod +x git-cleanup-repos.sh
+./git-cleanup-repos.sh
+
+# Run from specific directory
+cd /path/to/projects && ./git-cleanup-repos.sh
+```
+
+**Features:**
+- Recursive Git repository discovery
+- Git fetch, pull, reflog cleanup, and garbage collection
+- Build artifact removal (bin, obj, .vs, node_modules)
+- Detailed timestamped logging
+- Before/after repository statistics
+- Safe operations with validation
 
 ## 📚 Knowledge Base
 
@@ -230,6 +276,7 @@ This is a community-driven project built with ❤️ by developers, for develope
 - **Frameworks**: ASP.NET Boilerplate, ABP.IO, Angular, Blazor, and more
 - **Languages**: C#, TypeScript, Python, PowerShell, and others
 - **IDE Support**: VS Code, Windsurf, Cursor, Devin, Claude, Gemini
+- **Utility Scripts**: 2 system maintenance and cleanup scripts
 
 ## 📄 License
 
