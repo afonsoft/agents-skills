@@ -23,6 +23,7 @@ NC='\033[0m' # No Color
 DRY_RUN=false
 VERBOSE=false
 INTERACTIVE=true
+INSTALL_BLEACHBIT=false
 TOTAL_FREED=0
 
 # Funções de log
@@ -55,20 +56,23 @@ show_help() {
     echo "  sudo ./clear-up.sh [opcoes]"
     echo
     echo -e "${YELLOW}Opcoes:${NC}"
-    echo "  --dry-run, -d      Simula a limpeza sem remover arquivos"
-    echo "  --verbose, -v      Modo detalhado"
-    echo "  --force, -f        Modo não-interativo (pula confirmacoes)"
-    echo "  --help, -h         Exibe esta mensagem de ajuda"
+    echo "  --help, -h     Exibe esta mensagem de ajuda"
+    echo "  --dry-run, -d  Simula a limpeza sem remover arquivos"
+    echo "  --verbose, -v  Modo detalhado"
+    echo "  --force, -f    Modo não-interativo (pula confirmacoes)"
+    echo "  --bleachbit, -b Instala e executa BleachBit para limpeza profunda"
     echo
     echo -e "${YELLOW}O que sera limpo:${NC}"
     echo "  - Logs do sistema (*.log, log*)"
     echo "  - Cache de pacotes (apt)"
     echo "  - Arquivos temporários"
     echo "  - Cache de aplicativos"
-    echo "  - Kernel antigos"
-    echo "  - Lixeira do sistema"
+    echo "  - Kernels antigos"
     echo "  - Docker (se instalado)"
     echo "  - Snap packages antigos"
+    echo "  - aaPanel (se instalado)"
+    echo "  - BleachBit para limpeza profunda (com --bleachbit)"
+    echo "  - Journal do systemd"
     echo
     echo -e "${YELLOW}AVISO:${NC} Execute como root/sudo para acesso completo"
     echo
@@ -811,7 +815,114 @@ run_cleanup() {
     clean_journal
     echo
     
+    # 14. Limpeza com BleachBit (se disponível)
+    clean_bleachbit
+    echo
+    
     show_report
+}
+
+# Instalar e executar BleachBit
+install_and_run_bleachbit() {
+    if command -v bleachbit >/dev/null 2>&1; then
+        log_info "=== Executando Limpeza com BleachBit ==="
+        
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: BleachBit seria executado com as seguintes opções:"
+            echo "  bleachbit --clean system.cache system.rotated_logs system.tmp"
+            echo "  bleachbit --clean apt.autoclean apt.autoremove apt.clean"
+        else
+            log_info "Limpando cache do sistema e logs rotacionados..."
+            bleachbit --clean system.cache system.rotated_logs system.tmp 2>/dev/null || log_warning "Erro ao limpar cache e logs com BleachBit"
+            
+            log_info "Limpando resíduos do gerenciador de pacotes..."
+            bleachbit --clean apt.autoclean apt.autoremove apt.clean 2>/dev/null || log_warning "Erro ao limpar resíduos do APT com BleachBit"
+            
+            log_success "Limpeza com BleachBit concluída"
+        fi
+    else
+        log_info "BleachBit não encontrado. Instalando..."
+        
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: BleachBit seria instalado"
+            return
+        fi
+        
+        # Detectar distribuição
+        local distro=""
+        if [ -f /etc/os-release ]; then
+            distro=$(grep "^ID=" /etc/os-release | cut -d'"' -f2)
+        elif command -v lsb_release >/dev/null 2>&1; then
+            distro=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
+        fi
+        
+        log_info "Detectada distribuição: $distro"
+        
+        # Instalar BleachBit baseado na distribuição
+        case "$distro" in
+            ubuntu|debian)
+                log_info "Instalando BleachBit via APT..."
+                apt-get update -qq >/dev/null 2>&1
+                apt-get install -y bleachbit >/dev/null 2>&1
+                ;;
+            fedora|centos|rhel)
+                log_info "Instalando BleachBit via DNF/YUM..."
+                if command -v dnf >/dev/null 2>&1; then
+                    dnf install -y bleachbit >/dev/null 2>&1
+                elif command -v yum >/dev/null 2>&1; then
+                    yum install -y bleachbit >/dev/null 2>&1
+                fi
+                ;;
+            arch)
+                log_info "Instalando BleachBit via Pacman..."
+                pacman -S --noconfirm bleachbit >/dev/null 2>&1
+                ;;
+            *)
+                log_warning "Distribuição não suportada para instalação automática: $distro"
+                log_info "Por favor, instale o BleachBit manualmente:"
+                echo "  Ubuntu/Debian: sudo apt-get install bleachbit"
+                echo "  Fedora/CentOS: sudo dnf install bleachbit"
+                echo "  Arch Linux: sudo pacman -S bleachbit"
+                return
+                ;;
+        esac
+        
+        if [ $? -eq 0 ]; then
+            log_success "BleachBit instalado com sucesso"
+            
+            # Executar limpeza após instalação
+            log_info "Executando limpeza com BleachBit recém-instalado..."
+            bleachbit --clean system.cache system.rotated_logs system.tmp 2>/dev/null || log_warning "Erro ao limpar cache e logs com BleachBit"
+            bleachbit --clean apt.autoclean apt.autoremove apt.clean 2>/dev/null || log_warning "Erro ao limpar resíduos do APT com BleachBit"
+            log_success "Limpeza com BleachBit concluída"
+        else
+            log_error "Falha ao instalar BleachBit"
+        fi
+    fi
+}
+
+# Limpeza com BleachBit
+clean_bleachbit() {
+    if command -v bleachbit >/dev/null 2>&1; then
+        log_info "=== Limpando com BleachBit ==="
+        
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: BleachBit seria executado"
+            return
+        fi
+        
+        # Limpar cache do sistema e logs rotacionados
+        log_info "Limpando cache do sistema e logs rotacionados..."
+        bleachbit --clean system.cache system.rotated_logs system.tmp 2>/dev/null || log_warning "Erro ao limpar cache e logs com BleachBit"
+        
+        # Limpar resíduos do gerenciador de pacotes
+        log_info "Limpando resíduos do gerenciador de pacotes..."
+        bleachbit --clean apt.autoclean apt.autoremove apt.clean 2>/dev/null || log_warning "Erro ao limpar resíduos do APT com BleachBit"
+        
+        log_success "Limpeza com BleachBit concluída"
+    else
+        log_verbose "BleachBit não disponível"
+    fi
 }
 
 # Parse de argumentos
@@ -830,6 +941,9 @@ parse_args() {
                 ;;
             --force|-f)
                 INTERACTIVE=false
+                ;;
+            --bleachbit|-b)
+                INSTALL_BLEACHBIT=true
                 ;;
             *)
                 log_error "Opção desconhecida: $1"
@@ -874,7 +988,11 @@ main() {
         fi
     fi
     
-    run_cleanup
+    if [ "$INSTALL_BLEACHBIT" = true ]; then
+        install_and_run_bleachbit
+    else
+        run_cleanup
+    fi
 }
 
 # Execução

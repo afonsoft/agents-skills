@@ -15,6 +15,7 @@ Script completo para limpeza de disco em sistemas Ubuntu/Linux que remove logs, 
 - **Docker**: Containers, imagens, volumes, redes e build cache não utilizados
 - **Snap**: Versões antigas de snap packages
 - **aaPanel**: Logs, backups, lixeira, cache e binary logs
+- **BleachBit**: Limpeza profunda com instalação automática
 - **Journal do systemd**: Logs do sistema limitados
 
 ### 🛡️ **Segurança**
@@ -315,6 +316,62 @@ du -h /www --max-depth=2 | sort -hr | head -n 10
 - Certificados SSL
 - Bancos de dados (apenas logs)
 - Backups recentes (< 7 dias)
+
+## 🧹 BleachBit Integration
+
+O script agora inclui integração com BleachBit para limpeza profunda do sistema:
+
+#### **O que o BleachBit limpa:**
+- **Cache do sistema**: Arquivos temporários e cache de aplicações
+- **Logs rotacionados**: Logs antigos e compactados
+- **Resíduos do APT**: Pacotes não utilizados e cache
+- **Histórico**: Histórico de navegação e documentos recentes
+- **Lixeira**: Arquivos da lixeira do sistema
+- **Memória swap**: Arquivos de swap temporários
+
+#### **Modos de uso:**
+```bash
+# Instalar e executar BleachBit automaticamente
+sudo ./clear-up.sh --bleachbit
+
+# Simulação do BleachBit
+sudo ./clear-up.sh --bleachbit --dry-run
+
+# Execução manual do BleachBit (se já instalado)
+sudo ./clear-up.sh --bleachbit --verbose
+```
+
+#### **Instalação automática:**
+- **Detecção de distribuição**: Ubuntu, Debian, Fedora, CentOS, Arch
+- **Gerenciador de pacotes**: APT, DNF, YUM, Pacman
+- **Instalação silenciosa**: Sem interação do usuário
+- **Execução imediata**: Após instalação, executa limpeza
+
+#### **Comandos específicos:**
+```bash
+# Limpeza focada do BleachBit
+bleachbit --clean system.cache system.rotated_logs system.tmp
+bleachbit --clean apt.autoclean apt.autoremove apt.clean
+
+# Limpeza completa (recomendado)
+bleachbit --clean system.cache system.rotated_logs system.tmp \
+                apt.autoclean apt.autoremove apt.clean \
+                deep.scan registry \
+                thumbnails.cache2 \
+                system.trash
+```
+
+#### **Benefícios do BleachBit:**
+- **Limpeza profunda**: Atinge locais que outras ferramentas ignoram
+- **Segurança**: Remove vestígios de atividades sensíveis
+- **Performance**: Melhora velocidade do sistema
+- **Espaço**: Libera GBs de espaço acumulado
+
+#### **Segurança:**
+- **Instalação verificada**: Apenas fontes oficiais
+- **Execução segura**: Comandos testados e validados
+- **Rollback**: Preserva configurações importantes
+- **Logging**: Registro completo das operações
 
 ## 🛠️ Personalização
 
