@@ -16,7 +16,7 @@ Script completo para limpeza de disco em sistemas Ubuntu/Linux que remove logs, 
 - **Snap**: Versões antigas de snap packages
 - **aaPanel**: Logs, backups, lixeira, cache e binary logs
 - **BleachBit**: Limpeza profunda com instalação automática
-- **Journal do systemd**: Logs do sistema limitados
+- **Journal do systemd**: Logs do sistema limitados (últimas 24 horas)
 
 ### 🛡️ **Segurança**
 - **Modo simulação**: `--dry-run` para preview seguro

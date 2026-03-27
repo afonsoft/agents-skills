@@ -742,8 +742,8 @@ clean_journal() {
         if [ "$DRY_RUN" = true ]; then
             log_warning "DRY RUN: Journal seria limpo"
         else
-            # Manter apenas os últimos 7 dias
-            journalctl --vacuum-time=7d 2>/dev/null || log_warning "Erro ao limpar journal"
+            # Manter apenas os últimos 1 dia
+            journalctl --vacuum-time=1d 2>/dev/null || log_warning "Erro ao limpar journal"
             
             # Limitar a 100MB
             journalctl --vacuum-size=100M 2>/dev/null || log_warning "Erro ao limitar tamanho do journal"
