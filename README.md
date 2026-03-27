@@ -180,10 +180,9 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 ### Quick Contribution Steps
 
 1. **Fork** the repository
-2. **Create** a feature branch
-3. **Add** your skill/rule/knowledge
-4. **Test** with your IDE
-5. **Submit** a pull request to the `staged` branch
+2. **Create** a feature branch from `staged` branch
+3. **Add** your skill/rule/knowledge/agent/workflow
+4. **Submit** a pull request to the `staged` branch
 
 ### Development Setup
 
@@ -198,32 +197,39 @@ npm install
 # Validate your contribution
 npm run build
 npm run skill:validate  # For skills
+npm run plugin:validate  # For plugins (if applicable)
+
+# Fix line endings before committing
+bash scripts/fix-line-endings.sh
 ```
 
 ## 📖 Documentation
 
-- [Development Guide](AGENTS.md) - Detailed development workflow
-- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
-- [Code of Conduct](CODE_OF_CONDUCT.md) - Community standards
-- [Security Policy](SECURITY.md) - Security policies
+- [Development Guide](AGENTS.md) - Detailed development workflow and project structure
+- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
+- [Code of Conduct](CODE_OF_CONDUCT.md) - Community standards and guidelines
+- [Security Policy](SECURITY.md) - Security policies and vulnerability reporting
 
 ## 🏆 Community
 
-This is a community-driven project. Join us in:
+This is a community-driven project built with ❤️ by developers, for developers. Join us in:
 
-- 🌟 **Starring** the repository
-- 🍴 **Forking** and contributing
+- 🌟 **Starring** the repository to show your support
+- 🍴 **Forking** and contributing your skills and knowledge
 - 🐛 **Reporting** issues and suggesting features
-- 📝 **Improving** documentation
-- 💬 **Sharing** feedback and experiences
+- 📝 **Improving** documentation and sharing feedback
+- 💬 **Sharing** your experiences and use cases
+- 🤝 **Helping** others in the community
 
 ## 📊 Statistics
 
-- **Skills**: 61+ specialized skills
-- **Rules**: 96+ coding standards  
-- **Workflows**: 7+ automation workflows
+- **Skills**: 61+ specialized skills across various domains
+- **Rules**: 96+ coding standards and best practices
+- **Workflows**: 7+ agentic workflows for automation
 - **Knowledge**: 5+ comprehensive guides and migration documents
-- **IDE Support**: 6+ major IDEs and CLIs
+- **Frameworks**: ASP.NET Boilerplate, ABP.IO, Angular, Blazor, and more
+- **Languages**: C#, TypeScript, Python, PowerShell, and others
+- **IDE Support**: VS Code, Windsurf, Cursor, Devin, Claude, Gemini
 
 ## 📄 License
 
@@ -232,8 +238,9 @@ This project is licensed under the [MIT License](LICENSE) - see the LICENSE file
 ## 🔗 Related Projects
 
 - [GitHub Copilot](https://github.com/features/copilot) - AI pair programmer
-- [GitHub Awesome Copilot](https://github.com/github/awesome-copilot) - Community resources
 - [Agent Skills Specification](https://agentskills.io/specification) - Skills standard
+- [Agentic Workflows](https://github.github.com/gh-aw) - AI-powered repository automation
+- [MCP Protocol](https://modelcontextprotocol.io/) - Model Context Protocol for AI agents
 
 ---
 

@@ -1,6 +1,6 @@
-# Contributing to Awesome GitHub Copilot
+# Contributing to agents-skills
 
-Thank you for your interest in contributing to the Awesome GitHub Copilot repository! We welcome contributions from the community to help expand our collection of custom instructions and skills.
+Thank you for your interest in contributing to the agents-skills repository! We welcome contributions from the community to help expand our collection of custom agents, skills, rules, and knowledge for AI development experiences.
 
 ## Table of Contents
 
@@ -12,8 +12,6 @@ Thank you for your interest in contributing to the Awesome GitHub Copilot reposi
   - [Adding Prompts](#adding-prompts)
   - [Adding Agents](#adding-agents)
   - [Adding Skills](#adding-skills)
-  - [Adding Plugins](#adding-plugins)
-  - [Adding Hooks](#adding-hooks)
   - [Adding Agentic Workflows](#adding-agentic-workflows)
 - [Submitting Your Contribution](#submitting-your-contribution)
 - [Contributor Recognition](#contributor-recognition)
@@ -23,7 +21,7 @@ Thank you for your interest in contributing to the Awesome GitHub Copilot reposi
 
 ## What We Accept
 
-We welcome contributions covering any technology, framework, or development practice that helps developers work more effectively with GitHub Copilot. This includes:
+We welcome contributions covering any technology, framework, or development practice that helps developers work more effectively with AI agents and development tools. This includes:
 
 - Programming languages and frameworks
 - Development methodologies and best practices
@@ -45,13 +43,13 @@ To maintain a safe, responsible, and high-signal collection, we will **not accep
 - **Exploit Weaknesses**: Instructions that take advantage of vulnerabilities in other platforms or services
 - **Promote Harmful Content**: Guidance that could lead to the creation of harmful, discriminatory, or inappropriate content
 - **Circumvent Platform Policies**: Attempts to work around GitHub, Microsoft, or other platform terms of service
-- **Duplicate Existing Model Strengths Without Meaningful Uplift**: Submissions that mainly tell Copilot to do work frontier models already handle well (for example, generic TypeScript, HTML, or other broadly-supported coding tasks) without addressing a clear gap, specialized workflow, or domain-specific constraint. These contributions are often lower value for users and can introduce weaker or conflicting guidance than the model's default behavior.
-- **Plugins from remote sources**: While the plugin design allows us to support plugins from other GitHub repos, or other Git endpoints, we are not accepting contributions that simply add plugins from external sources. Plugins from remote sources represent a security risk as we are unable to verify their content for the policies we enforce on this repository. This policy does not apply to repositories that are managed by Microsoft or GitHub.
+- **Duplicate Existing Model Strengths Without Meaningful Uplift**: Submissions that mainly tell AI agents to do work frontier models already handle well without addressing a clear gap, specialized workflow, or domain-specific constraint
+- **Remote Resources from Unverified Sources**: While the design allows us to support resources from other GitHub repos or Git endpoints, we are not accepting contributions that simply add resources from external sources without proper verification
 
 ## Quality Guidelines
 
 - **Be specific**: Generic instructions are less helpful than specific, actionable guidance
-- **Test your content**: Ensure your instructions or skills work well with GitHub Copilot
+- **Test your content**: Ensure your instructions, skills, or agents work well with AI development tools
 - **Follow conventions**: Use consistent formatting and naming
 - **Keep it focused**: Each file should address a specific technology, framework, or use case
 - **Write clearly**: Use simple, direct language
@@ -59,27 +57,29 @@ To maintain a safe, responsible, and high-signal collection, we will **not accep
 
 ## How to Contribute
 
-### Adding Instructions
+### Adding Rules
 
-Instructions help customize GitHub Copilot's behavior for specific technologies, coding practices, or domains.
+Rules help customize AI agent behavior for specific technologies, coding practices, or domains.
 
-1. **Create your instruction file**: Add a new `.md` file in the `instructions/` directory
+1. **Create your rule file**: Add a new `.instructions.md` file in the `rules/` directory
 2. **Follow the naming convention**: Use descriptive, lowercase filenames with hyphens (e.g., `python-django.instructions.md`)
-3. **Structure your content**: Start with a clear heading and organize your instructions logically
-4. **Test your instructions**: Make sure your instructions work well with GitHub Copilot
+3. **Include frontmatter**: Add metadata at the top with required fields (`description`, `applyTo`)
+4. **Structure your content**: Start with a clear heading and organize your instructions logically
+5. **Test your rules**: Make sure your rules work well with your AI development tool
 
-#### Example instruction format
+#### Example rule format
 
 ```markdown
 ---
-description: "Instructions for customizing GitHub Copilot behavior for specific technologies and practices"
+description: "Instructions for customizing AI agent behavior for specific technologies and practices"
+applyTo: '**/*.py,**/*.js'
 ---
 
 # Your Technology/Framework Name
 
 ## Instructions
 
-- Provide clear, specific guidance for GitHub Copilot
+- Provide clear, specific guidance for AI agents
 - Include best practices and conventions
 - Use bullet points for easy reading
 
@@ -90,7 +90,7 @@ description: "Instructions for customizing GitHub Copilot behavior for specific 
 
 ### Adding an Agent
 
-Agents are specialized configurations that transform GitHub Copilot Chat into domain-specific assistants or personas for particular development scenarios.
+Agents are specialized configurations that transform AI chat assistants into domain-specific experts or personas for particular development scenarios.
 
 1. **Create your agent file**: Add a new `.agent.md` file in the `agents/` directory
 2. **Follow the naming convention**: Use descriptive, lowercase filenames with hyphens and the `.agent.md` extension (e.g., `react-performance-expert.agent.md`)
@@ -103,7 +103,7 @@ Agents are specialized configurations that transform GitHub Copilot Chat into do
 ```markdown
 ---
 description: "Brief description of the agent and its purpose"
-model: "gpt-5"
+model: "gpt-4"
 tools: ["codebase", "terminalCommand"]
 name: "My Agent Name"
 ---
@@ -138,125 +138,39 @@ Skills are self-contained folders in the `skills/` directory that include a `SKI
 3. **Add optional assets**: Keep bundled assets reasonably sized (under 5MB each) and reference them from `SKILL.md`
 4. **Validate and update docs**: Run `npm run skill:validate` and then `npm run build` to update the generated README tables
 
-### Adding Plugins
+### Adding Knowledge
 
-Plugins group related agents, commands, and skills around specific themes or workflows, making it easy for users to install comprehensive toolkits via GitHub Copilot CLI.
+Knowledge files are comprehensive documentation, guides, and patterns stored in the `knowledge/` directory to serve as contextual information for AI agents.
 
-1. **Create your plugin**: Run `npm run plugin:create` to scaffold a new plugin
-2. **Follow the naming convention**: Use descriptive, lowercase folder names with hyphens (e.g., `python-web-development`)
-3. **Define your content**: List agents, commands, and skills in `plugin.json` using the Claude Code spec fields
-4. **Test your plugin**: Run `npm run plugin:validate` to verify your plugin structure
+1. **Create your knowledge file**: Add a new `.md` file in the `knowledge/` directory
+2. **Follow the naming convention**: Use descriptive, lowercase filenames with hyphens (e.g., `migration-guide.md`)
+3. **Structure your content**: Include comprehensive documentation with clear sections
+4. **Include practical examples**: Add code examples, patterns, and step-by-step guides
+5. **Keep it current**: Ensure information is up-to-date and relevant
 
-#### Creating a plugin
-
-```bash
-npm run plugin:create -- --name my-plugin-id
-```
-
-#### Plugin structure
-
-```
-plugins/my-plugin-id/
-├── .github/plugin/plugin.json  # Plugin metadata (Claude Code spec format)
-└── README.md                   # Plugin documentation
-```
-
-> **Note:** Plugin content is defined declaratively in plugin.json using Claude Code spec fields (`agents`, `commands`, `skills`). Source files live in top-level directories and are materialized into plugins by CI.
-
-#### plugin.json example
-
-```json
-{
-  "name": "my-plugin-id",
-  "description": "Plugin description",
-  "version": "1.0.0",
-  "keywords": [],
-  "author": { "name": "Awesome Copilot Community" },
-  "repository": "https://github.com/github/awesome-copilot",
-  "license": "MIT",
-  "agents": ["./agents/my-agent.md"],
-  "commands": ["./commands/my-command.md"],
-  "skills": ["./skills/my-skill/"]
-}
-```
-
-#### Plugin Guidelines
-
-- **Declarative content**: Plugin content is specified via `agents`, `commands`, and `skills` arrays in plugin.json — source files live in top-level directories and are materialized into plugins by CI
-- **Valid references**: All paths referenced in plugin.json must point to existing source files in the repository
-- **Instructions excluded**: Instructions are standalone resources and are not part of plugins
-- **Clear purpose**: The plugin should solve a specific problem or workflow
-- **Validate before submitting**: Run `npm run plugin:validate` to ensure your plugin is valid
-
-#### Adding External Plugins
-
-External plugins are plugins hosted outside this repository (e.g., in a GitHub repo, npm package, or git URL). They are listed in `plugins/external.json` and merged into the generated `marketplace.json` during build.
-
-To add an external plugin, append an entry to `plugins/external.json` following the [Claude Code plugin marketplace spec](https://code.claude.com/docs/en/plugin-marketplaces#plugin-entries). Each entry requires `name`, `source`, `description`, and `version`:
-
-```json
-[
-  {
-    "name": "my-external-plugin",
-    "source": {
-      "source": "github",
-      "repo": "owner/plugin-repo"
-    },
-    "description": "Description of the external plugin",
-    "version": "1.0.0"
-  }
-]
-```
-
-Supported source types:
-
-- **GitHub**: `{ "source": "github", "repo": "owner/repo", "ref": "v1.0.0" }`
-- **Git URL**: `{ "source": "url", "url": "https://gitlab.com/team/plugin.git" }`
-- **npm**: `{ "source": "npm", "package": "@scope/package", "version": "1.0.0" }`
-- **pip**: `{ "source": "pip", "package": "package-name", "version": "1.0.0" }`
-
-After editing `plugins/external.json`, run `npm run build` to regenerate `marketplace.json`.
-
-### Adding Hooks
-
-Hooks enable automated workflows triggered by specific events during GitHub Copilot coding agent sessions, such as session start, session end, user prompts, and tool usage.
-
-1. **Create a new hook folder**: Add a new folder in the `hooks/` directory with a descriptive, lowercase name using hyphens (e.g., `session-logger`)
-2. **Create `README.md`**: Add a `README.md` file with frontmatter including `name`, `description`, and optionally `tags`
-3. **Create `hooks.json`**: Add a `hooks.json` file with hook configuration following the [GitHub Copilot hooks specification](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/use-hooks)
-4. **Add bundled scripts**: Include any scripts or assets the hook needs, and make them executable (`chmod +x script.sh`)
-5. **Update the README**: Run `npm run build` to update the generated README tables
-
-#### Example hook structure
-
-```
-hooks/my-hook/
-├── README.md       # Hook documentation with frontmatter
-├── hooks.json      # Hook event configuration
-└── my-script.sh    # Bundled script(s)
-```
-
-#### Example README.md frontmatter
+#### Example knowledge structure
 
 ```markdown
----
-name: "My Hook Name"
-description: "Brief description of what this hook does"
-tags: ["logging", "automation"]
----
+# Knowledge Document Title
 
-# My Hook Name
+## Overview
+[Brief description of what this guide covers]
 
-Detailed documentation about the hook...
+## Prerequisites
+[What users need to know before starting]
+
+## Step-by-Step Guide
+[Detailed instructions with examples]
+
+## Code Examples
+[Practical code samples]
+
+## Best Practices
+[Recommendations and patterns]
+
+## Troubleshooting
+[Common issues and solutions]
 ```
-
-#### Hook Guidelines
-
-- **Event configuration**: Define hook events in `hooks.json` — supported events include session start, session end, user prompts, and tool usage
-- **Executable scripts**: Ensure all bundled scripts are executable and referenced in both `README.md` and `hooks.json`
-- **Privacy aware**: Be mindful of what data your hook collects or logs
-- **Clear documentation**: Explain installation steps, configuration options, and what the hook does
-- Follow the [GitHub Copilot hooks specification](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/use-hooks)
 
 ### Adding Agentic Workflows
 
@@ -311,7 +225,7 @@ Create a daily summary of open issues for the team.
 1. **Fork this repository**
 2. **Create a new branch** for your contribution from the `staged` branch. **This is critical** - ensure that a branch is created from `staged`, not `main`. Branches created from `main` will cause merge conflicts and delays in processing your contribution, or they may be outright rejected.
 3. **Add your instruction, skills, agents, workflow, or plugin** following the guidelines above
-4. **Run the update script**: `npm start` to update the README with your new file (make sure you run `npm install` first if you haven't already)
+4. **Run the update script**: `npm run build` to update the README with your new file (make sure you run `npm install` first if you haven't already)
    - A GitHub Actions workflow will verify that this step was performed correctly
    - If the README.md would be modified by running the script, the PR check will fail with a comment showing the required changes
 5. **Submit a pull request** targeting the `staged` branch with:
@@ -343,11 +257,11 @@ We welcome many kinds of contributions, including the custom categories below:
 
 | Category         | Description                                                | Emoji |
 | ---------------- | ---------------------------------------------------------- | :---: |
-| **Instructions** | Custom instruction sets that guide GitHub Copilot behavior |  🧭   |
-| **Agents**       | Defined GitHub Copilot roles or personalities              |  🎭   |
-| **Skills**       | Specialized knowledge of a task for GitHub Copilot         |  🧰   |
+| **Rules**        | Custom rule sets that guide AI agent behavior              |  🧭   |
+| **Agents**       | Defined AI agent roles or personalities                    |  🎭   |
+| **Skills**       | Specialized knowledge of a task for AI agents             |  🧰   |
 | **Workflows**    | Agentic Workflows for AI-powered repository automation     |  ⚡   |
-| **Plugins**      | Installable packages of related prompts, agents, or skills |  🎁   |
+| **Knowledge**    | Documentation, guides, and patterns for AI agents         |  📚   |
 
 In addition, all standard contribution types supported by [All Contributors](https://allcontributors.org/emoji-key/) are recognized.
 
