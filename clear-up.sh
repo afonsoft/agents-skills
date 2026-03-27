@@ -645,6 +645,58 @@ clean_aapanel() {
             done
         done
         
+        # 11. Limpar arquivos de instalação do painel
+        log_info "Limpando arquivos de instalação do painel..."
+        local panel_install_dirs=(
+            "/www/server/panel/install"
+        )
+        
+        for install_dir in "${panel_install_dirs[@]}"; do
+            if [ -d "$install_dir" ]; then
+                local install_files=$(find "$install_dir" -name "*.rpm" -o -name "*.zip" -o -name "*.tar.gz" 2>/dev/null || true)
+                if [ -n "$install_files" ]; then
+                    local install_count=$(echo "$install_files" | wc -l)
+                    local install_size=$(echo "$install_files" | xargs du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
+                    
+                    log_info "Arquivos de instalação encontrados: $install_count arquivos ($install_size)"
+                    
+                    if [ "$DRY_RUN" = true ]; then
+                        log_warning "DRY RUN: Arquivos de instalação ($install_size) seriam removidos"
+                        echo "$install_files" | head -3 | sed 's/^/  /'
+                        [ "$install_count" -gt 3 ] && echo "  ... e $((install_count - 3)) mais"
+                    else
+                        echo "$install_files" | xargs rm -f 2>/dev/null || log_warning "Erro ao remover arquivos de instalação"
+                        log_success "Arquivos de instalação removidos: $install_count arquivos ($install_size)"
+                    fi
+                fi
+            fi
+        done
+        
+        # 12. Limpar diretórios de teste de bancos de dados
+        log_info "Limpando diretórios de teste de bancos de dados..."
+        local test_db_dirs=(
+            "/www/server/mysql/mysql-test"
+            "/www/server/pgsql/test"
+            "/var/lib/mysql/mysql-test"
+            "/var/lib/pgsql/test"
+            "/usr/local/mysql/mysql-test"
+            "/usr/local/pgsql/test"
+        )
+        
+        for test_dir in "${test_db_dirs[@]}"; do
+            if [ -d "$test_dir" ]; then
+                local test_size=$(get_size "$test_dir")
+                log_info "Diretório de teste encontrado: $test_dir ($test_size)"
+                
+                if [ "$DRY_RUN" = true ]; then
+                    log_warning "DRY RUN: Diretório de teste $test_dir ($test_size) seria removido"
+                else
+                    rm -rf "$test_dir" 2>/dev/null || log_warning "Erro ao remover diretório de teste $test_dir"
+                    log_success "Diretório de teste removido: $test_dir ($test_size)"
+                fi
+            fi
+        done
+        
         log_success "Limpeza do aaPanel concluída"
         
     else

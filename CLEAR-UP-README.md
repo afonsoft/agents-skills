@@ -119,12 +119,16 @@ docker/
 ├── server/panel/logs/        # Logs do painel
 ├── wwwlogs/                  # Logs de sites
 ├── server/nginx/logs/        # Logs do Nginx
+├── server/panel/install/     # Arquivos de instalação
 ├── backup/                   # Backups antigos
-├── server/mysql/             # Binary logs
+├── server/mysql/             # Binary logs e testes
+├── server/pgsql/              # Testes PostgreSQL
 ├── server/panel/recycle_bin/ # Lixeira
 ├── server/*/cache/           # Cache web/PHP
 ├── tmp/                      # Sessões PHP (sess_*)
-└── var/lib/php*/sessions/    # Sessões PHP
+├── var/lib/php*/sessions/    # Sessões PHP
+├── var/lib/mysql/mysql-test/  # Testes MySQL
+└── var/lib/pgsql/test/        # Testes PostgreSQL
 ```
 
 ## 📈 Exemplo de Output
@@ -246,6 +250,8 @@ O script agora inclui limpeza completa para servidores com aaPanel:
 - **Lixeira**: recycle_bin do painel e sistema
 - **Cache Web**: Nginx/Apache proxy, fastcgi, uwsgi cache
 - **Sessões PHP**: Arquivos sess_* em /tmp e diretórios de sessões
+- **Arquivos de Instalação**: .rpm, .zip, .tar.gz do painel
+- **Diretórios de Teste**: mysql-test, pgsql/test e variantes
 - **Logs PHP**: Logs de todas as versões PHP instaladas
 - **Análise de Espaço**: Top 10 maiores consumidores em /www
 
@@ -267,6 +273,17 @@ rm -rf /www/server/panel/logs/*
 # Remover sessões PHP
 find /tmp -name "sess_*" -type f -delete
 find /var/lib/php/sessions -name "sess_*" -type f -delete
+
+# Remover arquivos de instalação do painel
+rm -rf /www/server/panel/install/*.rpm
+rm -rf /www/server/panel/install/*.zip
+rm -rf /www/server/panel/install/*.tar.gz
+
+# Remover diretórios de teste de bancos de dados
+rm -rf /www/server/mysql/mysql-test
+rm -rf /www/server/pgsql/test
+rm -rf /var/lib/mysql/mysql-test
+rm -rf /var/lib/pgsql/test
 
 # Remover binary logs (cuidado!)
 rm -f /www/server/mysql/mysql-bin.*
