@@ -50,6 +50,7 @@ INSTALL_CURSOR=false
 INSTALL_DEVIN=false
 INSTALL_CLAUDE=false
 INSTALL_GEMINI=false
+INSTALL_OPENCLAW=false
 
 # ============================================================================
 # HELP
@@ -69,6 +70,7 @@ show_help() {
     echo "  --devin,    -d          Instala para Devin / Devin Review / Devin CLI"
     echo "  --claude                Instala para Claude Code"
     echo "  --gemini,   -g          Instala para Gemini CLI (Google)"
+    echo "  --openclaw, -o          Instala para OpenClaw"
     echo "  --all,      -a          Instala para todas as IDEs/CLIs"
     echo
     echo -e "${YELLOW}Outras opcoes:${NC}"
@@ -102,6 +104,9 @@ show_help() {
     echo "               + AGENTS.md -> ~/.devin/AGENTS.md"
     echo "  Claude       ~/.claude/skills    ~/.claude/rules          ~/.claude/knowledge"
     echo "  Gemini CLI   ~/.gemini/skills    ~/.gemini/GEMINI.md      ~/.gemini/knowledge"
+    echo "               + ~/.gemini/memory/MEMORY.md"
+    echo "  OpenClaw     ~/.openclaw/skills  ~/.openclaw/workspace/memory/MEMORY.md"
+    echo "               + ~/.openclaw/workspace/memory/YYYY-MM-DD.md (daily logs)"
     echo
     echo "  Base: ~/.agents/skills (sempre instalado)"
     echo
@@ -113,6 +118,7 @@ show_help() {
     echo "  Devin CLI: https://cli.devin.ai/docs/extensibility/skills/overview"
     echo "  Claude:    https://docs.anthropic.com/en/docs/claude-code"
     echo "  Gemini:    https://geminicli.com/docs/"
+    echo "  OpenClaw:  https://docs.openclaw.ai/tools/skills"
     echo
 }
 
@@ -139,6 +145,7 @@ parse_args() {
                 INSTALL_DEVIN=true
                 INSTALL_CLAUDE=true
                 INSTALL_GEMINI=true
+                INSTALL_OPENCLAW=true
                 ;;
             --vscode|-v)
                 INSTALL_VSCODE=true
@@ -157,6 +164,9 @@ parse_args() {
                 ;;
             --gemini|-g)
                 INSTALL_GEMINI=true
+                ;;
+            --openclaw|-o)
+                INSTALL_OPENCLAW=true
                 ;;
             *)
                 log_error "Opcao desconhecida: $1"
@@ -315,7 +325,7 @@ install_windsurf() {
         log_success "Rules consolidadas -> ~/.windsurfrules"
     fi
 
-    # Knowledge -> ~/.windsurf/knowledge
+    # Knowledge -> ~/.windsurf/knowledge (memories)
     if [ -d "knowledge" ]; then
         backup_dir_if_exists "$HOME/.windsurf/knowledge"
         cp -a knowledge/* "$HOME/.windsurf/knowledge/" 2>/dev/null || true
@@ -512,6 +522,15 @@ install_gemini() {
         log_success "Knowledge -> ~/.gemini/knowledge"
     fi
 
+    # Memory files para Gemini CLI (contexto persistente)
+    # Gemini CLI suporta arquivos de memoria no workspace
+    mkdir -p "$HOME/.gemini/memory"
+    if [ -f "MEMORY.md" ]; then
+        backup_file_if_exists "$HOME/.gemini/MEMORY.md"
+        cp MEMORY.md "$HOME/.gemini/MEMORY.md"
+        log_success "MEMORY.md -> ~/.gemini/MEMORY.md"
+    fi
+
     # AGENTS.md -> ~/.gemini/AGENTS.md
     if [ -f "AGENTS.md" ]; then
         mkdir -p "$HOME/.gemini"
@@ -521,6 +540,54 @@ install_gemini() {
     fi
 
     log_success "Gemini CLI (Google) instalado!"
+}
+
+install_openclaw() {
+    log_info "=== Instalando para OpenClaw ==="
+
+    # OpenClaw usa skills em ~/.openclaw/skills e workspace/skills
+    # Ref: https://docs.openclaw.ai/tools/skills
+    # Skills -> ~/.openclaw/skills (managed skills)
+    backup_dir_if_exists "$HOME/.openclaw/skills"
+    cp -a skills/* "$HOME/.openclaw/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.openclaw/skills"
+
+    # Memory files -> ~/.openclaw/workspace/memory/
+    # OpenClaw usa memoria em Markdown no workspace
+    # Ref: https://docs.openclaw.ai/concepts/memory
+    mkdir -p "$HOME/.openclaw/workspace/memory"
+    
+    # MEMORY.md -> ~/.openclaw/workspace/memory/MEMORY.md
+    if [ -f "MEMORY.md" ]; then
+        backup_file_if_exists "$HOME/.openclaw/workspace/memory/MEMORY.md"
+        cp MEMORY.md "$HOME/.openclaw/workspace/memory/MEMORY.md"
+        log_success "MEMORY.md -> ~/.openclaw/workspace/memory/MEMORY.md"
+    fi
+    
+    # Knowledge -> ~/.openclaw/workspace/memory/ (como arquivos de memoria)
+    if [ -d "knowledge" ]; then
+        backup_dir_if_exists "$HOME/.openclaw/workspace/memory/knowledge"
+        cp -a knowledge/* "$HOME/.openclaw/workspace/memory/" 2>/dev/null || true
+        log_success "Knowledge -> ~/.openclaw/workspace/memory/"
+    fi
+    
+    # Criar estrutura de memoria diaria se necessario
+    local today=$(date +%Y-%m-%d)
+    mkdir -p "$HOME/.openclaw/workspace/memory"
+    if [ ! -f "$HOME/.openclaw/workspace/memory/$today.md" ]; then
+        echo "# Memory Log - $today" > "$HOME/.openclaw/workspace/memory/$today.md"
+        echo "" >> "$HOME/.openclaw/workspace/memory/$today.md"
+        log_success "Daily memory file created: ~/.openclaw/workspace/memory/$today.md"
+    fi
+
+    # AGENTS.md -> ~/.openclaw/workspace/AGENTS.md
+    if [ -f "AGENTS.md" ]; then
+        backup_file_if_exists "$HOME/.openclaw/workspace/AGENTS.md"
+        cp AGENTS.md "$HOME/.openclaw/workspace/AGENTS.md"
+        log_success "AGENTS.md -> ~/.openclaw/workspace/AGENTS.md"
+    fi
+
+    log_success "OpenClaw instalado!"
 }
 
 # ============================================================================
@@ -598,6 +665,16 @@ verify_installation() {
         [ -f "$HOME/.gemini/GEMINI.md" ] && log_success "  Rules consolidadas: ~/.gemini/GEMINI.md"
         [ -d "$HOME/.gemini/knowledge" ] && log_success "  Knowledge: ~/.gemini/knowledge"
         [ -f "$HOME/.gemini/AGENTS.md" ] && log_success "  AGENTS.md: ~/.gemini/AGENTS.md"
+        [ -f "$HOME/.gemini/MEMORY.md" ] && log_success "  Memory: ~/.gemini/MEMORY.md"
+    fi
+
+    if [ "$INSTALL_OPENCLAW" = true ]; then
+        echo
+        log_info "OpenClaw:"
+        [ -d "$HOME/.openclaw/skills" ] && log_success "  Skills: ~/.openclaw/skills"
+        [ -f "$HOME/.openclaw/workspace/memory/MEMORY.md" ] && log_success "  Memory: ~/.openclaw/workspace/memory/MEMORY.md"
+        [ -d "$HOME/.openclaw/workspace/memory" ] && log_success "  Memory dir: ~/.openclaw/workspace/memory/"
+        [ -f "$HOME/.openclaw/workspace/AGENTS.md" ] && log_success "  AGENTS.md: ~/.openclaw/workspace/AGENTS.md"
     fi
 
     echo
@@ -643,7 +720,11 @@ show_post_install() {
     fi
     if [ "$INSTALL_GEMINI" = true ]; then
         echo "  rm -rf ~/.gemini/skills ~/.gemini/knowledge"
-        echo "  rm -f ~/.gemini/GEMINI.md ~/.gemini/AGENTS.md"
+        echo "  rm -f ~/.gemini/GEMINI.md ~/.gemini/AGENTS.md ~/.gemini/MEMORY.md"
+    fi
+    if [ "$INSTALL_OPENCLAW" = true ]; then
+        echo "  rm -rf ~/.openclaw/skills ~/.openclaw/workspace/memory"
+        echo "  rm -f ~/.openclaw/workspace/AGENTS.md"
     fi
 
     echo
@@ -668,6 +749,7 @@ main() {
     [ "$INSTALL_DEVIN" = true ] && ides_selecionadas="${ides_selecionadas} Devin"
     [ "$INSTALL_CLAUDE" = true ] && ides_selecionadas="${ides_selecionadas} Claude"
     [ "$INSTALL_GEMINI" = true ] && ides_selecionadas="${ides_selecionadas} Gemini"
+    [ "$INSTALL_OPENCLAW" = true ] && ides_selecionadas="${ides_selecionadas} OpenClaw"
     log_info "IDEs/CLIs selecionadas:${ides_selecionadas}"
     echo
 
@@ -680,6 +762,7 @@ main() {
     [ "$INSTALL_DEVIN" = true ] && install_devin
     [ "$INSTALL_CLAUDE" = true ] && install_claude
     [ "$INSTALL_GEMINI" = true ] && install_gemini
+    [ "$INSTALL_OPENCLAW" = true ] && install_openclaw
 
     verify_installation
     show_post_install
