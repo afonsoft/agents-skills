@@ -123,6 +123,7 @@ docker/
 ├── backup/                   # Backups antigos
 ├── server/mysql/             # Binary logs e testes
 ├── server/pgsql/              # Testes PostgreSQL
+├── server/redis/             # 🆕 src do Redis
 ├── server/panel/recycle_bin/ # Lixeira
 ├── server/*/cache/           # Cache web/PHP (incluindo nginx/src)
 ├── tmp/                      # Sessões PHP (sess_*)
@@ -252,6 +253,7 @@ O script agora inclui limpeza completa para servidores com aaPanel:
 - **Sessões PHP**: Arquivos sess_* em /tmp e diretórios de sessões
 - **Arquivos de Instalação**: .rpm, .zip, .tar.gz do painel
 - **Diretórios de Teste**: mysql-test, pgsql/test e variantes
+- **Diretório src do Redis**: Arquivos fonte do Redis
 - **Logs PHP**: Logs de todas as versões PHP instaladas
 - **Análise de Espaço**: Top 10 maiores consumidores em /www
 
@@ -287,6 +289,9 @@ rm -rf /www/server/mysql/mysql-test
 rm -rf /www/server/pgsql/test
 rm -rf /var/lib/mysql/mysql-test
 rm -rf /var/lib/pgsql/test
+
+# Remover diretório src do Redis
+rm -rf /www/server/redis/src 2>/dev/null
 
 # Remover binary logs (cuidado!)
 rm -f /www/server/mysql/mysql-bin.*

@@ -698,6 +698,28 @@ clean_aapanel() {
             fi
         done
         
+        # 13. Limpar diretório src do Redis
+        log_info "Limpando diretório src do Redis..."
+        local redis_src_dirs=(
+            "/www/server/redis/src"
+            "/var/lib/redis/src"
+            "/usr/local/redis/src"
+        )
+        
+        for redis_src_dir in "${redis_src_dirs[@]}"; do
+            if [ -d "$redis_src_dir" ]; then
+                local redis_size=$(get_size "$redis_src_dir")
+                log_info "Diretório src do Redis encontrado: $redis_src_dir ($redis_size)"
+                
+                if [ "$DRY_RUN" = true ]; then
+                    log_warning "DRY RUN: Diretório src do Redis $redis_src_dir ($redis_size) seria removido"
+                else
+                    rm -rf "$redis_src_dir" 2>/dev/null || log_warning "Erro ao remover diretório src do Redis $redis_src_dir"
+                    log_success "Diretório src do Redis removido: $redis_src_dir ($redis_size)"
+                fi
+            fi
+        done
+        
         log_success "Limpeza do aaPanel concluída"
         
     else
