@@ -12,7 +12,7 @@ Script completo para limpeza de disco em sistemas Ubuntu/Linux que remove logs, 
 - **Arquivos temporários**: `/tmp`, `/var/tmp`, `*.tmp`, `*.temp`
 - **Cache de aplicativos**: Firefox, Chrome, thumbnails
 - **Kernels antigos**: Remoção segura de kernels não utilizados
-- **Docker**: Containers, imagens, volumes e redes não utilizados
+- **Docker**: Containers, imagens, volumes, redes e build cache não utilizados
 - **Snap**: Versões antigas de snap packages
 - **Journal do systemd**: Logs do sistema limitados
 
@@ -108,7 +108,8 @@ docker/
 ├── containers/        # Containers parados
 ├── images/           # Imensões não utilizadas
 ├── volumes/          # Volumes não utilizados
-└── networks/         # Redes não utilizadas
+├── networks/         # Redes não utilizadas
+└── builder/          # Build cache e histórico
 ```
 
 ## 📈 Exemplo de Output
@@ -185,7 +186,39 @@ Operações realizadas: 15
 - Kernels antigos requerem confirmação explícita
 - Modo interativo por padrão para operações críticas
 
-## 🛠️ Personalização
+## � Docker Build Cache
+
+O script agora limpa completamente o ambiente Docker incluindo:
+
+#### **O que é limpo:**
+- **Containers parados**: `docker rm` para containers com status "exited"
+- **Imensões não utilizadas**: `docker image prune -f`
+- **Volumes não utilizados**: `docker volume prune -f`
+- **Redes não utilizadas**: `docker network prune -f`
+- **Build cache**: `docker builder prune -af` (novo!)
+- **Sistema completo**: `docker system prune -af`
+
+#### **Build Cache Específico:**
+```bash
+# Verificar tamanho do build cache
+docker builder du
+
+# Limpar manualmente (se necessário)
+docker builder prune -af
+
+# O que o script faz automaticamente:
+[INFO] Limpando histórico de build do Docker...
+[INFO] Tamanho do build cache: 2.3GB
+[SUCCESS] Histórico de build do Docker limpo
+```
+
+#### **Por que limpar o build cache?**
+- **Economia de espaço**: Build cache pode ocupar vários GB
+- **Performance**: Cache antigo pode desacelerar builds
+- **Segurança**: Remove artefatos de builds anteriores
+- **Consistência**: Fresh builds sem resíduos
+
+## �🛠️ Personalização
 
 ### Adicionar Novos Padrões
 Edite o script e adicione novas chamadas `remove_files()`:

@@ -315,6 +315,17 @@ clean_docker() {
             # Remover redes não utilizadas
             docker network prune -f 2>/dev/null || log_warning "Erro ao limpar redes Docker"
             
+            # Limpar histórico de build do Docker
+            log_info "Limpando histórico de build do Docker..."
+            local build_history_size=$(docker builder du 2>/dev/null | grep "Total" | awk '{print $2}' || echo "0")
+            if [ "$build_history_size" != "0" ]; then
+                log_info "Tamanho do build cache: $build_history_size"
+                docker builder prune -af 2>/dev/null || log_warning "Erro ao limpar build cache do Docker"
+                log_success "Histórico de build do Docker limpo"
+            else
+                log_verbose "Nenhum build cache encontrado"
+            fi
+            
             # Limpar sistema completo
             docker system prune -af 2>/dev/null || log_warning "Erro na limpeza completa do Docker"
             
