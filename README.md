@@ -237,16 +237,9 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 git clone https://github.com/your-username/agents-skills.git
 cd agents-skills
 
-# Install dependencies
-npm install
-
 # Validate your contribution
-npm run build
 npm run skill:validate  # For skills
 npm run plugin:validate  # For plugins (if applicable)
-
-# Fix line endings before committing
-bash scripts/fix-line-endings.sh
 ```
 
 ## 📖 Documentation
