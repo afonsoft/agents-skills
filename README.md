@@ -10,6 +10,7 @@ A community-driven collection of custom agents, skills, rules, and knowledge des
 - **⚡ Workflows** - Agentic workflows for GitHub Actions automation
 - **🧠 Knowledge** - Memory documents, patterns, and migration guides
 - **🛠️ Installation Scripts** - Easy setup across multiple IDEs and CLIs
+- **🧹 Utility Scripts** - System maintenance and cleanup tools
 
 ## 📁 Repository Structure
 
@@ -21,7 +22,9 @@ agents-skills/
 ├── workflows/        # Agentic workflows for automation
 ├── knowledge/        # Memory documents and guides
 ├── install.sh        # Installation script for all IDEs
-└── rm-backup.sh      # Cleanup script for backups
+├── rm-backup.sh      # Cleanup script for backups
+├── clear-up-linux.sh # Linux system cleanup script
+└── git-cleanup-repos.sh # Git repository maintenance script
 ```
 
 ## 🎯 Quick Start
@@ -116,6 +119,49 @@ Cleanup script to remove backup files created during installation:
 ./rm-backup.sh
 ```
 
+### clear-up-linux.sh
+
+Comprehensive Linux system cleanup script with aaPanel and BleachBit support:
+```bash
+# Basic cleanup
+sudo ./clear-up-linux.sh
+
+# With BleachBit deep cleaning
+sudo ./clear-up-linux.sh --bleachbit
+
+# Dry run simulation
+sudo ./clear-up-linux.sh --dry-run --verbose
+```
+
+**Features:**
+- System logs, APT cache, temporary files cleanup
+- Docker containers, images, volumes, and build cache
+- aaPanel comprehensive cleaning (16 categories)
+- PostgreSQL logs, MySQL binary logs, web cache
+- BleachBit integration for deep cleaning
+- Journal cleanup (1-day retention)
+- Interactive and batch modes
+
+### git-cleanup-repos.sh
+
+Git repository maintenance and cleanup script:
+```bash
+# Make executable and run
+chmod +x git-cleanup-repos.sh
+./git-cleanup-repos.sh
+
+# Run from specific directory
+cd /path/to/projects && ./git-cleanup-repos.sh
+```
+
+**Features:**
+- Recursive Git repository discovery
+- Git fetch, pull, reflog cleanup, and garbage collection
+- Build artifact removal (bin, obj, .vs, node_modules)
+- Detailed timestamped logging
+- Before/after repository statistics
+- Safe operations with validation
+
 ## 📚 Knowledge Base
 
 ### Pattern Libraries
@@ -180,10 +226,9 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 ### Quick Contribution Steps
 
 1. **Fork** the repository
-2. **Create** a feature branch
-3. **Add** your skill/rule/knowledge
-4. **Test** with your IDE
-5. **Submit** a pull request to the `staged` branch
+2. **Create** a feature branch from `staged` branch
+3. **Add** your skill/rule/knowledge/agent/workflow
+4. **Submit** a pull request to the `staged` branch
 
 ### Development Setup
 
@@ -192,38 +237,39 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 git clone https://github.com/your-username/agents-skills.git
 cd agents-skills
 
-# Install dependencies
-npm install
-
 # Validate your contribution
-npm run build
 npm run skill:validate  # For skills
+npm run plugin:validate  # For plugins (if applicable)
 ```
 
 ## 📖 Documentation
 
-- [Development Guide](AGENTS.md) - Detailed development workflow
-- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
-- [Code of Conduct](CODE_OF_CONDUCT.md) - Community standards
-- [Security Policy](SECURITY.md) - Security policies
+- [Development Guide](AGENTS.md) - Detailed development workflow and project structure
+- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
+- [Code of Conduct](CODE_OF_CONDUCT.md) - Community standards and guidelines
+- [Security Policy](SECURITY.md) - Security policies and vulnerability reporting
 
 ## 🏆 Community
 
-This is a community-driven project. Join us in:
+This is a community-driven project built with ❤️ by developers, for developers. Join us in:
 
-- 🌟 **Starring** the repository
-- 🍴 **Forking** and contributing
+- 🌟 **Starring** the repository to show your support
+- 🍴 **Forking** and contributing your skills and knowledge
 - 🐛 **Reporting** issues and suggesting features
-- 📝 **Improving** documentation
-- 💬 **Sharing** feedback and experiences
+- 📝 **Improving** documentation and sharing feedback
+- 💬 **Sharing** your experiences and use cases
+- 🤝 **Helping** others in the community
 
 ## 📊 Statistics
 
-- **Skills**: 61+ specialized skills
-- **Rules**: 96+ coding standards  
-- **Workflows**: 7+ automation workflows
+- **Skills**: 61+ specialized skills across various domains
+- **Rules**: 96+ coding standards and best practices
+- **Workflows**: 7+ agentic workflows for automation
 - **Knowledge**: 5+ comprehensive guides and migration documents
-- **IDE Support**: 6+ major IDEs and CLIs
+- **Frameworks**: ASP.NET Boilerplate, ABP.IO, Angular, Blazor, and more
+- **Languages**: C#, TypeScript, Python, PowerShell, and others
+- **IDE Support**: VS Code, Windsurf, Cursor, Devin, Claude, Gemini
+- **Utility Scripts**: 2 system maintenance and cleanup scripts
 
 ## 📄 License
 
@@ -232,8 +278,9 @@ This project is licensed under the [MIT License](LICENSE) - see the LICENSE file
 ## 🔗 Related Projects
 
 - [GitHub Copilot](https://github.com/features/copilot) - AI pair programmer
-- [GitHub Awesome Copilot](https://github.com/github/awesome-copilot) - Community resources
 - [Agent Skills Specification](https://agentskills.io/specification) - Skills standard
+- [Agentic Workflows](https://github.github.com/gh-aw) - AI-powered repository automation
+- [MCP Protocol](https://modelcontextprotocol.io/) - Model Context Protocol for AI agents
 
 ---
 
