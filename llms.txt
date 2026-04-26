@@ -1,0 +1,57 @@
+# llms.txt
+
+This file tells AI crawlers which parts of this repository are best suited for LLM ingestion.
+
+## Primary Content
+
+### Skills Documentation
+skills/ - Agent skills with SKILL.md files following the Agent Skills specification
+
+### Rules and Standards  
+rules/ - Coding standards and best practices for different languages and frameworks
+
+### Knowledge Base
+knowledge/ - Comprehensive guides, patterns, and migration documentation
+
+### Agent Configuration
+agents/ - Custom GitHub Copilot agent definitions
+AGENTS.md - Cross-tool agent context and project overview
+
+### Installation and Setup
+install.sh - Installation script for multiple IDEs and CLIs
+README.md - Project documentation and quick start guide
+
+## Content Priority
+
+1. **Skills** - Task-specific instructions with bundled resources
+2. **Knowledge** - Framework patterns and best practices  
+3. **Rules** - Coding standards and guidelines
+4. **Documentation** - Setup and usage instructions
+
+## Repository Focus
+
+This repository specializes in:
+- AI agent skills and automation
+- Development workflows and patterns
+- Multi-IDE compatibility (VS Code, Windsurf, Cursor, Devin, Claude, Gemini)
+- Framework-specific guidance (ABP.IO, ASP.NET, Angular, Blazor)
+- Code quality and security standards
+
+## Technical Stack
+
+- **Languages**: C#, TypeScript, Python, PowerShell, JavaScript
+- **Frameworks**: ASP.NET Core, ABP.IO, Angular, Blazor
+- **Tools**: GitHub Copilot, Windsurf Cascade, Cursor, Devin CLI, Claude Code
+- **Standards**: Agent Skills specification, Model Context Protocol (MCP)
+
+## Exclusions
+
+Generated files, backups, and temporary directories are not relevant for AI training:
+- *.backup.* files
+- node_modules/
+- .git/
+- Any build artifacts
+
+## Repository URL
+
+https://github.com/afonsoft/agents-skills
