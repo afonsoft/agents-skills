@@ -1,12 +1,12 @@
 # AGENTS.md
 
-**agents-skills** - Community-driven collection of custom agents, skills, rules, and knowledge for enhancing AI development experiences.
+**agents-skills** - Community-driven collection of AI agent skills, rules, and knowledge following modern conventions.
 
 ## Project Overview
 
-This repository provides specialized AI agent capabilities across multiple IDEs and CLIs:
+Cross-tool compatibility for AI development agents with file-based protocols:
 - **VS Code** (GitHub Copilot)
-- **Windsurf** (Cascade)
+- **Windsurf** (Cascade) 
 - **Cursor**
 - **Devin CLI**
 - **Claude Code**
@@ -17,73 +17,80 @@ This repository provides specialized AI agent capabilities across multiple IDEs 
 
 ```
 agents-skills/
-├── agents/           # Custom GitHub Copilot agent definitions
-├── skills/           # Task-specific skills with bundled resources
-├── rules/            # Coding standards and guidelines
+├── skills/           # Agent Skills (SKILL.md format)
+├── rules/            # Path-specific coding standards (.instructions.md)
+├── agents/           # GitHub Copilot agent definitions
 ├── workflows/        # Agentic workflows for automation
 ├── knowledge/        # Memory documents and guides
-├── install.sh        # Installation script for all IDEs/CLIs
-├── rm-backup.sh     # Backup cleanup script
-├── clear-up-linux.sh  # Linux system cleanup utility
-├── git-cleanup-repos.sh # Git repository maintenance
-└── .agents/          # Agent configuration and conventions
+├── .agents/          # Agent conventions and documentation
+├── install.sh        # Multi-IDE/CLI installation script
+└── llms.txt          # LLM discoverability
 ```
 
-## Key Conventions
-
-### Skills Format
-- Standard `SKILL.md` with YAML frontmatter
-- Follows [Agent Skills specification](https://agentskills.io)
-- Supports resource bundling and tool declarations
-
-### Rules System
-- `.instructions.md` files for path-specific rules
-- YAML-frontmatter for IDE-specific configurations
-- Cross-platform compatibility
-
-### Knowledge Base
-- Markdown documentation with patterns and guides
-- Migration strategies and architectural decisions
-- Framework-specific best practices
-
-## Installation
+## Build Commands
 
 ```bash
-# Install for all IDEs/CLIs
+# Install skills across all IDEs/CLIs
 ./install.sh --all
 
-# Install for specific tools
+# Install for specific tools  
 ./install.sh --vscode --windsurf --claude
+
+# Clean up backup files
+./rm-backup.sh
 ```
 
-## Usage
+## Coding Conventions
 
-Skills are automatically discovered by supported agents:
-- **Workspace skills**: `.agents/skills/` or tool-specific paths
-- **User skills**: `~/.agents/skills/`
-- **System skills**: Tool-specific locations
+### Skills (SKILL.md)
+- YAML frontmatter: name, description, tools, triggers
+- Standard folder structure with bundled resources
+- Follows [Agent Skills specification](https://agentskills.io)
 
-## Standards
+### Rules (.instructions.md)
+- Path-specific standards with YAML frontmatter
+- Cross-platform compatibility
+- IDE-specific configurations
 
-This repository follows emerging AI conventions:
+### Context Files
 - **AGENTS.md** - Cross-tool agent context (this file)
-- **SKILL.md** - Agent skills format
-- **llms.txt** - LLM discoverability
-- **MCP** - Model Context Protocol integration
+- **CLAUDE.md** - Claude-specific persistent instructions
+- **GEMINI.md** - Gemini-specific context
+
+## Agent Behavior
+
+### What Agents Should Do
+- Read and follow skills/rules for specialized tasks
+- Use bundled resources when executing skills
+- Respect .aiignore patterns for file exclusion
+- Apply context from nearest AGENTS.md in directory tree
+
+### What Agents Should Not Touch
+- Generated files and backup artifacts
+- Configuration files with sensitive data
+- Build outputs and dependencies
+- Files matching .aiignore patterns
+
+## Standards Compliance
+
+Following [Agentic AI Foundation](https://aaif.org) conventions:
+- **SKILL.md** format for modular expertise
+- **llms.txt** for LLM discoverability
+- **Model Context Protocol (MCP)** for tool integration
+- File-based protocols over proprietary solutions
 
 ## Contributing
 
-1. Fork the repository
-2. Create feature branch from `staged`
-3. Add your skill/rule/knowledge/agent/workflow
+1. Fork repository
+2. Create feature branch from `staged`  
+3. Add skill/rule/knowledge following conventions
 4. Submit PR to `staged` branch
-
-## License
-
-MIT License - see LICENSE file for details.
 
 ## Resources
 
 - [Agent Skills Specification](https://agentskills.io)
-- [AI Conventions](https://github.com/GuilhermeAlbert/awesome-ai-conventions)
+- [AI Conventions](https://github.com/GuilhermeAlbert/awesome-ai-conventions)  
+- [Model Context Protocol](https://modelcontextprotocol.io)
 - [Agentic AI Foundation](https://aaif.org)
+
+MIT License - see LICENSE file
