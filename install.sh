@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script de instalacao das skills, rules e knowledge do Itau SCM Agent Skills
+# Script de instalacao das skills, rules e knowledge do agents-skills
 # Suporta instalacao seletiva por IDE ou instalacao completa
 #
 # Uso:
@@ -58,7 +58,7 @@ INSTALL_OPENCLAW=false
 
 show_help() {
     echo
-    echo -e "${CYAN}Itau SCM Agent Skills - Instalador${NC}"
+    echo -e "${CYAN}agents-skills - Instalador${NC}"
     echo
     echo -e "${YELLOW}Uso:${NC}"
     echo "  ./install.sh [opcoes]"
@@ -79,12 +79,12 @@ show_help() {
     echo -e "${YELLOW}Exemplos:${NC}"
     echo "  ./install.sh --all                    # Todas as IDEs"
     echo "  ./install.sh --vscode                 # Apenas VS Code"
-    echo "  ./install.sh --cursor --devin         # Cursor + Devin"
-    echo "  ./install.sh --windsurf --claude      # Windsurf + Claude"
+    echo "  ./install.sh --devin --claude         # Devin + Claude"
+    echo "  ./install.sh --windsurf --vscode      # Windsurf + VS Code"
     echo "  ./install.sh --gemini                 # Apenas Gemini CLI"
     echo "  ./install.sh -a                       # Todas as IDEs/CLIs (atalho)"
-    echo "  ./install.sh -v -d -g                 # VS Code + Devin + Gemini (atalho)"
-    echo "  ./install.sh -c                       # Apenas Cursor (atalho)"
+    echo "  ./install.sh -d -c -w                 # Devin + Claude + Windsurf (atalho)"
+    echo "  ./install.sh -c                       # Apenas Claude Code (atalho)"
     echo
     echo -e "${YELLOW}O que sera instalado:${NC}"
     echo
@@ -94,6 +94,7 @@ show_help() {
     echo "                                   ~/.github/copilot-instructions.md (consolidado)"
     echo "  Windsurf     ~/.windsurf/skills  ~/.windsurf/rules        ~/.windsurf/knowledge"
     echo "                                   ~/.windsurfrules (consolidado)"
+    echo "                                   ~/.codeium/windsurf/memories/global_rules.md (global, sempre ativo)"
     echo "  Cursor       ~/.cursor/skills    ~/.cursor/rules          ~/.cursor/knowledge"
     echo "                                   ~/.cursorrules (consolidado)"
     echo "  Devin        ~/.agents/skills     ~/.devin/skills         ~/.devin/knowledge"
@@ -102,11 +103,11 @@ show_help() {
     echo "               + ~/.config/cognition/knowledge  (Devin CLI)"
     echo "               + AGENTS.md -> ~/.devin/AGENTS.md"
     echo "  Claude       ~/.claude/skills    ~/.claude/rules          ~/.claude/knowledge"
-    echo "               + CLAUDE.md (persistent instructions)"
+    echo "                                   ~/.claude/CLAUDE.md (instrucoes globais)"
+    echo "                                   ~/.claude/settings.json (permissoes)"
+    echo "                                   ~/.claude/commands/ (slash commands)"
     echo "  Gemini CLI   ~/.gemini/skills    ~/.gemini/GEMINI.md      ~/.gemini/knowledge"
-    echo "               + ~/.gemini/memory/MEMORY.md"
     echo "  OpenClaw     ~/.openclaw/skills  ~/.openclaw/workspace/memory/MEMORY.md"
-    echo "               + ~/.openclaw/workspace/memory/YYYY-MM-DD.md (daily logs)"
     echo
     echo "  Base: ~/.agents/skills (sempre instalado)"
     echo
@@ -117,6 +118,7 @@ show_help() {
     echo "  Devin:     https://docs.devin.ai/work-with-devin/devin-review"
     echo "  Devin CLI: https://cli.devin.ai/docs/extensibility/skills/overview"
     echo "  Claude:    https://docs.anthropic.com/en/docs/claude-code"
+    echo "             https://docs.anthropic.com/en/docs/claude-code/slash-commands"
     echo "  Gemini:    https://geminicli.com/docs/"
     echo "  OpenClaw:  https://docs.openclaw.ai/tools/skills"
     echo
@@ -204,7 +206,7 @@ backup_file_if_exists() {
 generate_consolidated_rules() {
     local output_file="$1"
     backup_file_if_exists "$output_file"
-    echo "<!-- Auto-generated from itau-lt6-scm-agent-skills rules -->" > "$output_file"
+    echo "<!-- Auto-generated from agents-skills rules -->" > "$output_file"
     echo "" >> "$output_file"
     for rule_file in rules/*.instructions.md; do
         if [ -f "$rule_file" ]; then
@@ -315,7 +317,7 @@ install_windsurf() {
     cp -a skills/* "$HOME/.windsurf/skills/" 2>/dev/null || true
     log_success "Skills -> ~/.windsurf/skills"
 
-    # Rules -> ~/.windsurf/rules + consolidado
+    # Rules -> ~/.windsurf/rules + consolidados
     if [ -d "rules" ]; then
         backup_dir_if_exists "$HOME/.windsurf/rules"
         cp -a rules/*.instructions.md "$HOME/.windsurf/rules/" 2>/dev/null || true
@@ -323,6 +325,19 @@ install_windsurf() {
 
         generate_consolidated_rules "$HOME/.windsurfrules"
         log_success "Rules consolidadas -> ~/.windsurfrules"
+
+        # Global Rules -> ~/.codeium/windsurf/memories/global_rules.md
+        # Ref: https://docs.windsurf.com/windsurf/cascade/memories
+        # Escopo global (todos os workspaces), sempre ativo, limite 6.000 chars
+        mkdir -p "$HOME/.codeium/windsurf/memories"
+        backup_file_if_exists "$HOME/.codeium/windsurf/memories/global_rules.md"
+        generate_consolidated_rules "$HOME/.codeium/windsurf/memories/global_rules.md"
+        log_success "Global Rules -> ~/.codeium/windsurf/memories/global_rules.md"
+        local rules_size
+        rules_size=$(wc -c < "$HOME/.codeium/windsurf/memories/global_rules.md" 2>/dev/null || echo 0)
+        if [ "$rules_size" -gt 6000 ]; then
+            log_warning "global_rules.md excede o limite de 6.000 chars (${rules_size} chars). Windsurf pode truncar o conteudo."
+        fi
     fi
 
     # Knowledge -> ~/.windsurf/knowledge (memories)
@@ -482,6 +497,130 @@ install_claude() {
         log_success "Knowledge -> ~/.claude/knowledge"
     fi
 
+    # CLAUDE.md -> ~/.claude/CLAUDE.md (instrucoes globais para Claude Code)
+    # Ref: https://docs.anthropic.com/en/docs/claude-code/memory
+    # CLAUDE.md e carregado automaticamente como contexto global em todas as sessoes
+    if [ -d "rules" ]; then
+        backup_file_if_exists "$HOME/.claude/CLAUDE.md"
+        echo "# CLAUDE.md — agents-skills" > "$HOME/.claude/CLAUDE.md"
+        echo "" >> "$HOME/.claude/CLAUDE.md"
+        echo "> Auto-generated from agents-skills rules" >> "$HOME/.claude/CLAUDE.md"
+        echo "" >> "$HOME/.claude/CLAUDE.md"
+        echo "## Skills" >> "$HOME/.claude/CLAUDE.md"
+        echo "" >> "$HOME/.claude/CLAUDE.md"
+        echo "Skills disponiveis em \`~/.claude/skills/\`. Cada subdiretorio contem um \`SKILL.md\`." >> "$HOME/.claude/CLAUDE.md"
+        echo "Ao receber uma solicitacao, verifique se alguma skill se aplica e carregue-a antes de responder." >> "$HOME/.claude/CLAUDE.md"
+        echo "" >> "$HOME/.claude/CLAUDE.md"
+        echo "## Knowledge" >> "$HOME/.claude/CLAUDE.md"
+        echo "" >> "$HOME/.claude/CLAUDE.md"
+        echo "Knowledge sources disponiveis em \`~/.claude/knowledge/\`. Consulte conforme necessidade do contexto." >> "$HOME/.claude/CLAUDE.md"
+        echo "" >> "$HOME/.claude/CLAUDE.md"
+        echo "## Rules" >> "$HOME/.claude/CLAUDE.md"
+        echo "" >> "$HOME/.claude/CLAUDE.md"
+        echo "Rules detalhadas em \`~/.claude/rules/\`. Arquivos \`.instructions.md\` com YAML frontmatter." >> "$HOME/.claude/CLAUDE.md"
+        echo "" >> "$HOME/.claude/CLAUDE.md"
+        echo "---" >> "$HOME/.claude/CLAUDE.md"
+        echo "" >> "$HOME/.claude/CLAUDE.md"
+        # Incluir global-rules inline para contexto imediato
+        if [ -f "rules/global-rules.instructions.md" ]; then
+            cat "rules/global-rules.instructions.md" >> "$HOME/.claude/CLAUDE.md"
+        fi
+        log_success "CLAUDE.md -> ~/.claude/CLAUDE.md"
+    fi
+
+    # settings.json -> ~/.claude/settings.json (configuracoes e permissoes)
+    # Ref: https://docs.anthropic.com/en/docs/claude-code/settings
+    # Configura permissoes padrao e preferencias globais do Claude Code
+    if [ ! -f "$HOME/.claude/settings.json" ]; then
+        cat > "$HOME/.claude/settings.json" << 'SETTINGS_EOF'
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "Glob",
+      "Grep",
+      "LS",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git checkout -b *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(npm run *)",
+      "Bash(npx *)",
+      "Bash(dotnet build*)",
+      "Bash(dotnet test*)",
+      "Bash(mvn *)",
+      "Bash(terraform plan*)",
+      "Bash(terraform validate*)",
+      "Bash(pytest*)",
+      "Bash(cat *)",
+      "Bash(find *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)"
+    ],
+    "deny": [
+      "Bash(git merge * main)",
+      "Bash(git merge * master)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_ENABLE_SKILLS": "true"
+  }
+}
+SETTINGS_EOF
+        log_success "settings.json -> ~/.claude/settings.json"
+    else
+        log_info "~/.claude/settings.json ja existe, mantendo configuracoes do usuario"
+    fi
+
+    # commands/ -> ~/.claude/commands (slash commands customizados)
+    # Ref: https://docs.anthropic.com/en/docs/claude-code/slash-commands
+    mkdir -p "$HOME/.claude/commands"
+   
+    # Comando /plan — gerar execution plan
+    cat > "$HOME/.claude/commands/plan.md" << 'CMD_EOF'
+Gere um Execution Plan seguindo o formato obrigatorio:
+
+1. Goal and context
+2. Impacted files and modules
+3. Implementation strategy
+4. Risks and mitigations
+5. Validation steps (tests, build, lint)
+
+Analise o contexto atual do projeto e a solicitacao do usuario: $ARGUMENTS
+CMD_EOF
+   
+    # Comando /review — revisar codigo
+    cat > "$HOME/.claude/commands/review.md" << 'CMD_EOF'
+Revise o codigo seguindo as rules do agents-skills:
+
+- Verifique aderencia aos padroes em ~/.claude/rules/
+- Valide seguranca (OWASP Top 10, secrets, headers)
+- Cheque convencoes de nomenclatura
+- Verifique cobertura de testes minima
+- Identifique riscos e sugira mitigacoes
+
+Contexto: $ARGUMENTS
+CMD_EOF
+
+    # Comando /skill — listar ou carregar skills
+    cat > "$HOME/.claude/commands/skill.md" << 'CMD_EOF'
+Liste as skills disponiveis em ~/.claude/skills/ ou carregue uma skill especifica.
+
+Se nenhum argumento for fornecido, liste todas as skills com nome e descricao.
+Se um nome de skill for fornecido, leia e aplique o SKILL.md correspondente.
+
+Argumento: $ARGUMENTS
+CMD_EOF
+
+    log_success "Commands -> ~/.claude/commands/"
+
     # AGENTS.md -> ~/.claude/AGENTS.md
     if [ -f "AGENTS.md" ]; then
         mkdir -p "$HOME/.claude"
@@ -621,6 +760,7 @@ verify_installation() {
         [ -d "$HOME/.windsurf/skills" ] && log_success "  Skills: ~/.windsurf/skills"
         [ -d "$HOME/.windsurf/rules" ] && log_success "  Rules: ~/.windsurf/rules"
         [ -f "$HOME/.windsurfrules" ] && log_success "  Rules consolidadas: ~/.windsurfrules"
+        [ -f "$HOME/.codeium/windsurf/memories/global_rules.md" ] && log_success "  Global Rules: ~/.codeium/windsurf/memories/global_rules.md"
         [ -d "$HOME/.windsurf/knowledge" ] && log_success "  Knowledge: ~/.windsurf/knowledge"
         [ -f "$HOME/.windsurf/AGENTS.md" ] && log_success "  AGENTS.md: ~/.windsurf/AGENTS.md"
     fi
@@ -655,6 +795,9 @@ verify_installation() {
         [ -d "$HOME/.claude/skills" ] && log_success "  Skills: ~/.claude/skills"
         [ -d "$HOME/.claude/rules" ] && log_success "  Rules: ~/.claude/rules"
         [ -d "$HOME/.claude/knowledge" ] && log_success "  Knowledge: ~/.claude/knowledge"
+        [ -f "$HOME/.claude/CLAUDE.md" ] && log_success "  CLAUDE.md: ~/.claude/CLAUDE.md"
+        [ -f "$HOME/.claude/settings.json" ] && log_success "  Settings: ~/.claude/settings.json"
+        [ -d "$HOME/.claude/commands" ] && log_success "  Commands: ~/.claude/commands/"
         [ -f "$HOME/.claude/AGENTS.md" ] && log_success "  AGENTS.md: ~/.claude/AGENTS.md"
     fi
 
@@ -715,8 +858,8 @@ show_post_install() {
         echo "  rm -rf ~/.config/cognition/skills ~/.config/cognition/knowledge"
     fi
     if [ "$INSTALL_CLAUDE" = true ]; then
-        echo "  rm -rf ~/.claude/skills ~/.claude/rules ~/.claude/knowledge"
-        echo "  rm -f ~/.claude/AGENTS.md"
+        echo "  rm -rf ~/.claude/skills ~/.claude/rules ~/.claude/knowledge ~/.claude/commands"
+        echo "  rm -f ~/.claude/AGENTS.md ~/.claude/CLAUDE.md ~/.claude/settings.json"
     fi
     if [ "$INSTALL_GEMINI" = true ]; then
         echo "  rm -rf ~/.gemini/skills ~/.gemini/knowledge"
@@ -738,7 +881,7 @@ show_post_install() {
 
 main() {
     echo "========================================"
-    echo "  Itau SCM Agent Skills - Instalador"
+    echo "  agents-skills - Instalador"
     echo "========================================"
     echo
 
