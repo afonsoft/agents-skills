@@ -46,6 +46,8 @@ show_help() {
     echo "  - Backups de arquivos de conhecimento (knowledge/)"
     echo "  - Backups de arquivos de memoria (OpenClaw, Gemini)"
     echo "  - Backups do Visual Studio (Windows)"
+    echo "  - Backups de Windsurf global rules (~/.codeium/windsurf/memories/)"
+    echo "  - Backups de Claude CLAUDE.md, settings.json, commands/"
     echo
 }
 
@@ -67,6 +69,7 @@ remove_backups() {
         "$HOME/.cognition"
         "$HOME/.config/cognition"
         "$HOME/.openclaw"
+        "$HOME/.codeium"
     )
 
     log_info "Iniciando limpeza de backups..."
@@ -108,6 +111,8 @@ remove_backups() {
         ".windsurfrules.backup.*"
         ".cursorrules.backup.*"
         "AGENTS.md.backup.*"
+        "CLAUDE.md.backup.*"
+        "settings.json.backup.*"
     )
 
     for pattern in "${consolidated_files[@]}"; do
@@ -127,6 +132,50 @@ remove_backups() {
             fi
         fi
     done
+
+    # Remove backups de arquivos específicos do Claude
+    if [ -d "$HOME/.claude" ]; then
+        local claude_files=(
+            "CLAUDE.md.backup.*"
+            "settings.json.backup.*"
+        )
+        
+        for pattern in "${claude_files[@]}"; do
+            local found_files
+            if [ "$DRY_RUN" = true ]; then
+                found_files=$(find "$HOME/.claude" -maxdepth 1 -name "$pattern" 2>/dev/null || true)
+                if [ -n "$found_files" ]; then
+                    echo "$found_files"
+                    total_removed=$((total_removed + $(echo "$found_files" | wc -l)))
+                fi
+            else
+                local removed_count
+                removed_count=$(find "$HOME/.claude" -maxdepth 1 -name "$pattern" -exec rm -f {} + 2>/dev/null | wc -l || true)
+                if [ "$removed_count" -gt 0 ]; then
+                    log_success "Removidos $removed_count backups de Claude ($pattern)"
+                    total_removed=$((total_removed + removed_count))
+                fi
+            fi
+        done
+        
+        # Remove backups de commands/
+        if [ -d "$HOME/.claude/commands" ]; then
+            if [ "$DRY_RUN" = true ]; then
+                found_files=$(find "$HOME/.claude/commands" -name '*.backup.*' 2>/dev/null || true)
+                if [ -n "$found_files" ]; then
+                    echo "$found_files"
+                    total_removed=$((total_removed + $(echo "$found_files" | wc -l)))
+                fi
+            else
+                local removed_count
+                removed_count=$(find "$HOME/.claude/commands" -name '*.backup.*' -exec rm -f {} + 2>/dev/null | wc -l || true)
+                if [ "$removed_count" -gt 0 ]; then
+                    log_success "Removidos $removed_count backups de Claude commands/"
+                    total_removed=$((total_removed + removed_count))
+                fi
+            fi
+        fi
+    fi
 
     # Remove backups de arquivos específicos do Gemini
     if [ -d "$HOME/.gemini" ]; then
@@ -152,6 +201,26 @@ remove_backups() {
                 fi
             fi
         done
+    fi
+
+    # Remove backups de Windsurf global rules
+    if [ -d "$HOME/.codeium/windsurf/memories" ]; then
+        log_info "Verificando backups de Windsurf global rules..."
+        
+        if [ "$DRY_RUN" = true ]; then
+            found_files=$(find "$HOME/.codeium/windsurf/memories" -name 'global_rules.md.backup.*' 2>/dev/null || true)
+            if [ -n "$found_files" ]; then
+                echo "$found_files"
+                total_removed=$((total_removed + $(echo "$found_files" | wc -l)))
+            fi
+        else
+            local removed_count
+            removed_count=$(find "$HOME/.codeium/windsurf/memories" -name 'global_rules.md.backup.*' -exec rm -f {} + 2>/dev/null | wc -l || true)
+            if [ "$removed_count" -gt 0 ]; then
+                log_success "Removidos $removed_count backups de Windsurf global rules"
+                total_removed=$((total_removed + removed_count))
+            fi
+        fi
     fi
 
     # Remove backups de OpenClaw
