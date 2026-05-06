@@ -107,6 +107,7 @@ show_help() {
     echo "                                   ~/.claude/settings.json (permissoes)"
     echo "                                   ~/.claude/commands/ (slash commands)"
     echo "  Gemini CLI   ~/.gemini/skills    ~/.gemini/GEMINI.md      ~/.gemini/knowledge"
+    echo "                                   ~/.gemini/settings.json (config)"
     echo "  OpenClaw     ~/.openclaw/skills  ~/.openclaw/workspace/memory/MEMORY.md"
     echo
     echo "  Base: ~/.agents/skills (sempre instalado)"
@@ -674,17 +675,20 @@ install_gemini() {
     mkdir -p "$HOME/.gemini"
 
     # Skills -> ~/.gemini/skills
-    # Gemini CLI descobre skills em ~/.gemini/skills/ (user-level)
+    # Gemini CLI descobre skills em ~/.gemini/skills/ e .agents/skills/ (alias)
     # Cada skill e um diretorio contendo SKILL.md
-    # Ref: https://geminicli.com/docs/
+    # Ref: https://geminicli.com/docs/cli/tutorials/skills-getting-started
     backup_dir_if_exists "$HOME/.gemini/skills"
     cp -a skills/* "$HOME/.gemini/skills/" 2>/dev/null || true
     log_success "Skills -> ~/.gemini/skills"
 
     # Rules -> ~/.gemini/GEMINI.md (contexto global consolidado)
-    # Gemini CLI usa GEMINI.md como arquivo de contexto e instrucoes globais
-    # Similar ao .cursorrules e .windsurfrules para outros agentes
+    # GEMINI.md e o arquivo de contexto e instrucoes globais do projeto
+    # Ref: https://geminicli.com/docs/cli/tutorials/memory-management
+    # Nota: GEMINI.md normalmente fica no root do projeto, mas aqui instalamos
+    #       uma versao global em ~/.gemini/ para uso como referencia
     if [ -d "rules" ]; then
+        backup_file_if_exists "$HOME/.gemini/GEMINI.md"
         generate_consolidated_rules "$HOME/.gemini/GEMINI.md"
         log_success "Rules consolidadas -> ~/.gemini/GEMINI.md"
     fi
@@ -696,13 +700,44 @@ install_gemini() {
         log_success "Knowledge -> ~/.gemini/knowledge"
     fi
 
-    # Memory files para Gemini CLI (contexto persistente)
-    # Gemini CLI suporta arquivos de memoria no workspace
-    mkdir -p "$HOME/.gemini/memory"
-    if [ -f "MEMORY.md" ]; then
-        backup_file_if_exists "$HOME/.gemini/MEMORY.md"
-        cp MEMORY.md "$HOME/.gemini/MEMORY.md"
-        log_success "MEMORY.md -> ~/.gemini/MEMORY.md"
+    # Settings -> ~/.gemini/settings.json
+    # Configuracoes globais do Gemini CLI
+    # Ref: https://geminicli.com/docs/cli/settings
+    if [ ! -f "$HOME/.gemini/settings.json" ]; then
+        cat > "$HOME/.gemini/settings.json" << 'SETTINGS_EOF'
+{
+  "general": {
+    "enableAutoUpdate": true,
+    "enableNotifications": false,
+    "sessionRetention": {
+      "enabled": true,
+      "maxAge": "30d"
+    }
+  },
+  "ui": {
+    "autoThemeSwitching": true,
+    "showLineNumbers": true,
+    "compactToolOutput": true
+  },
+  "context": {
+    "fileFiltering": {
+      "respectGitIgnore": true,
+      "enableRecursiveFileSearch": true,
+      "enableFuzzySearch": true
+    }
+  },
+  "tools": {
+    "useRipgrep": true,
+    "shell": {
+      "enableInteractiveShell": true,
+      "showColor": true
+    }
+  }
+}
+SETTINGS_EOF
+        log_success "Settings -> ~/.gemini/settings.json"
+    else
+        log_info "~/.gemini/settings.json ja existe, mantendo configuracoes do usuario"
     fi
 
     # AGENTS.md -> ~/.gemini/AGENTS.md
@@ -842,8 +877,8 @@ verify_installation() {
         [ -d "$HOME/.gemini/skills" ] && log_success "  Skills: ~/.gemini/skills"
         [ -f "$HOME/.gemini/GEMINI.md" ] && log_success "  Rules consolidadas: ~/.gemini/GEMINI.md"
         [ -d "$HOME/.gemini/knowledge" ] && log_success "  Knowledge: ~/.gemini/knowledge"
+        [ -f "$HOME/.gemini/settings.json" ] && log_success "  Settings: ~/.gemini/settings.json"
         [ -f "$HOME/.gemini/AGENTS.md" ] && log_success "  AGENTS.md: ~/.gemini/AGENTS.md"
-        [ -f "$HOME/.gemini/MEMORY.md" ] && log_success "  Memory: ~/.gemini/MEMORY.md"
     fi
 
     if [ "$INSTALL_OPENCLAW" = true ]; then
@@ -899,7 +934,7 @@ show_post_install() {
     fi
     if [ "$INSTALL_GEMINI" = true ]; then
         echo "  rm -rf ~/.gemini/skills ~/.gemini/knowledge"
-        echo "  rm -f ~/.gemini/GEMINI.md ~/.gemini/AGENTS.md ~/.gemini/MEMORY.md"
+        echo "  rm -f ~/.gemini/GEMINI.md ~/.gemini/AGENTS.md ~/.gemini/settings.json"
     fi
     if [ "$INSTALL_OPENCLAW" = true ]; then
         echo "  rm -rf ~/.openclaw/skills ~/.openclaw/workspace/memory"

@@ -112,6 +112,7 @@ remove_backups() {
         ".cursorrules.backup.*"
         "AGENTS.md.backup.*"
         "CLAUDE.md.backup.*"
+        "GEMINI.md.backup.*"
         "settings.json.backup.*"
         "config.json.backup.*"
     )
@@ -182,7 +183,7 @@ remove_backups() {
     if [ -d "$HOME/.gemini" ]; then
         local gemini_files=(
             "GEMINI.md.backup.*"
-            "MEMORY.md.backup.*"
+            "settings.json.backup.*"
         )
         
         for pattern in "${gemini_files[@]}"; do
