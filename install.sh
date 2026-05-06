@@ -98,8 +98,9 @@ show_help() {
     echo "                                   ~/.cursorrules (consolidado)"
     echo "  Devin        ~/.agents/skills     ~/.devin/skills         ~/.devin/knowledge"
     echo "               + ~/.cognition/skills  (legacy)"
-    echo "               + ~/.config/cognition/skills  (Devin CLI)"
-    echo "               + ~/.config/cognition/knowledge  (Devin CLI)"
+    echo "               + ~/.config/devin/skills  (Devin CLI)"
+    echo "               + ~/.config/devin/knowledge  (Devin CLI)"
+    echo "               + ~/.config/devin/config.json  (imports)"
     echo "               + AGENTS.md -> ~/.devin/AGENTS.md"
     echo "  Claude       ~/.claude/skills    ~/.claude/rules          ~/.claude/knowledge"
     echo "                                   ~/.claude/CLAUDE.md (instrucoes globais)"
@@ -445,22 +446,22 @@ install_devin() {
         log_success "Knowledge -> ~/.devin/knowledge"
     fi
 
-    # Devin CLI (Terminal) - Skills -> ~/.config/cognition/skills/
+    # Devin CLI (Terminal) - Skills -> ~/.config/devin/skills/
     # Ref: https://cli.devin.ai/docs/extensibility/skills/overview#where-skills-live
-    backup_dir_if_exists "$HOME/.config/cognition/skills"
-    cp -a skills/* "$HOME/.config/cognition/skills/" 2>/dev/null || true
-    log_success "Skills -> ~/.config/cognition/skills (Devin CLI)"
+    backup_dir_if_exists "$HOME/.config/devin/skills"
+    cp -a skills/* "$HOME/.config/devin/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.config/devin/skills (Devin CLI)"
 
-    # Devin CLI - Knowledge -> ~/.config/cognition/knowledge/
+    # Devin CLI - Knowledge -> ~/.config/devin/knowledge/
     if [ -d "knowledge" ]; then
-        backup_dir_if_exists "$HOME/.config/cognition/knowledge"
-        cp -a knowledge/* "$HOME/.config/cognition/knowledge/" 2>/dev/null || true
-        log_success "Knowledge -> ~/.config/cognition/knowledge (Devin CLI)"
+        backup_dir_if_exists "$HOME/.config/devin/knowledge"
+        cp -a knowledge/* "$HOME/.config/devin/knowledge/" 2>/dev/null || true
+        log_success "Knowledge -> ~/.config/devin/knowledge (Devin CLI)"
     fi
 
-    # Rules -> ~/.cursor/rules e ~/.windsurfrules (para Devin Review)
+    # Rules -> ~/.cursor/rules (para Devin Review / Devin CLI)
     # Devin CLI le rules de .cursor/rules/*.md, .cursorrules, .windsurf/rules/*.md, AGENTS.md
-    # Ref: https://cli.devin.ai/docs/extensibility/rules
+    # Ref: https://cli.devin.ai/docs/extensibility/rules#rules-from-other-tools
     if [ -d "rules" ]; then
         if [ ! -d "$HOME/.cursor/rules" ] || [ -z "$(ls -A "$HOME/.cursor/rules" 2>/dev/null)" ]; then
             backup_dir_if_exists "$HOME/.cursor/rules"
@@ -470,11 +471,13 @@ install_devin() {
             log_info "~/.cursor/rules ja existe, pulando (instale --cursor para atualizar)"
         fi
 
-        if [ ! -f "$HOME/.windsurfrules" ]; then
-            generate_consolidated_rules "$HOME/.windsurfrules"
-            log_success "Rules consolidadas -> ~/.windsurfrules (para Devin Review / Devin CLI)"
+        # Rules -> ~/.windsurf/rules (para Devin CLI - pode ler de Windsurf)
+        if [ ! -d "$HOME/.windsurf/rules" ] || [ -z "$(ls -A "$HOME/.windsurf/rules" 2>/dev/null)" ]; then
+            backup_dir_if_exists "$HOME/.windsurf/rules"
+            cp -a rules/*.instructions.md "$HOME/.windsurf/rules/" 2>/dev/null || true
+            log_success "Rules -> ~/.windsurf/rules (para Devin CLI - le de Windsurf)"
         else
-            log_info "~/.windsurfrules ja existe, pulando (instale --windsurf para atualizar)"
+            log_info "~/.windsurf/rules ja existe, pulando (instale --windsurf para atualizar)"
         fi
     fi
 
@@ -484,6 +487,24 @@ install_devin() {
         backup_file_if_exists "$HOME/.devin/AGENTS.md"
         cp AGENTS.md "$HOME/.devin/AGENTS.md"
         log_success "AGENTS.md -> ~/.devin/AGENTS.md"
+    fi
+
+    # Config -> ~/.config/devin/config.json (controla imports de outras ferramentas)
+    # Ref: https://cli.devin.ai/docs/extensibility/rules#controlling-imports
+    mkdir -p "$HOME/.config/devin"
+    if [ ! -f "$HOME/.config/devin/config.json" ]; then
+        cat > "$HOME/.config/devin/config.json" << 'CONFIG_EOF'
+{
+  "read_config_from": {
+    "cursor": true,
+    "windsurf": true,
+    "claude": true
+  }
+}
+CONFIG_EOF
+        log_success "Config -> ~/.config/devin/config.json"
+    else
+        log_info "~/.config/devin/config.json ja existe, mantendo configuracoes do usuario"
     fi
 
     log_success "Devin / Devin Review / Devin CLI instalado!"
@@ -791,14 +812,15 @@ verify_installation() {
     if [ "$INSTALL_DEVIN" = true ]; then
         echo
         log_info "Devin / Devin Review / Devin CLI:"
-        [ -d "$HOME/.agents/skills" ] && log_success "  Skills (recomendado): ~/.agents/skills"
-        [ -d "$HOME/.cognition/skills" ] && log_success "  Skills (Devin-specific): ~/.cognition/skills"
-        [ -d "$HOME/.devin/skills" ] && log_success "  Skills (compatibilidade): ~/.devin/skills"
+        [ -d "$HOME/.agents/skills" ] && log_success "  Skills: ~/.agents/skills"
+        [ -d "$HOME/.cognition/skills" ] && log_success "  Skills: ~/.cognition/skills"
+        [ -d "$HOME/.devin/skills" ] && log_success "  Skills: ~/.devin/skills"
         [ -d "$HOME/.devin/knowledge" ] && log_success "  Knowledge: ~/.devin/knowledge"
-        [ -d "$HOME/.config/cognition/skills" ] && log_success "  Skills (Devin CLI): ~/.config/cognition/skills"
-        [ -d "$HOME/.config/cognition/knowledge" ] && log_success "  Knowledge (Devin CLI): ~/.config/cognition/knowledge"
+        [ -d "$HOME/.config/devin/skills" ] && log_success "  Skills: ~/.config/devin/skills"
+        [ -d "$HOME/.config/devin/knowledge" ] && log_success "  Knowledge: ~/.config/devin/knowledge"
+        [ -f "$HOME/.config/devin/config.json" ] && log_success "  Config: ~/.config/devin/config.json"
         [ -d "$HOME/.cursor/rules" ] && log_success "  Rules (Devin Review/CLI): ~/.cursor/rules"
-        [ -f "$HOME/.windsurfrules" ] && log_success "  Rules (Devin Review/CLI): ~/.windsurfrules"
+        [ -d "$HOME/.windsurf/rules" ] && log_success "  Rules (Devin CLI): ~/.windsurf/rules"
         [ -f "$HOME/.devin/AGENTS.md" ] && log_success "  AGENTS.md: ~/.devin/AGENTS.md"
     fi
 
@@ -868,7 +890,8 @@ show_post_install() {
         echo "  rm -rf ~/.cognition/skills"
         echo "  rm -rf ~/.devin/skills ~/.devin/knowledge"
         echo "  rm -f ~/.devin/AGENTS.md"
-        echo "  rm -rf ~/.config/cognition/skills ~/.config/cognition/knowledge"
+        echo "  rm -rf ~/.config/devin/skills ~/.config/devin/knowledge"
+        echo "  rm -f ~/.config/devin/config.json"
     fi
     if [ "$INSTALL_CLAUDE" = true ]; then
         echo "  rm -rf ~/.claude/skills ~/.claude/rules ~/.claude/knowledge ~/.claude/commands"

@@ -68,6 +68,7 @@ remove_backups() {
         "$HOME/.gemini"
         "$HOME/.cognition"
         "$HOME/.config/cognition"
+        "$HOME/.config/devin"
         "$HOME/.openclaw"
         "$HOME/.codeium"
     )
@@ -112,6 +113,7 @@ remove_backups() {
         "AGENTS.md.backup.*"
         "CLAUDE.md.backup.*"
         "settings.json.backup.*"
+        "config.json.backup.*"
     )
 
     for pattern in "${consolidated_files[@]}"; do
