@@ -42,11 +42,11 @@ show_help() {
     echo
     echo -e "${YELLOW}O que sera limpo:${NC}"
     echo "  - Backups de skills em ~/.agents/, ~/.windsurf/, ~/.cursor/, etc."
-    echo "  - Backups de rules consolidadas (.windsurfrules, .cursorrules)"
+    echo "  - Backups de rules consolidadas (.cursorrules)"
     echo "  - Backups de arquivos de conhecimento (knowledge/)"
     echo "  - Backups de arquivos de memoria (OpenClaw, Gemini)"
     echo "  - Backups do Visual Studio (Windows)"
-    echo "  - Backups de Windsurf global rules (~/.codeium/windsurf/memories/)"
+    echo "  - Backups de Windsurf global rules (~/.windsurf/rules/global_rules.md)"
     echo "  - Backups de Claude CLAUDE.md, settings.json, commands/"
     echo
 }
@@ -108,7 +108,6 @@ remove_backups() {
 
     # Remove backups de arquivos consolidados no nível HOME
     local consolidated_files=(
-        ".windsurfrules.backup.*"
         ".cursorrules.backup.*"
         "AGENTS.md.backup.*"
         "CLAUDE.md.backup.*"
@@ -204,18 +203,18 @@ remove_backups() {
     fi
 
     # Remove backups de Windsurf global rules
-    if [ -d "$HOME/.codeium/windsurf/memories" ]; then
+    if [ -d "$HOME/.windsurf/rules" ]; then
         log_info "Verificando backups de Windsurf global rules..."
         
         if [ "$DRY_RUN" = true ]; then
-            found_files=$(find "$HOME/.codeium/windsurf/memories" -name 'global_rules.md.backup.*' 2>/dev/null || true)
+            found_files=$(find "$HOME/.windsurf/rules" -name 'global_rules.md.backup.*' 2>/dev/null || true)
             if [ -n "$found_files" ]; then
                 echo "$found_files"
                 total_removed=$((total_removed + $(echo "$found_files" | wc -l)))
             fi
         else
             local removed_count
-            removed_count=$(find "$HOME/.codeium/windsurf/memories" -name 'global_rules.md.backup.*' -exec rm -f {} + 2>/dev/null | wc -l || true)
+            removed_count=$(find "$HOME/.windsurf/rules" -name 'global_rules.md.backup.*' -exec rm -f {} + 2>/dev/null | wc -l || true)
             if [ "$removed_count" -gt 0 ]; then
                 log_success "Removidos $removed_count backups de Windsurf global rules"
                 total_removed=$((total_removed + removed_count))

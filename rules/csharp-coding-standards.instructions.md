@@ -1,8 +1,9 @@
 ---
-description: C# coding standards and conventions for consistent, maintainable code
-applyTo:
+trigger: glob
+globs:
   - "**/*.cs"
   - "**/*.csx"
+description: C# coding standards and conventions for consistent, maintainable code
 ---
 
 # C# Coding Standards

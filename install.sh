@@ -93,8 +93,7 @@ show_help() {
     echo "  VS Code      ~/.github/skills    ~/.copilot/instructions  ~/.copilot/knowledge"
     echo "                                   ~/.github/copilot-instructions.md (consolidado)"
     echo "  Windsurf     ~/.windsurf/skills  ~/.windsurf/rules        ~/.windsurf/knowledge"
-    echo "                                   ~/.windsurfrules (consolidado)"
-    echo "                                   ~/.codeium/windsurf/memories/global_rules.md (global, sempre ativo)"
+    echo "                                   ~/.windsurf/rules/global_rules.md (global, sempre ativo)"
     echo "  Cursor       ~/.cursor/skills    ~/.cursor/rules          ~/.cursor/knowledge"
     echo "                                   ~/.cursorrules (consolidado)"
     echo "  Devin        ~/.agents/skills     ~/.devin/skills         ~/.devin/knowledge"
@@ -317,26 +316,41 @@ install_windsurf() {
     cp -a skills/* "$HOME/.windsurf/skills/" 2>/dev/null || true
     log_success "Skills -> ~/.windsurf/skills"
 
-    # Rules -> ~/.windsurf/rules + consolidados
+    # Rules -> ~/.windsurf/rules (workspace rules)
+    # Ref: https://docs.windsurf.com/windsurf/cascade/memories#rules
+    # Workspace rules stored in .windsurf/rules/ with activation modes
+    # Limit: 12.000 characters per workspace rule
     if [ -d "rules" ]; then
         backup_dir_if_exists "$HOME/.windsurf/rules"
         cp -a rules/*.instructions.md "$HOME/.windsurf/rules/" 2>/dev/null || true
-        log_success "Rules -> ~/.windsurf/rules"
+        log_success "Workspace Rules -> ~/.windsurf/rules"
 
-        generate_consolidated_rules "$HOME/.windsurfrules"
-        log_success "Rules consolidadas -> ~/.windsurfrules"
+        # Check workspace rules size limit
+        local total_size=0
+        for rule_file in "$HOME/.windsurf/rules"/*.md; do
+            if [ -f "$rule_file" ]; then
+                local rule_size
+                rule_size=$(wc -c < "$rule_file" 2>/dev/null || echo 0)
+                if [ "$rule_size" -gt 12000 ]; then
+                    log_warning "$(basename "$rule_file") excede o limite de 12.000 chars (${rule_size} chars). Windsurf pode truncar."
+                fi
+                total_size=$((total_size + rule_size))
+            fi
+        done
+        log_info "Workspace rules total size: ${total_size} chars"
 
-        # Global Rules -> ~/.codeium/windsurf/memories/global_rules.md
-        # Ref: https://docs.windsurf.com/windsurf/cascade/memories
-        # Escopo global (todos os workspaces), sempre ativo, limite 6.000 chars
-        mkdir -p "$HOME/.codeium/windsurf/memories"
-        backup_file_if_exists "$HOME/.codeium/windsurf/memories/global_rules.md"
-        generate_consolidated_rules "$HOME/.codeium/windsurf/memories/global_rules.md"
-        log_success "Global Rules -> ~/.codeium/windsurf/memories/global_rules.md"
-        local rules_size
-        rules_size=$(wc -c < "$HOME/.codeium/windsurf/memories/global_rules.md" 2>/dev/null || echo 0)
-        if [ "$rules_size" -gt 6000 ]; then
-            log_warning "global_rules.md excede o limite de 6.000 chars (${rules_size} chars). Windsurf pode truncar o conteudo."
+        # Global Rules -> ~/.windsurf/rules/global_rules.md
+        # Ref: https://docs.windsurf.com/windsurf/cascade/memories#system-level-rules-enterprise
+        # Global rules stored at user level, always on, limit 6.000 characters
+        # Note: Global rules don't use frontmatter - they are always active
+        mkdir -p "$HOME/.windsurf/rules"
+        backup_file_if_exists "$HOME/.windsurf/rules/global_rules.md"
+        generate_consolidated_rules "$HOME/.windsurf/rules/global_rules.md"
+        log_success "Global Rules -> ~/.windsurf/rules/global_rules.md"
+        local global_size
+        global_size=$(wc -c < "$HOME/.windsurf/rules/global_rules.md" 2>/dev/null || echo 0)
+        if [ "$global_size" -gt 6000 ]; then
+            log_warning "global_rules.md excede o limite de 6.000 chars (${global_size} chars). Windsurf pode truncar o conteudo."
         fi
     fi
 
@@ -758,9 +772,8 @@ verify_installation() {
         echo
         log_info "Windsurf (Cascade):"
         [ -d "$HOME/.windsurf/skills" ] && log_success "  Skills: ~/.windsurf/skills"
-        [ -d "$HOME/.windsurf/rules" ] && log_success "  Rules: ~/.windsurf/rules"
-        [ -f "$HOME/.windsurfrules" ] && log_success "  Rules consolidadas: ~/.windsurfrules"
-        [ -f "$HOME/.codeium/windsurf/memories/global_rules.md" ] && log_success "  Global Rules: ~/.codeium/windsurf/memories/global_rules.md"
+        [ -d "$HOME/.windsurf/rules" ] && log_success "  Workspace Rules: ~/.windsurf/rules"
+        [ -f "$HOME/.windsurf/rules/global_rules.md" ] && log_success "  Global Rules: ~/.windsurf/rules/global_rules.md"
         [ -d "$HOME/.windsurf/knowledge" ] && log_success "  Knowledge: ~/.windsurf/knowledge"
         [ -f "$HOME/.windsurf/AGENTS.md" ] && log_success "  AGENTS.md: ~/.windsurf/AGENTS.md"
     fi
@@ -845,7 +858,7 @@ show_post_install() {
     fi
     if [ "$INSTALL_WINDSURF" = true ]; then
         echo "  rm -rf ~/.windsurf/skills ~/.windsurf/rules ~/.windsurf/knowledge"
-        echo "  rm -f ~/.windsurfrules ~/.windsurf/AGENTS.md"
+        echo "  rm -f ~/.windsurf/AGENTS.md"
     fi
     if [ "$INSTALL_CURSOR" = true ]; then
         echo "  rm -rf ~/.cursor/skills ~/.cursor/rules ~/.cursor/knowledge"
