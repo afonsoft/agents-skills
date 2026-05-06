@@ -93,20 +93,21 @@ show_help() {
     echo "  VS Code      ~/.github/skills    ~/.copilot/instructions  ~/.copilot/knowledge"
     echo "                                   ~/.github/copilot-instructions.md (consolidado)"
     echo "  Windsurf     ~/.windsurf/skills  ~/.windsurf/rules        ~/.windsurf/knowledge"
-    echo "                                   ~/.windsurfrules (consolidado)"
-    echo "                                   ~/.codeium/windsurf/memories/global_rules.md (global, sempre ativo)"
+    echo "                                   ~/.windsurf/rules/global_rules.md (global, sempre ativo)"
     echo "  Cursor       ~/.cursor/skills    ~/.cursor/rules          ~/.cursor/knowledge"
     echo "                                   ~/.cursorrules (consolidado)"
     echo "  Devin        ~/.agents/skills     ~/.devin/skills         ~/.devin/knowledge"
     echo "               + ~/.cognition/skills  (legacy)"
-    echo "               + ~/.config/cognition/skills  (Devin CLI)"
-    echo "               + ~/.config/cognition/knowledge  (Devin CLI)"
+    echo "               + ~/.config/devin/skills  (Devin CLI)"
+    echo "               + ~/.config/devin/knowledge  (Devin CLI)"
+    echo "               + ~/.config/devin/config.json  (imports)"
     echo "               + AGENTS.md -> ~/.devin/AGENTS.md"
     echo "  Claude       ~/.claude/skills    ~/.claude/rules          ~/.claude/knowledge"
     echo "                                   ~/.claude/CLAUDE.md (instrucoes globais)"
     echo "                                   ~/.claude/settings.json (permissoes)"
     echo "                                   ~/.claude/commands/ (slash commands)"
     echo "  Gemini CLI   ~/.gemini/skills    ~/.gemini/GEMINI.md      ~/.gemini/knowledge"
+    echo "                                   ~/.gemini/settings.json (config)"
     echo "  OpenClaw     ~/.openclaw/skills  ~/.openclaw/workspace/memory/MEMORY.md"
     echo
     echo "  Base: ~/.agents/skills (sempre instalado)"
@@ -317,26 +318,41 @@ install_windsurf() {
     cp -a skills/* "$HOME/.windsurf/skills/" 2>/dev/null || true
     log_success "Skills -> ~/.windsurf/skills"
 
-    # Rules -> ~/.windsurf/rules + consolidados
+    # Rules -> ~/.windsurf/rules (workspace rules)
+    # Ref: https://docs.windsurf.com/windsurf/cascade/memories#rules
+    # Workspace rules stored in .windsurf/rules/ with activation modes
+    # Limit: 12.000 characters per workspace rule
     if [ -d "rules" ]; then
         backup_dir_if_exists "$HOME/.windsurf/rules"
         cp -a rules/*.instructions.md "$HOME/.windsurf/rules/" 2>/dev/null || true
-        log_success "Rules -> ~/.windsurf/rules"
+        log_success "Workspace Rules -> ~/.windsurf/rules"
 
-        generate_consolidated_rules "$HOME/.windsurfrules"
-        log_success "Rules consolidadas -> ~/.windsurfrules"
+        # Check workspace rules size limit
+        local total_size=0
+        for rule_file in "$HOME/.windsurf/rules"/*.md; do
+            if [ -f "$rule_file" ]; then
+                local rule_size
+                rule_size=$(wc -c < "$rule_file" 2>/dev/null || echo 0)
+                if [ "$rule_size" -gt 12000 ]; then
+                    log_warning "$(basename "$rule_file") excede o limite de 12.000 chars (${rule_size} chars). Windsurf pode truncar."
+                fi
+                total_size=$((total_size + rule_size))
+            fi
+        done
+        log_info "Workspace rules total size: ${total_size} chars"
 
-        # Global Rules -> ~/.codeium/windsurf/memories/global_rules.md
-        # Ref: https://docs.windsurf.com/windsurf/cascade/memories
-        # Escopo global (todos os workspaces), sempre ativo, limite 6.000 chars
-        mkdir -p "$HOME/.codeium/windsurf/memories"
-        backup_file_if_exists "$HOME/.codeium/windsurf/memories/global_rules.md"
-        generate_consolidated_rules "$HOME/.codeium/windsurf/memories/global_rules.md"
-        log_success "Global Rules -> ~/.codeium/windsurf/memories/global_rules.md"
-        local rules_size
-        rules_size=$(wc -c < "$HOME/.codeium/windsurf/memories/global_rules.md" 2>/dev/null || echo 0)
-        if [ "$rules_size" -gt 6000 ]; then
-            log_warning "global_rules.md excede o limite de 6.000 chars (${rules_size} chars). Windsurf pode truncar o conteudo."
+        # Global Rules -> ~/.windsurf/rules/global_rules.md
+        # Ref: https://docs.windsurf.com/windsurf/cascade/memories#system-level-rules-enterprise
+        # Global rules stored at user level, always on, limit 6.000 characters
+        # Note: Global rules don't use frontmatter - they are always active
+        mkdir -p "$HOME/.windsurf/rules"
+        backup_file_if_exists "$HOME/.windsurf/rules/global_rules.md"
+        generate_consolidated_rules "$HOME/.windsurf/rules/global_rules.md"
+        log_success "Global Rules -> ~/.windsurf/rules/global_rules.md"
+        local global_size
+        global_size=$(wc -c < "$HOME/.windsurf/rules/global_rules.md" 2>/dev/null || echo 0)
+        if [ "$global_size" -gt 6000 ]; then
+            log_warning "global_rules.md excede o limite de 6.000 chars (${global_size} chars). Windsurf pode truncar o conteudo."
         fi
     fi
 
@@ -431,22 +447,22 @@ install_devin() {
         log_success "Knowledge -> ~/.devin/knowledge"
     fi
 
-    # Devin CLI (Terminal) - Skills -> ~/.config/cognition/skills/
+    # Devin CLI (Terminal) - Skills -> ~/.config/devin/skills/
     # Ref: https://cli.devin.ai/docs/extensibility/skills/overview#where-skills-live
-    backup_dir_if_exists "$HOME/.config/cognition/skills"
-    cp -a skills/* "$HOME/.config/cognition/skills/" 2>/dev/null || true
-    log_success "Skills -> ~/.config/cognition/skills (Devin CLI)"
+    backup_dir_if_exists "$HOME/.config/devin/skills"
+    cp -a skills/* "$HOME/.config/devin/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.config/devin/skills (Devin CLI)"
 
-    # Devin CLI - Knowledge -> ~/.config/cognition/knowledge/
+    # Devin CLI - Knowledge -> ~/.config/devin/knowledge/
     if [ -d "knowledge" ]; then
-        backup_dir_if_exists "$HOME/.config/cognition/knowledge"
-        cp -a knowledge/* "$HOME/.config/cognition/knowledge/" 2>/dev/null || true
-        log_success "Knowledge -> ~/.config/cognition/knowledge (Devin CLI)"
+        backup_dir_if_exists "$HOME/.config/devin/knowledge"
+        cp -a knowledge/* "$HOME/.config/devin/knowledge/" 2>/dev/null || true
+        log_success "Knowledge -> ~/.config/devin/knowledge (Devin CLI)"
     fi
 
-    # Rules -> ~/.cursor/rules e ~/.windsurfrules (para Devin Review)
+    # Rules -> ~/.cursor/rules (para Devin Review / Devin CLI)
     # Devin CLI le rules de .cursor/rules/*.md, .cursorrules, .windsurf/rules/*.md, AGENTS.md
-    # Ref: https://cli.devin.ai/docs/extensibility/rules
+    # Ref: https://cli.devin.ai/docs/extensibility/rules#rules-from-other-tools
     if [ -d "rules" ]; then
         if [ ! -d "$HOME/.cursor/rules" ] || [ -z "$(ls -A "$HOME/.cursor/rules" 2>/dev/null)" ]; then
             backup_dir_if_exists "$HOME/.cursor/rules"
@@ -456,11 +472,13 @@ install_devin() {
             log_info "~/.cursor/rules ja existe, pulando (instale --cursor para atualizar)"
         fi
 
-        if [ ! -f "$HOME/.windsurfrules" ]; then
-            generate_consolidated_rules "$HOME/.windsurfrules"
-            log_success "Rules consolidadas -> ~/.windsurfrules (para Devin Review / Devin CLI)"
+        # Rules -> ~/.windsurf/rules (para Devin CLI - pode ler de Windsurf)
+        if [ ! -d "$HOME/.windsurf/rules" ] || [ -z "$(ls -A "$HOME/.windsurf/rules" 2>/dev/null)" ]; then
+            backup_dir_if_exists "$HOME/.windsurf/rules"
+            cp -a rules/*.instructions.md "$HOME/.windsurf/rules/" 2>/dev/null || true
+            log_success "Rules -> ~/.windsurf/rules (para Devin CLI - le de Windsurf)"
         else
-            log_info "~/.windsurfrules ja existe, pulando (instale --windsurf para atualizar)"
+            log_info "~/.windsurf/rules ja existe, pulando (instale --windsurf para atualizar)"
         fi
     fi
 
@@ -470,6 +488,24 @@ install_devin() {
         backup_file_if_exists "$HOME/.devin/AGENTS.md"
         cp AGENTS.md "$HOME/.devin/AGENTS.md"
         log_success "AGENTS.md -> ~/.devin/AGENTS.md"
+    fi
+
+    # Config -> ~/.config/devin/config.json (controla imports de outras ferramentas)
+    # Ref: https://cli.devin.ai/docs/extensibility/rules#controlling-imports
+    mkdir -p "$HOME/.config/devin"
+    if [ ! -f "$HOME/.config/devin/config.json" ]; then
+        cat > "$HOME/.config/devin/config.json" << 'CONFIG_EOF'
+{
+  "read_config_from": {
+    "cursor": true,
+    "windsurf": true,
+    "claude": true
+  }
+}
+CONFIG_EOF
+        log_success "Config -> ~/.config/devin/config.json"
+    else
+        log_info "~/.config/devin/config.json ja existe, mantendo configuracoes do usuario"
     fi
 
     log_success "Devin / Devin Review / Devin CLI instalado!"
@@ -639,17 +675,20 @@ install_gemini() {
     mkdir -p "$HOME/.gemini"
 
     # Skills -> ~/.gemini/skills
-    # Gemini CLI descobre skills em ~/.gemini/skills/ (user-level)
+    # Gemini CLI descobre skills em ~/.gemini/skills/ e .agents/skills/ (alias)
     # Cada skill e um diretorio contendo SKILL.md
-    # Ref: https://geminicli.com/docs/
+    # Ref: https://geminicli.com/docs/cli/tutorials/skills-getting-started
     backup_dir_if_exists "$HOME/.gemini/skills"
     cp -a skills/* "$HOME/.gemini/skills/" 2>/dev/null || true
     log_success "Skills -> ~/.gemini/skills"
 
     # Rules -> ~/.gemini/GEMINI.md (contexto global consolidado)
-    # Gemini CLI usa GEMINI.md como arquivo de contexto e instrucoes globais
-    # Similar ao .cursorrules e .windsurfrules para outros agentes
+    # GEMINI.md e o arquivo de contexto e instrucoes globais do projeto
+    # Ref: https://geminicli.com/docs/cli/tutorials/memory-management
+    # Nota: GEMINI.md normalmente fica no root do projeto, mas aqui instalamos
+    #       uma versao global em ~/.gemini/ para uso como referencia
     if [ -d "rules" ]; then
+        backup_file_if_exists "$HOME/.gemini/GEMINI.md"
         generate_consolidated_rules "$HOME/.gemini/GEMINI.md"
         log_success "Rules consolidadas -> ~/.gemini/GEMINI.md"
     fi
@@ -661,13 +700,44 @@ install_gemini() {
         log_success "Knowledge -> ~/.gemini/knowledge"
     fi
 
-    # Memory files para Gemini CLI (contexto persistente)
-    # Gemini CLI suporta arquivos de memoria no workspace
-    mkdir -p "$HOME/.gemini/memory"
-    if [ -f "MEMORY.md" ]; then
-        backup_file_if_exists "$HOME/.gemini/MEMORY.md"
-        cp MEMORY.md "$HOME/.gemini/MEMORY.md"
-        log_success "MEMORY.md -> ~/.gemini/MEMORY.md"
+    # Settings -> ~/.gemini/settings.json
+    # Configuracoes globais do Gemini CLI
+    # Ref: https://geminicli.com/docs/cli/settings
+    if [ ! -f "$HOME/.gemini/settings.json" ]; then
+        cat > "$HOME/.gemini/settings.json" << 'SETTINGS_EOF'
+{
+  "general": {
+    "enableAutoUpdate": true,
+    "enableNotifications": false,
+    "sessionRetention": {
+      "enabled": true,
+      "maxAge": "30d"
+    }
+  },
+  "ui": {
+    "autoThemeSwitching": true,
+    "showLineNumbers": true,
+    "compactToolOutput": true
+  },
+  "context": {
+    "fileFiltering": {
+      "respectGitIgnore": true,
+      "enableRecursiveFileSearch": true,
+      "enableFuzzySearch": true
+    }
+  },
+  "tools": {
+    "useRipgrep": true,
+    "shell": {
+      "enableInteractiveShell": true,
+      "showColor": true
+    }
+  }
+}
+SETTINGS_EOF
+        log_success "Settings -> ~/.gemini/settings.json"
+    else
+        log_info "~/.gemini/settings.json ja existe, mantendo configuracoes do usuario"
     fi
 
     # AGENTS.md -> ~/.gemini/AGENTS.md
@@ -758,9 +828,8 @@ verify_installation() {
         echo
         log_info "Windsurf (Cascade):"
         [ -d "$HOME/.windsurf/skills" ] && log_success "  Skills: ~/.windsurf/skills"
-        [ -d "$HOME/.windsurf/rules" ] && log_success "  Rules: ~/.windsurf/rules"
-        [ -f "$HOME/.windsurfrules" ] && log_success "  Rules consolidadas: ~/.windsurfrules"
-        [ -f "$HOME/.codeium/windsurf/memories/global_rules.md" ] && log_success "  Global Rules: ~/.codeium/windsurf/memories/global_rules.md"
+        [ -d "$HOME/.windsurf/rules" ] && log_success "  Workspace Rules: ~/.windsurf/rules"
+        [ -f "$HOME/.windsurf/rules/global_rules.md" ] && log_success "  Global Rules: ~/.windsurf/rules/global_rules.md"
         [ -d "$HOME/.windsurf/knowledge" ] && log_success "  Knowledge: ~/.windsurf/knowledge"
         [ -f "$HOME/.windsurf/AGENTS.md" ] && log_success "  AGENTS.md: ~/.windsurf/AGENTS.md"
     fi
@@ -778,14 +847,15 @@ verify_installation() {
     if [ "$INSTALL_DEVIN" = true ]; then
         echo
         log_info "Devin / Devin Review / Devin CLI:"
-        [ -d "$HOME/.agents/skills" ] && log_success "  Skills (recomendado): ~/.agents/skills"
-        [ -d "$HOME/.cognition/skills" ] && log_success "  Skills (Devin-specific): ~/.cognition/skills"
-        [ -d "$HOME/.devin/skills" ] && log_success "  Skills (compatibilidade): ~/.devin/skills"
+        [ -d "$HOME/.agents/skills" ] && log_success "  Skills: ~/.agents/skills"
+        [ -d "$HOME/.cognition/skills" ] && log_success "  Skills: ~/.cognition/skills"
+        [ -d "$HOME/.devin/skills" ] && log_success "  Skills: ~/.devin/skills"
         [ -d "$HOME/.devin/knowledge" ] && log_success "  Knowledge: ~/.devin/knowledge"
-        [ -d "$HOME/.config/cognition/skills" ] && log_success "  Skills (Devin CLI): ~/.config/cognition/skills"
-        [ -d "$HOME/.config/cognition/knowledge" ] && log_success "  Knowledge (Devin CLI): ~/.config/cognition/knowledge"
+        [ -d "$HOME/.config/devin/skills" ] && log_success "  Skills: ~/.config/devin/skills"
+        [ -d "$HOME/.config/devin/knowledge" ] && log_success "  Knowledge: ~/.config/devin/knowledge"
+        [ -f "$HOME/.config/devin/config.json" ] && log_success "  Config: ~/.config/devin/config.json"
         [ -d "$HOME/.cursor/rules" ] && log_success "  Rules (Devin Review/CLI): ~/.cursor/rules"
-        [ -f "$HOME/.windsurfrules" ] && log_success "  Rules (Devin Review/CLI): ~/.windsurfrules"
+        [ -d "$HOME/.windsurf/rules" ] && log_success "  Rules (Devin CLI): ~/.windsurf/rules"
         [ -f "$HOME/.devin/AGENTS.md" ] && log_success "  AGENTS.md: ~/.devin/AGENTS.md"
     fi
 
@@ -807,8 +877,8 @@ verify_installation() {
         [ -d "$HOME/.gemini/skills" ] && log_success "  Skills: ~/.gemini/skills"
         [ -f "$HOME/.gemini/GEMINI.md" ] && log_success "  Rules consolidadas: ~/.gemini/GEMINI.md"
         [ -d "$HOME/.gemini/knowledge" ] && log_success "  Knowledge: ~/.gemini/knowledge"
+        [ -f "$HOME/.gemini/settings.json" ] && log_success "  Settings: ~/.gemini/settings.json"
         [ -f "$HOME/.gemini/AGENTS.md" ] && log_success "  AGENTS.md: ~/.gemini/AGENTS.md"
-        [ -f "$HOME/.gemini/MEMORY.md" ] && log_success "  Memory: ~/.gemini/MEMORY.md"
     fi
 
     if [ "$INSTALL_OPENCLAW" = true ]; then
@@ -845,7 +915,7 @@ show_post_install() {
     fi
     if [ "$INSTALL_WINDSURF" = true ]; then
         echo "  rm -rf ~/.windsurf/skills ~/.windsurf/rules ~/.windsurf/knowledge"
-        echo "  rm -f ~/.windsurfrules ~/.windsurf/AGENTS.md"
+        echo "  rm -f ~/.windsurf/AGENTS.md"
     fi
     if [ "$INSTALL_CURSOR" = true ]; then
         echo "  rm -rf ~/.cursor/skills ~/.cursor/rules ~/.cursor/knowledge"
@@ -855,7 +925,8 @@ show_post_install() {
         echo "  rm -rf ~/.cognition/skills"
         echo "  rm -rf ~/.devin/skills ~/.devin/knowledge"
         echo "  rm -f ~/.devin/AGENTS.md"
-        echo "  rm -rf ~/.config/cognition/skills ~/.config/cognition/knowledge"
+        echo "  rm -rf ~/.config/devin/skills ~/.config/devin/knowledge"
+        echo "  rm -f ~/.config/devin/config.json"
     fi
     if [ "$INSTALL_CLAUDE" = true ]; then
         echo "  rm -rf ~/.claude/skills ~/.claude/rules ~/.claude/knowledge ~/.claude/commands"
@@ -863,7 +934,7 @@ show_post_install() {
     fi
     if [ "$INSTALL_GEMINI" = true ]; then
         echo "  rm -rf ~/.gemini/skills ~/.gemini/knowledge"
-        echo "  rm -f ~/.gemini/GEMINI.md ~/.gemini/AGENTS.md ~/.gemini/MEMORY.md"
+        echo "  rm -f ~/.gemini/GEMINI.md ~/.gemini/AGENTS.md ~/.gemini/settings.json"
     fi
     if [ "$INSTALL_OPENCLAW" = true ]; then
         echo "  rm -rf ~/.openclaw/skills ~/.openclaw/workspace/memory"
