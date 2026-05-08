@@ -1,6 +1,6 @@
 # agents-skills
 
-A community-driven collection of custom agents, skills, rules, and knowledge designed to enhance GitHub Copilot and AI development experiences across various domains, languages, and frameworks.
+A community-driven collection of custom agents, skills, rules, and knowledge designed to enhance GitHub Copilot and AI development experiences across various domains, languages, and frameworks. Following OpenAI harness engineering principles for agent-centered development.
 
 ## 🚀 Features
 
@@ -20,7 +20,19 @@ agents-skills/
 ├── skills/           # Task-specific skills with bundled resources
 ├── rules/            # Coding standards and guidelines
 ├── workflows/        # Agentic workflows for automation
-├── knowledge/        # Memory documents and guides
+├── knowledge/        # Knowledge base (structured docs following OpenAI patterns)
+│   ├── design-docs/  # Design patterns, core beliefs, architectural principles
+│   ├── exec-plans/   # Active/completed execution plans, tech debt tracker
+│   ├── generated/    # Auto-generated documentation
+│   ├── product-specs/ # Product specifications
+│   ├── references/   # Framework-specific guides
+│   ├── DESIGN.md     # Design principles and patterns
+│   ├── FRONTEND.md   # Frontend design patterns
+│   ├── PLANS.md      # Planning templates
+│   ├── PRODUCT_SENSE.md # Product principles
+│   ├── QUALITY_SCORE.md # Quality metrics and scoring
+│   ├── RELIABILITY.md # Reliability requirements
+│   └── SECURITY.md   # Security guidelines
 ├── install.sh        # Installation script for all IDEs
 ├── rm-backup.sh      # Cleanup script for backups
 ├── clear-up-linux.sh # Linux system cleanup script
@@ -164,20 +176,36 @@ cd /path/to/projects && ./git-cleanup-repos.sh
 
 ## 📚 Knowledge Base
 
+Following OpenAI harness engineering principles with structured knowledge organization:
+
+### Core Documents
+- **[AGENTS.md](AGENTS.md)** - Repository index (~100 lines) serving as map to knowledge base
+- **[knowledge/design-docs/core-beliefs.md](knowledge/design-docs/core-beliefs.md)** - Agent-centered development principles and "golden rules"
+- **[knowledge/DESIGN.md](knowledge/DESIGN.md)** - Design principles and architectural patterns
+- **[knowledge/SECURITY.md](knowledge/SECURITY.md)** - Security guidelines and requirements
+
 ### Pattern Libraries
-- **Agent Skills Patterns**: Common structures and templates for skill development
-- **Implementation Patterns**: Reusable coding patterns and architectural templates
-- **Coding Standards Compendium**: Comprehensive coding guidelines across languages
+- **[knowledge/design-docs/agent-skills-patterns.md](knowledge/design-docs/agent-skills-patterns.md)** - Common structures and templates for skill development
+- **[knowledge/design-docs/ai-development-patterns.md](knowledge/design-docs/ai-development-patterns.md)** - AI/ML development patterns and best practices
+- **[knowledge/design-docs/implementation-patterns.md](knowledge/design-docs/implementation-patterns.md)** - Reusable coding patterns and architectural templates
+- **[knowledge/design-docs/coding-standards-compendium.md](knowledge/design-docs/coding-standards-compendium.md)** - Comprehensive coding guidelines across languages
 
 ### Migration Guides
-- **ASP.NET Boilerplate to ABP.IO**: Complete migration guide with code examples
+- **[knowledge/references/aspnetboilerplate-to-abp-migration-guide.md](knowledge/references/aspnetboilerplate-to-abp-migration-guide.md)** - Complete migration guide with code examples
 - **Framework Upgrades**: Step-by-step upgrade instructions
 - **Best Practices**: Modern development patterns and conventions
 
 ### Framework Documentation
-- **ABP.IO Framework Guide**: Comprehensive ABP.IO framework documentation
+- **[knowledge/references/abp-io-framework-guide.md](knowledge/references/abp-io-framework-guide.md)** - Comprehensive ABP.IO framework documentation
 - **Architecture Patterns**: DDD patterns and clean architecture principles
 - **Development Tools**: CLI, Suite, and Studio usage guides
+
+### Planning & Quality
+- **[knowledge/PLANS.md](knowledge/PLANS.md)** - Planning templates and methodology
+- **[knowledge/PRODUCT_SENSE.md](knowledge/PRODUCT_SENSE.md)** - Product principles and decision framework
+- **[knowledge/QUALITY_SCORE.md](knowledge/QUALITY_SCORE.md)** - Quality metrics and scoring system
+- **[knowledge/RELIABILITY.md](knowledge/RELIABILITY.md)** - Reliability requirements and standards
+- **[knowledge/exec-plans/tech-debt-tracker.md](knowledge/exec-plans/tech-debt-tracker.md)** - Technical debt tracking
 
 ## 🎨 Featured Skills
 
@@ -198,6 +226,12 @@ cd /path/to/projects && ./git-cleanup-repos.sh
 - **postgresql-code-review**: PostgreSQL optimization strategies
 - **sql-optimization**: SQL performance tuning patterns
 - **ef-core**: Entity Framework Core best practices
+
+### Harness Engineering
+- **harness-repo-structure**: Create and maintain OpenAI-style repository structure
+- **harness-architecture**: Rigid layered architecture with forward-only dependencies
+- **harness-quality-invariants**: Quality invariants and golden rules for agent-generated code
+- **harness-no-yolo-probing**: Strict prohibition of unvalidated data access
 
 ## 🔧 Configuration
 
@@ -244,7 +278,8 @@ npm run plugin:validate  # For plugins (if applicable)
 
 ## 📖 Documentation
 
-- [Development Guide](AGENTS.md) - Detailed development workflow and project structure
+- [AGENTS.md](AGENTS.md) - Repository index and quick start guide (OpenAI harness engineering pattern)
+- [knowledge/design-docs/core-beliefs.md](knowledge/design-docs/core-beliefs.md) - Core principles and golden rules
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
 - [Code of Conduct](CODE_OF_CONDUCT.md) - Community standards and guidelines
 - [Security Policy](SECURITY.md) - Security policies and vulnerability reporting
@@ -262,10 +297,10 @@ This is a community-driven project built with ❤️ by developers, for develope
 
 ## 📊 Statistics
 
-- **Skills**: 61+ specialized skills across various domains
-- **Rules**: 96+ coding standards and best practices
+- **Skills**: 62+ specialized skills across various domains (including harness engineering)
+- **Rules**: 99+ coding standards and best practices (including architecture rules)
 - **Workflows**: 7+ agentic workflows for automation
-- **Knowledge**: 5+ comprehensive guides and migration documents
+- **Knowledge**: 18+ comprehensive guides and documents (restructured following OpenAI patterns)
 - **Frameworks**: ASP.NET Boilerplate, ABP.IO, Angular, Blazor, and more
 - **Languages**: C#, TypeScript, Python, PowerShell, and others
 - **IDE Support**: VS Code, Windsurf, Cursor, Devin, Claude, Gemini
@@ -281,6 +316,8 @@ This project is licensed under the [MIT License](LICENSE) - see the LICENSE file
 - [Agent Skills Specification](https://agentskills.io/specification) - Skills standard
 - [Agentic Workflows](https://github.github.com/gh-aw) - AI-powered repository automation
 - [MCP Protocol](https://modelcontextprotocol.io/) - Model Context Protocol for AI agents
+- [OpenAI Harness Engineering](https://openai.com/index/harness-engineering/) - Harness engineering principles
+- [Awesome Harness Engineering](https://github.com/ai-boost/awesome-harness-engineering) - Harness engineering resources
 
 ---
 

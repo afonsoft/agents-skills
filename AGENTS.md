@@ -1,19 +1,14 @@
 # AGENTS.md
 
-**agents-skills** - Community-driven collection of AI agent skills, rules, and knowledge following modern conventions.
+**agents-skills** - Community-driven collection of AI agent skills, rules, and knowledge following OpenAI harness engineering principles.
 
-## Project Overview
+## Quick Start
 
-Cross-tool compatibility for AI development agents with file-based protocols:
-- **VS Code** (GitHub Copilot)
-- **Windsurf** (Cascade) 
-- **Cursor**
-- **Devin CLI**
-- **Claude Code**
-- **Gemini CLI**
-- **OpenClaw**
+```bash
+./install.sh --all
+```
 
-## Repository Structure
+## Repository Map
 
 ```
 agents-skills/
@@ -21,76 +16,45 @@ agents-skills/
 ├── rules/            # Path-specific coding standards (.instructions.md)
 ├── agents/           # GitHub Copilot agent definitions
 ├── workflows/        # Agentic workflows for automation
-├── knowledge/        # Memory documents and guides
-├── .agents/          # Agent conventions and documentation
-├── install.sh        # Multi-IDE/CLI installation script
+├── knowledge/        # Knowledge base (structured docs)
+├── .agents/          # Agent conventions
+├── install.sh        # Installation script
 └── llms.txt          # LLM discoverability
 ```
 
-## Build Commands
+## Knowledge Base Structure
 
-```bash
-# Install skills across all IDEs/CLIs
-./install.sh --all
+See [knowledge/](knowledge/) for detailed documentation:
 
-# Install for specific tools  
-./install.sh --vscode --windsurf --claude
+- **knowledge/design-docs/** - Design patterns, core beliefs, architectural principles
+- **knowledge/exec-plans/** - Active/completed execution plans, tech debt tracker
+- **knowledge/generated/** - Auto-generated documentation
+- **knowledge/product-specs/** - Product specifications
+- **knowledge/references/** - Framework-specific guides
+- **knowledge/DESIGN.md** - Design principles and patterns
+- **knowledge/FRONTEND.md** - Frontend design patterns
+- **knowledge/PLANS.md** - Planning templates
+- **knowledge/PRODUCT_SENSE.md** - Product principles
+- **knowledge/QUALITY_SCORE.md** - Quality metrics and scoring
+- **knowledge/RELIABILITY.md** - Reliability requirements
+- **knowledge/SECURITY.md** - Security guidelines
 
-# Clean up backup files
-./rm-backup.sh
-```
+## Core Principles
 
-## Coding Conventions
+**Humans direct. Agents execute.**
 
-### Skills (SKILL.md)
-- YAML frontmatter: name, description, tools, triggers
-- Standard folder structure with bundled resources
-- Follows [Agent Skills specification](https://agentskills.io)
+Repository optimized for agent readability following OpenAI harness engineering:
+- AGENTS.md as index (~100 lines), not encyclopedia
+- Knowledge in structured docs/ with mechanical validation
+- Rigid architecture with forward-only dependencies
+- Continuous garbage collection for technical debt
 
-### Rules (.instructions.md)
-- Path-specific standards with YAML frontmatter
-- Cross-platform compatibility
-- IDE-specific configurations
+See [knowledge/design-docs/core-beliefs.md](knowledge/design-docs/core-beliefs.md) for complete principles.
 
-### Context Files
-- **AGENTS.md** - Cross-tool agent context (this file)
-- **CLAUDE.md** - Claude-specific persistent instructions
-- **GEMINI.md** - Gemini-specific context
+## Supported Platforms
 
-## Agent Behavior
+VS Code (GitHub Copilot), Windsurf (Cascade), Cursor, Devin CLI, Claude Code, Gemini CLI
 
-### What Agents Should Do
-- Read and follow skills/rules for specialized tasks
-- Use bundled resources when executing skills
-- Respect .aiignore patterns for file exclusion
-- Apply context from nearest AGENTS.md in directory tree
+## Standards
 
-### What Agents Should Not Touch
-- Generated files and backup artifacts
-- Configuration files with sensitive data
-- Build outputs and dependencies
-- Files matching .aiignore patterns
-
-## Standards Compliance
-
-Following [Agentic AI Foundation](https://aaif.org) conventions:
-- **SKILL.md** format for modular expertise
-- **llms.txt** for LLM discoverability
-- **Model Context Protocol (MCP)** for tool integration
-- File-based protocols over proprietary solutions
-
-## Contributing
-
-1. Fork repository
-2. Create feature branch from `staged`  
-3. Add skill/rule/knowledge following conventions
-4. Submit PR to `staged` branch
-
-## Resources
-
-- [Agent Skills Specification](https://agentskills.io)
-- [AI Conventions](https://github.com/GuilhermeAlbert/awesome-ai-conventions)  
-- [Model Context Protocol](https://modelcontextprotocol.io)
-- [Agentic AI Foundation](https://aaif.org)
-
-MIT License - see LICENSE file
+[Agent Skills Specification](https://agentskills.io) | [Agentic AI Foundation](https://aaif.org) | [Model Context Protocol](https://modelcontextprotocol.io)
