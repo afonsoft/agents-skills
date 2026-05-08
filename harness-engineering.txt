@@ -1,0 +1,225 @@
+https://openai.com/pt-BR/index/harness-engineering/
+
+Nos últimos cinco meses, nossa equipe realizou um experimento: construir e lançar uma versão beta interna de um produto de software com 0 linhas de código escritas manualmente.
+
+O produto possui usuários internos que utilizam o produto diariamente, além de testadores alfa externos. Ele é enviado, implantado, apresenta defeitos e é consertado. O diferencial é que cada linha de código — lógica da aplicação, testes, configuração de CI, documentação, observabilidade e ferramentas internas — foi escrita pela Codex. Estimamos que construímos isso em cerca de 1/10 do tempo que levaríamos para escrever o código manualmente.
+
+Os humanos dirigem. Os agentes executam.
+
+Escolhemos essa restrição intencionalmente para que pudéssemos construir o necessário para aumentar a velocidade de engenharia em várias ordens de magnitude. Tínhamos semanas para enviar o que acabou sendo um milhão de linhas de código. Para isso, precisávamos entender o que muda quando a principal função de uma equipe de engenharia de software deixa de ser escrever código e passa a ser projetar ambientes, especificar intenções e construir ciclos de feedback que permitam aos agentes do Codex realizar um trabalho confiável.
+
+Este post aborda o que aprendemos ao construir um produto totalmente novo com uma equipe de agentes — o que deu errado, o que se agravou e como maximizar nosso único recurso verdadeiramente escasso: tempo e atenção humanos.
+
+Começamos com um repositório git vazio.
+O primeiro commit em um repositório vazio foi realizado no final de agosto de 2025.
+
+A estrutura inicial — estrutura do repositório, configuração de CI, regras de formatação, configuração do gerenciador de pacotes e estrutura do aplicativo — foi gerada pelo Codex CLI usando o GPT‑5, guiada por um pequeno conjunto de modelos existentes. Até mesmo o arquivo AGENTS.md inicial, que orienta os agentes sobre como trabalhar no repositório, foi escrito pelo próprio Codex.
+
+Não havia nenhum código pré-existente escrito por humanos para ancorar o sistema. Desde o início, o repositório foi moldado pelo agente.
+
+Cinco meses depois, o repositório contém cerca de um milhão de linhas de código, abrangendo lógica de aplicação, infraestrutura, ferramentas, documentação e utilitários internos para desenvolvedores. Ao longo desse período, aproximadamente 1.500 solicitações de pull request foram abertas e mescladas, com uma pequena equipe de apenas três engenheiros à frente do Codex. Isso se traduz em uma média de 3,5 PRs por engenheiro por dia e, surpreendentemente, essa produtividade aumentou à medida que a equipe cresceu para sete engenheiros. É importante ressaltar que esse resultado não foi obtido apenas por produzir: o produto foi utilizado internamente por centenas de usuários, incluindo usuários avançados que o utilizam diariamente.
+
+Ao longo de todo o processo de desenvolvimento, os humanos nunca contribuíram diretamente com qualquer código. Isso se tornou uma filosofia central para a equipe: nada de código escrito manualmente.
+
+Redefinindo o papel do engenheiro
+A falta de programação humana direta introduziu um tipo diferente de trabalho de engenharia, focado em sistemas, estruturas e aproveitamento de recursos.
+
+O progresso inicial foi mais lento do que esperávamos, não porque o Codex fosse incapaz, mas porque o ambiente estava pouco especificado. O agente não possuía as ferramentas, abstrações e estrutura interna necessárias para progredir em direção a objetivos de alto nível. A principal função da nossa equipe de engenharia passou a ser permitir que os agentes realizassem trabalhos úteis.
+
+Na prática, isso significava trabalhar em profundidade: decompondo objetivos maiores em blocos de construção menores (design, código, revisão, teste, etc.), solicitando ao agente que construísse esses blocos e usando-os para desbloquear tarefas mais complexas. Quando algo dava errado, a solução quase nunca era "tentar com mais afinco". Como a única maneira de progredir era fazer com que o Codex realizasse o trabalho, os engenheiros humanos sempre assumiam a tarefa e perguntavam: "qual funcionalidade está faltando e como podemos torná-la legível e aplicável para o agente?"
+
+Os humanos interagem com o sistema quase inteiramente por meio de comandos: um engenheiro descreve uma tarefa, executa o agente e permite que ele abra uma solicitação de pull request. Para levar uma solicitação de pull request (PR) à conclusão, instruímos o Codex a revisar suas próprias alterações localmente, solicitar revisões adicionais específicas de agentes, tanto localmente quanto na nuvem, responder a qualquer feedback fornecido por humanos ou agentes e iterar em um loop até que todos os agentes revisores estejam satisfeitos (efetivamente, trata-se de um Loop de Ralph Wiggum⁠(abre em uma nova janela)). O Codex utiliza diretamente nossas ferramentas de desenvolvimento padrão (gh, scripts locais e habilidades incorporadas ao repositório) para coletar contexto sem que os usuários precisem copiar e colar comandos na linha de comando.
+
+Humanos podem revisar solicitações de pull request, mas não são obrigados a fazê-lo. Com o tempo, direcionamos quase todos os esforços de revisão para serem realizados diretamente entre agentes.
+
+Aumentar a legibilidade do aplicativo
+Com o aumento da produção de código, nosso gargalo passou a ser a capacidade humana de controle de qualidade. Como a principal limitação tem sido o tempo e a atenção humana, trabalhamos para adicionar mais recursos ao agente, tornando elementos como a interface do usuário do aplicativo, os registros e as métricas do aplicativo diretamente legíveis para o Codex.
+
+Por exemplo, fizemos com que o aplicativo fosse inicializável por árvore de trabalho do Git, para que o Codex pudesse ser iniciado e executar uma instância por alteração. Também integramos o protocolo Chrome DevTools ao ambiente de execução do agente e criamos funcionalidades para trabalhar com snapshots do DOM, capturas de tela e navegação. Isso permitiu que a Codex reproduzisse erros, validasse correções e analisasse o comportamento da interface do usuário diretamente.
+
+Diagrama intitulado "Codex controla o aplicativo com o Chrome DevTools MCP para validar seu funcionamento". O Codex seleciona um alvo, captura instantâneos do estado antes e depois de acionar um caminho de interface do usuário, observa eventos de tempo de execução por meio do Chrome DevTools, aplica correções, reinicia e repete a validação até que o aplicativo esteja limpo.
+Fizemos o mesmo para ferramentas de observabilidade. Registros, métricas e rastreamentos são expostos ao Codex por meio de uma pilha de observabilidade local que é efêmera para qualquer árvore de trabalho específica. O Codex funciona em uma versão totalmente isolada desse aplicativo — incluindo seus registros e métricas, que são apagados assim que a tarefa é concluída. Os agentes podem consultar registros com LogQL e métricas com PromQL. Com esse contexto disponível, instruções como "garantir que a inicialização do serviço seja concluída em menos de 800 ms" ou "nenhum trecho nessas quatro jornadas críticas do usuário exceda dois segundos" tornam-se viáveis.
+
+Diagrama intitulado "Fornecendo ao Codex uma pilha de observabilidade completa em ambiente de desenvolvimento local". Um aplicativo envia logs, métricas e rastreamentos para o Vector, que distribui os dados para uma pilha de observabilidade contendo logs, métricas e rastreamentos do Victoria, cada um consultado por meio das APIs LogQL, PromQL ou TraceQL. O Codex usa esses sinais para consultar, correlacionar e analisar, implementando correções no código-fonte, reiniciando o aplicativo, executando novamente as cargas de trabalho, testando os fluxos de interação do usuário e repetindo o processo em um ciclo de feedback.
+Regularmente vemos execuções únicas do Codex trabalhando em uma única tarefa por mais de seis horas (muitas vezes enquanto os humanos estão dormindo).
+
+Fizemos do conhecimento do repositório o sistema de registro.
+A gestão do contexto é um dos maiores desafios para tornar os agentes eficazes em tarefas complexas e de grande escala. Uma das primeiras lições que aprendemos foi simples: dê ao Codex um mapa, não um manual de instruções de 1.000 páginas.
+
+Nós tentamos o “one big AGENTS.md⁠(abre em uma nova janela)” , uma possível abordagem. Ela falhou de maneiras previsíveis:
+
+Contexto é um recurso escasso. Um arquivo de instruções gigantesco acaba por ocupar muito espaço, ofuscando a tarefa, o código e a documentação relevante — fazendo com que o agente ignore restrições importantes ou comece a otimizar para as restrições erradas.
+O excesso de orientação se torna uma não orientação. Quando tudo é “importante”, nada é. Os agentes acabam fazendo reconhecimento de padrões localmente, em vez de navegar intencionalmente.
+Apodrece instantaneamente. Um manual monolítico se transforma em um cemitério de regras obsoletas. Os agentes não conseguem discernir o que ainda é verdade, os humanos param de dar manutenção e o arquivo silenciosamente se torna uma atração perigosa.
+É difícil de verificar. Um único aglomerado não se presta a verificações mecânicas (cobertura, frescor, propriedade, ligações cruzadas), portanto a deriva é inevitável.
+Assim, em vez de tratarmos o AGENTS.md como uma enciclopédia, nós o tratamos como um índice.
+
+A base de conhecimento do repositório reside em um diretório estruturado docs/ tratado como o sistema de registro. Um breve arquivo AGENTS.md (aproximadamente 100 linhas) é inserido no contexto e serve principalmente como um mapa, com indicações para fontes de informação mais aprofundadas em outros locais.
+
+Texto simples
+
+1
+AGENTS.md
+2
+ARCHITECTURE.md
+3
+docs/
+4
+├── design-docs/
+5
+│   ├── index.md
+6
+│   ├── core-beliefs.md
+7
+│   └── ...
+8
+├── exec-plans/
+9
+│   ├── active/
+10
+│   ├── completed/
+11
+│   └── tech-debt-tracker.md
+12
+├── generated/
+13
+│   └── db-schema.md
+14
+├── product-specs/
+15
+│   ├── index.md
+16
+│   ├── new-user-onboarding.md
+17
+│   └── ...
+18
+├── references/
+19
+│   ├── design-system-reference-llms.txt
+20
+│   ├── nixpacks-llms.txt
+21
+│   ├── uv-llms.txt
+22
+│   └── ...
+23
+├── DESIGN.md
+24
+├── FRONTEND.md
+25
+├── PLANS.md
+26
+├── PRODUCT_SENSE.md
+27
+├── QUALITY_SCORE.md
+28
+├── RELIABILITY.md
+29
+└── SECURITY.md
+Layout do repositório de conhecimento.
+
+A documentação do projeto é catalogada e indexada, incluindo o status de verificação e um conjunto de crenças fundamentais que definem os princípios operacionais centrados no agente. A documentação de arquitetura⁠(abre em uma nova janela) fornece um mapa de alto nível dos domínios e da estrutura de pacotes. Um documento de qualidade avalia cada domínio de produto e camada arquitetônica, rastreando as lacunas ao longo do tempo.
+
+Os projetos são tratados como artefatos de primeira classe. Planos efêmeros e leves são usados para pequenas alterações, enquanto trabalhos complexos são registrados em planos de execução⁠(abre em uma nova janela) com logs de progresso e decisões que são armazenados no repositório. Os planos ativos, os planos concluídos e a dívida técnica conhecida são todos versionados e localizados no mesmo local, permitindo que os agentes operem sem depender de contexto externo.
+
+Isso possibilita uma divulgação progressiva: os agentes começam com um ponto de entrada pequeno e estável e são instruídos sobre onde procurar em seguida, em vez de serem sobrecarregados inicialmente.
+
+Nós aplicamos isso de forma automática. Linters dedicados e tarefas de CI validam se a base de conhecimento está atualizada, interligada e estruturada corretamente. Um agente recorrente de "manutenção da documentação" verifica se há documentação desatualizada ou obsoleta que não reflita o comportamento real do código e abre solicitações de pull request para correção.
+
+A legibilidade do agente é o objetivo.
+À medida que a base de código evoluía, a estrutura do Codex para decisões de design também precisava evoluir.
+
+Como o repositório é inteiramente gerado pelo agente, ele é otimizado primeiramente para a legibilidade do Codex. Da mesma forma que as equipes buscam melhorar a navegabilidade de seu código para novos engenheiros contratados, o objetivo de nossos engenheiros era possibilitar que um agente raciocinasse sobre todo o domínio de negócios diretamente do próprio repositório.
+
+Do ponto de vista do agente, qualquer coisa que ele não consiga acessar no contexto enquanto estiver em execução, efetivamente não existe. O conhecimento que reside em documentos do Google, em conversas online ou na mente das pessoas não é acessível ao sistema. Artefatos versionados e locais do repositório (e.g., código, markdown, schema, planos executáveis) são tudo o que ele consegue ver.
+
+Diagrama intitulado "Os limites do conhecimento do agente: O que o Codex não consegue ver não existe". O conhecimento do Codex é representado por uma bolha delimitada. Abaixo, seguem exemplos de conhecimento invisível — documentos do Google, mensagens do Slack e conhecimento humano tácito. As setas indicam que, para que essa informação fique visível para o Codex, ela precisa ser codificada no código-fonte em formato Markdown.
+Aprendemos que, com o tempo, precisávamos adicionar cada vez mais contexto ao repositório. Aquela discussão no Slack que alinhou a equipe em torno de um padrão arquitetônico? Se não for detectável pelo agente, é ilegível da mesma forma que seria desconhecido para um novo funcionário que ingressasse na empresa três meses depois.
+
+Fornecer mais contexto ao Codex significa organizar e expor as informações corretas para que o agente possa raciocinar sobre elas, em vez de sobrecarregá-lo com instruções ad hoc. Da mesma forma que você integraria um novo membro da equipe com base nos princípios do produto, normas de engenharia e cultura da equipe (incluindo preferências de emojis), fornecer essas informações ao agente leva a um resultado mais alinhado.
+
+Essa abordagem esclareceu muitas das vantagens e desvantagens. Priorizamos dependências e abstrações que pudessem ser totalmente internalizadas e analisadas dentro do repositório. Tecnologias frequentemente descritas como "chatas" tendem a ser mais fáceis de modelar para os agentes devido à sua capacidade de composição, estabilidade da API e representatividade no conjunto de treinamento. Em alguns casos, era mais barato fazer com que o agente reimplementasse subconjuntos de funcionalidades do que contornar o comportamento opaco das bibliotecas públicas. Por exemplo, em vez de usar um pacote genérico no estilo p-limit , implementamos nossa própria função auxiliar de mapeamento com concorrência: ela está totalmente integrada à nossa instrumentação OpenTelemetry, possui 100% de cobertura de testes e se comporta exatamente da maneira que nosso ambiente de execução espera.
+
+Ao tornar mais partes do sistema em um formato que o agente possa inspecionar, validar e modificar diretamente, aumenta-se a influência — não apenas para o Codex, mas também para outros agentes (por exemplo, Aardvark) que também estão trabalhando na base de código.
+
+Impondo arquitetura e bom gosto
+A documentação por si só não mantém coerente uma base de código totalmente gerada por agentes. Ao impor invariantes, em vez de microgerenciar implementações, permitimos que os agentes sejam lançados rapidamente sem comprometer a base. Por exemplo, exigimos que o Codex analise os formatos de dados no limite⁠(abre em uma nova janela), mas não somos prescritivos sobre como isso acontece (o modelo parece gostar do Zod, mas não especificamos essa biblioteca em particular).
+
+Os agentes são mais eficazes em ambientes com limites rígidos e estrutura previsível⁠(abre em uma nova janela), por isso construímos a aplicação em torno de um modelo arquitetônico rígido. Cada domínio de negócio é dividido em um conjunto fixo de camadas, com direções de dependência rigorosamente validadas e um conjunto limitado de arestas permitidas. Essas restrições são aplicadas mecanicamente por meio de linters personalizados (gerados por Codex, é claro!) e testes estruturais.
+
+O diagrama abaixo mostra a regra: dentro de cada domínio de negócio (por exemplo, Configurações do aplicativo), o código só pode depender “para a frente” por meio de um conjunto fixo de camadas (Types → Config → Repo → Service → Runtime → UI). Questões transversais (autenticação, conectores, telemetria, sinalizadores de recursos) entram por meio de uma única interface explícita: Provedores. Qualquer outra coisa é proibida e aplicada mecanicamente.
+
+Diagrama intitulado “Arquitetura de domínio em camadas com limites transversais explícitos”. Dentro do domínio da lógica de negócios, encontram-se os módulos: Tipos → Configuração → Repositório e Provedores → Serviço → Tempo de Execução → Interface do Usuário, com Conexão do Aplicativo + Interface do Usuário na parte inferior. Um módulo Utils fica fora do limite e é inserido em Providers.
+Este é o tipo de projeto arquitetônico que normalmente se adia até ter centenas de engenheiros. Com agentes de codificação, isso é um pré-requisito inicial: as restrições são o que permite velocidade sem deterioração ou desvio arquitetônico.
+
+Na prática, aplicamos essas regras com linters personalizados e testes estruturais, além de um pequeno conjunto de "invariantes de gosto". Por exemplo, impomos estaticamente o registro estruturado de logs, convenções de nomenclatura para esquemas e tipos, limites de tamanho de arquivo e requisitos de confiabilidade específicos da plataforma com verificações de código personalizadas. Como os lints são personalizados, escrevemos as mensagens de erro para inserir instruções de correção no contexto do agente.
+
+Em um fluxo de trabalho que prioriza o ser humano, essas regras podem parecer pedantes ou restritivas. Com os agentes, eles se tornam multiplicadores: uma vez codificados, aplicam-se em todos os lugares ao mesmo tempo.
+
+Ao mesmo tempo, deixamos claro onde as restrições são importantes e onde não são. Isso se assemelha a liderar uma grande organização de plataforma de engenharia: impor limites centralmente, permitir autonomia localmente. Você se preocupa profundamente com limites, correção e reprodutibilidade. Dentro desses limites, você permite que as equipes — ou agentes — tenham uma liberdade significativa na forma como as soluções são expressas.
+
+O código resultante nem sempre corresponde às preferências estilísticas humanas, e isso não tem problema. Desde que a saída seja correta, de fácil manutenção e legível para futuras execuções do agente, ela atende aos requisitos.
+
+O paladar humano é continuamente reintroduzido no sistema. Comentários de revisão, solicitações de pull request para refatoração e bugs visíveis ao usuário são registrados como atualizações de documentação ou codificados diretamente nas ferramentas. Quando a documentação é insuficiente, incorporamos a regra ao código.
+
+A taxa de processamento altera a filosofia de mesclagem
+À medida que a taxa de processamento do Codex aumentava, muitas normas convencionais de engenharia se tornaram contraproducentes.
+
+O repositório opera com o mínimo de bloqueios em processos de mesclagem. Pull requests são de curta duração. Instabilidades de teste geralmente são tratadas com execuções de acompanhamento, em vez de bloquear o progresso indefinidamente. Em um sistema em que a taxa de processamento do agente excede em muito a atenção humana, as correções são baratas, e esperar é caro.
+
+Isso seria irresponsável em um ambiente de baixa produtividade. Nesse caso, muitas vezes é a troca certa.
+
+O que significa, na prática, “gerado por agentes”?
+Quando dizemos que a base de código é gerada por agentes do Codex, queremos dizer tudo o que está presente na base de código.
+
+Os agentes produzem:
+
+Código e testes do produto
+Ferramentas de configuração e lançamento de CI
+Ferramentas internas para desenvolvedores
+Histórico de documentação e projeto
+Arnês de avaliação
+Analise os comentários e respostas.
+Scripts que gerenciam o próprio repositório
+Arquivos de definição do painel de controle de produção
+Os humanos permanecem sempre no processo, mas trabalham em um nível de abstração diferente do que costumávamos trabalhar. Priorizamos o trabalho, transformamos o feedback do usuário em critérios de aceitação e validamos os resultados. Quando o agente encontra dificuldades, interpretamos isso como um sinal: identificamos o que está faltando — ferramentas, diretrizes, documentação — e enviamos a informação de volta ao repositório, sempre fazendo com que o próprio Codex escreva a correção.
+
+Os agentes utilizam diretamente nossas ferramentas de desenvolvimento padrão. Eles coletam feedback das avaliações, respondem diretamente no texto, enviam atualizações e, frequentemente, compactam e mesclam suas próprias solicitações de pull request.
+
+Níveis crescentes de autonomia
+Com a incorporação de mais etapas do ciclo de desenvolvimento diretamente no sistema — testes, validação, revisão, tratamento de feedback e recuperação — o repositório ultrapassou recentemente um limite significativo, permitindo que o Codex implemente um novo recurso de ponta a ponta.
+
+Com um único comando, o agente agora pode:
+
+Validar o estado atual da base de código.
+Reproduzir um bug relatado.
+Gravar um vídeo demonstrando a falha.
+Implementar uma correção
+Validar a correção executando o aplicativo.
+Gravar um segundo vídeo demonstrando a resolução.
+Abrir uma solicitação de pull request
+Responder ao feedback de agentes e humanos
+Detectar e corrigir falhas de compilação
+Recorrer a um atendente humano somente quando for necessário tomar uma decisão.
+Consolidar a alteração
+Esse comportamento depende muito da estrutura e das ferramentas específicas desse repositório e não deve ser considerado generalizável sem investimentos semelhantes — pelo menos, não ainda.
+
+Entropia e coleta de lixo
+A autonomia total do agente também introduz novos problemas. O Codex replica padrões que já existem no repositório — mesmo os desiguais ou subótimos. Com o tempo, isso inevitavelmente leva ao desvio.
+
+Inicialmente, os humanos resolviam isso manualmente. Nossa equipe costumava passar todas as sextas-feiras (20% da semana) limpando "resíduos de IA". Como era de se esperar, isso não se mostrou escalável.
+
+Em vez disso, começamos a codificar o que chamamos de "princípios de ouro" diretamente no repositório e criamos um processo de limpeza recorrente. Esses princípios são regras mecânicas e opinativas que mantêm a base de código legível e consistente para futuras execuções do agente. Por exemplo: (1) preferimos pacotes de utilitários compartilhados em vez de auxiliares criados manualmente para manter os invariantes centralizados e (2) não sondamos dados no estilo "YOLO" - validamos limites ou confiamos em SDKs tipados para que o agente não possa construir acidentalmente em formas adivinhadas. Regularmente, temos um conjunto de tarefas em segundo plano no Codex que verificam desvios, atualizam as classificações de qualidade e abrem solicitações de pull request para refatoração específica. A maioria delas pode ser revisada em menos de um minuto e mesclada automaticamente.
+
+Isso funciona como a coleta de lixo. A dívida técnica é como um empréstimo com juros altos: quase sempre é melhor pagá-la continuamente em pequenas parcelas do que deixá-la acumular e ter que lidar com ela em rajadas dolorosas. O gosto humano é capturado uma única vez e, em seguida, aplicado continuamente em cada linha de código. Isso também nos permite identificar e resolver padrões problemáticos diariamente, em vez de deixá-los se espalhar pela base de código por dias ou semanas.
+
+O que ainda estamos aprendendo
+Até o momento, essa estratégia tem funcionado bem, desde o lançamento interno até a sua adoção na OpenAI. Criar um produto real para usuários reais ajudou a ancorar nossos investimentos na realidade e nos guiou rumo à manutenção a longo prazo.
+
+O que ainda não sabemos é como a coerência arquitetônica evolui ao longo dos anos em um sistema totalmente gerado por agentes. Ainda estamos aprendendo onde o julgamento humano agrega mais valor e como codificar esse julgamento para que ele se multiplique. Também não sabemos como esse sistema evoluirá à medida que os modelos se tornarem mais capazes com o tempo.
+
+O que ficou claro é o seguinte: desenvolver software ainda exige disciplina, mas essa disciplina se manifesta mais na estrutura de suporte do que no código em si. As ferramentas, abstrações e ciclos de feedback que mantêm a coesão do código são cada vez mais importantes.
+
+Nossos maiores desafios agora se concentram em projetar ambientes, circuitos de feedback e sistemas de controle que ajudem os agentes a atingir nosso objetivo: construir e manter softwares complexos e confiáveis em grande escala.
+
+À medida que agentes como o Codex assumem partes maiores do ciclo de vida do software, essas questões se tornarão ainda mais importantes. Esperamos que compartilhar algumas lições iniciais ajude você a refletir sobre onde investir seus esforços para que você possa simplesmente construir coisas.
