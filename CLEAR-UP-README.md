@@ -1,145 +1,261 @@
-# clear-up.sh - Script de Limpeza de Disco para Ubuntu/Linux
+# clear-up-linux.sh - Script de Limpeza de Disco para Ubuntu/Linux
 
-## 📋 Descrição
+## Descrição
 
-Script completo para limpeza de disco em sistemas Ubuntu/Linux que remove logs, arquivos temporários, cache e libera espaço em disco de forma segura e eficiente.
+Script completo para limpeza de disco em sistemas Ubuntu/Linux que remove logs, arquivos temporários, cache de desenvolvimento, pacotes órfãos, core dumps e muito mais — liberando espaço em disco de forma segura e eficiente.
 
-## 🚀 Recursos
+## Recursos
 
-### 🗑️ **Limpeza Abrangente**
-- **Logs do sistema**: `*.log`, `log*`, logs rotacionados
-- **Cache de pacotes**: APT cache, pacotes não utilizados
-- **Arquivos temporários**: `/tmp`, `/var/tmp`, `*.tmp`, `*.temp`
-- **Cache de aplicativos**: Firefox, Chrome, thumbnails
+### Limpeza Abrangente (20+ categorias)
+- **Logs do sistema**: `*.log`, `log*`, logs rotacionados, logs compactados antigos
+- **Cache de pacotes**: APT cache, pacotes não utilizados, listas do APT
+- **Arquivos temporários**: `/tmp`, `/var/tmp`, `*.tmp`, `*.temp`, arquivos de backup de editores
+- **Cache de aplicativos**: Firefox, Chrome, thumbnails, lixeira dos usuários
 - **Kernels antigos**: Remoção segura de kernels não utilizados
-- **Docker**: Containers, imagens, volumes, redes e build cache não utilizados
+- **Docker**: Containers, imagens, volumes, redes, build cache e system prune
 - **Snap**: Versões antigas de snap packages
-- **aaPanel**: Logs, backups, lixeira, cache e binary logs
+- **aaPanel**: Logs, backups, lixeira, cache web, sessões PHP, binary logs MySQL, logs PostgreSQL/Nginx/PHP, diretórios de teste, Redis src, arquivos de instalação
+- **Journal do systemd**: Logs do sistema limitados (últimas 24 horas, máximo 100MB)
+- **Caches de desenvolvimento**: pip, npm, yarn, pnpm, Cargo (Rust), Go, Gradle, Maven, Composer (PHP), NuGet (.NET), Gem (Ruby), `__pycache__`, virtualenvs
+- **Flatpak**: Runtimes e refs não utilizados
+- **Core dumps e crash reports**: systemd coredumps, `/var/crash`, Apport, core files soltos
+- **Pacotes órfãos**: Configurações residuais (dpkg `rc`), pacotes órfãos (deborphan)
+- **Locales não utilizados**: localepurge, cache de fontes, man pages de idiomas
+- **Swap e memória**: Limpeza de PageCache/dentries/inodes, reset seguro de swap
+- **Filas de email**: Postfix, Exim, logs de mail
+- **Arquivos grandes**: Identificação de ISOs, IMGs, VMDKs, logs > 500MB
+- **Arquivos antigos do sistema**: `.dpkg-old`, `.dpkg-new`, `.ucf-old`, `.bak`, backups em `/var/backups` (> 30 dias)
+- **Caches do sistema**: ldconfig, APT lists, PackageKit, cache de ícones
 - **BleachBit**: Limpeza profunda com instalação automática
-- **Journal do systemd**: Logs do sistema limitados (últimas 24 horas)
 
-### 🛡️ **Segurança**
+### Segurança
 - **Modo simulação**: `--dry-run` para preview seguro
-- **Modo interativo**: Confirmação antes de remoções críticas
+- **Modo interativo**: Confirmação antes de remoções críticas (swap, kernels, backups)
 - **Verificação de root**: Exige privilégios administrativos
-- **Backup automático**: Logs importantes são limpos, não removidos
+- **Backup automático**: Logs importantes são limpos (conteúdo truncado), não removidos
+- **Verificação de RAM**: Swap só é limpo se houver RAM livre suficiente
 
-### 📊 **Recursos Avançados**
+### Recursos Avançados
 - **Relatório detalhado**: Espaço liberado e operações realizadas
 - **Modo verbose**: Feedback completo do processo
 - **Contador de arquivos**: Estatísticas precisas de limpeza
 - **Cálculo de tamanho**: Informação de espaço antes/depois
+- **Detecção automática**: Verifica se cada ferramenta/serviço está instalado antes de agir
 
-## 📦 Instalação
+## Instalação
 
 ```bash
 # Baixar o script
-wget https://raw.githubusercontent.com/afonsoft/agents-skills/main/clear-up.sh
+wget https://raw.githubusercontent.com/afonsoft/agents-skills/main/clear-up-linux.sh
 
 # Tornar executável
-chmod +x clear-up.sh
+chmod +x clear-up-linux.sh
 
 # Mover para diretório do sistema (opcional)
-sudo mv clear-up.sh /usr/local/bin/clear-up
+sudo mv clear-up-linux.sh /usr/local/bin/clear-up-linux
 ```
 
-## 🎯 Uso
+## Uso
 
 ### Básico
 ```bash
 # Execução padrão (requer sudo)
-sudo ./clear-up.sh
+sudo ./clear-up-linux.sh
 
 # Com ajuda
-sudo ./clear-up.sh --help
+sudo ./clear-up-linux.sh --help
 ```
 
 ### Modo Seguro
 ```bash
 # Simulação (não remove nada)
-sudo ./clear-up.sh --dry-run
+sudo ./clear-up-linux.sh --dry-run
 
 # Simulação detalhada
-sudo ./clear-up.sh --dry-run --verbose
+sudo ./clear-up-linux.sh --dry-run --verbose
 ```
 
 ### Modo Avançado
 ```bash
 # Execução detalhada
-sudo ./clear-up.sh --verbose
+sudo ./clear-up-linux.sh --verbose
 
-# Não-interativo (para automação)
-sudo ./clear-up.sh --force
+# Não-interativo (para automação/cron)
+sudo ./clear-up-linux.sh --force
+
+# Com BleachBit (instala automaticamente se necessário)
+sudo ./clear-up-linux.sh --bleachbit
+
+# Combinação completa
+sudo ./clear-up-linux.sh --force --verbose --bleachbit
 ```
 
-## 🗂️ Estrutura de Limpeza
+## Opções de Linha de Comando
 
-### 1. **Logs do Sistema**
+| Opção | Abreviação | Descrição |
+|-------|------------|-----------|
+| `--help` | `-h` | Exibe mensagem de ajuda |
+| `--dry-run` | `-d` | Simula a limpeza sem remover arquivos |
+| `--verbose` | `-v` | Modo detalhado com feedback completo |
+| `--force` | `-f` | Modo não-interativo (pula confirmações) |
+| `--bleachbit` | `-b` | Instala e executa BleachBit para limpeza profunda |
+
+## Estrutura de Limpeza
+
+### 1. Logs do Sistema
 ```
 /var/log/
 ├── *.log              # Logs de aplicativos
 ├── log*               # Logs com prefixo 'log'
 ├── *.log.*            # Logs rotacionados
+├── *.gz, *.xz, *.bz2 # Logs compactados antigos (mantém 20 mais recentes)
 ├── syslog*            # Logs do sistema
 ├── auth.log*          # Logs de autenticação
 ├── kern.log*          # Logs do kernel
 ├── dpkg.log*          # Logs do dpkg
-└── apt.log*           # Logs do apt
+├── apt.log*           # Logs do apt
+├── mail.log*          # Logs de email
+└── mail.err*          # Erros de email
 ```
 
-### 2. **Cache e Temporários**
+### 2. Cache e Temporários
 ```
 /tmp/                  # Temporários do sistema
 /var/tmp/              # Temporários persistentes
 /var/cache/apt/        # Cache do APT
-/home/*/.cache/        # Cache de aplicativos
+/var/lib/apt/lists/    # Listas de pacotes do APT
+/var/cache/PackageKit/ # Cache do PackageKit
+/home/*/.cache/        # Cache de aplicativos dos usuários
 /home/*/.thumbnails/   # Cache de imagens
 ```
 
-### 3. **Cache de Aplicativos**
+### 3. Cache de Aplicativos
 ```
 /home/*/.cache/
 ├── google-chrome/     # Cache do Chrome
 ├── mozilla/firefox/   # Cache do Firefox
+├── icon-cache/        # Cache de ícones
 └── [outros apps]/     # Cache de outros aplicativos
 ```
 
-### 4. **Docker (se instalado)**
+### 4. Caches de Desenvolvimento
+```
+Python:
+├── pip cache          # pip cache purge
+├── __pycache__/       # Bytecode compilado
+├── *.pyc              # Arquivos compilados
+├── virtualenvs/       # Cache de virtualenvs
+├── pipenv/            # Cache do Pipenv
+└── pypoetry/          # Cache do Poetry
+
+Node.js:
+├── npm cache          # npm cache clean --force
+├── yarn cache         # yarn cache clean
+└── pnpm store         # pnpm store prune
+
+Rust:
+├── ~/.cargo/registry/cache/      # Cache de pacotes
+├── ~/.cargo/registry/src/        # Código fonte de pacotes
+└── ~/.cargo/git/checkouts/       # Checkouts Git
+
+Go:
+├── go cache           # go clean -cache
+└── go mod cache       # go clean -modcache
+
+Java:
+├── ~/.gradle/caches/  # Cache do Gradle
+└── ~/.m2/repository/  # Cache do Maven
+
+Outros:
+├── composer cache     # Composer (PHP)
+├── nuget cache        # NuGet (.NET)
+└── gem cache          # Gem (Ruby)
+```
+
+### 5. Docker (se instalado)
 ```
 docker/
 ├── containers/        # Containers parados
-├── images/           # Imensões não utilizadas
-├── volumes/          # Volumes não utilizados
-├── networks/         # Redes não utilizadas
-└── builder/          # Build cache e histórico
+├── images/            # Imagens não utilizadas
+├── volumes/           # Volumes não utilizados
+├── networks/          # Redes não utilizadas
+├── builder/           # Build cache e histórico
+└── system prune       # Limpeza completa do sistema
 ```
 
-### 5. **aaPanel (se instalado)**
+### 6. aaPanel (se instalado)
 ```
 /www/
-├── server/panel/logs/        # Logs do painel
-├── wwwlogs/                  # Logs de sites
-├── server/pgsql/data/          # 🆕 Logs do PostgreSQL (data)
-├── server/pgsql/logs/          # 🆕 Logs do PostgreSQL (logs)
-├── server/nginx/logs/        # Logs do Nginx
-├── server/panel/install/     # Arquivos de instalação
-├── backup/                   # Backups antigos
-├── server/mysql/             # Binary logs e testes
-├── server/pgsql/              # Testes PostgreSQL
-├── server/redis/             # 🆕 src do Redis
-├── server/panel/recycle_bin/ # Lixeira
-├── server/*/cache/           # Cache web/PHP (incluindo nginx/src)
-├── tmp/                      # Sessões PHP (sess_*)
-├── var/lib/php*/sessions/    # Sessões PHP
-├── var/lib/mysql/mysql-test/  # Testes MySQL
-└── var/lib/pgsql/test/        # Testes PostgreSQL
+├── server/panel/logs/           # Logs do painel (error, request, access, panel)
+├── wwwlogs/                     # Logs de sites
+├── server/pgsql/data/           # Logs do PostgreSQL (data)
+├── server/pgsql/logs/           # Logs do PostgreSQL (logs)
+├── server/nginx/logs/           # Logs do Nginx
+├── server/nginx/proxy_temp/     # Cache proxy Nginx
+├── server/nginx/fastcgi_temp/   # Cache FastCGI Nginx
+├── server/nginx/uwsgi_temp/     # Cache uWSGI Nginx
+├── server/nginx/scgi_temp/      # Cache SCGI Nginx
+├── server/nginx/src/            # Código fonte do Nginx
+├── server/apache2/cache/        # Cache do Apache
+├── server/panel/install/        # Arquivos de instalação (.rpm, .zip, .tar.gz)
+├── backup/                      # Backups antigos (> 7 dias)
+├── server/mysql/                # Binary logs e testes MySQL
+├── server/pgsql/test/           # Testes PostgreSQL
+├── server/redis/src/            # Código fonte do Redis
+├── server/panel/recycle_bin/    # Lixeira do painel
+├── server/php/*/var/log/        # Logs de PHP
+├── tmp/                         # Sessões PHP (sess_*)
+└── var/lib/php*/sessions/       # Sessões PHP
 ```
 
-## 📈 Exemplo de Output
+### 7. Core Dumps e Crash Reports
+```
+/var/lib/systemd/coredump/       # Coredumps do systemd
+/var/crash/                      # Crash reports (Ubuntu/Debian)
+/var/lib/apport/coredump/        # Apport coredumps
+/                                # Arquivos core soltos (até 3 níveis)
+```
+
+### 8. Pacotes e Sistema
+```
+Pacotes órfãos:
+├── dpkg 'rc' packages           # Pacotes com configurações residuais
+└── deborphan                    # Pacotes órfãos (se disponível)
+
+Arquivos residuais:
+├── /etc/*.dpkg-old              # Configs antigas do dpkg
+├── /etc/*.dpkg-new              # Configs novas do dpkg
+├── /etc/*.dpkg-dist             # Configs distribuídas do dpkg
+├── /etc/*.ucf-old               # Configs antigas do ucf
+├── /etc/*.ucf-dist              # Configs distribuídas do ucf
+├── /etc/*.old                   # Arquivos .old em /etc
+├── /etc/*.bak                   # Arquivos .bak em /etc
+└── /var/backups/ (> 30 dias)    # Backups antigos do sistema
+```
+
+### 9. Memória e Swap
+```
+Memória:
+└── /proc/sys/vm/drop_caches     # Libera PageCache, dentries, inodes
+
+Swap:
+└── swapoff/swapon               # Reset do swap (verifica RAM livre)
+```
+
+### 10. Filas de Email
+```
+Postfix:
+└── postsuper -d ALL             # Remove todos da fila
+
+Exim:
+└── exiqgrep + exim -Mrm         # Remove todos da fila
+```
+
+## Exemplo de Output
 
 ```
 ========================================
-      clear-up.sh - Limpeza de Disco
+      clear-up-linux.sh - Limpeza de Disco
 ========================================
 
 [INFO] Iniciando limpeza de disco...
@@ -154,16 +270,31 @@ docker/
 [INFO] Cache do APT: 2.1G
 [SUCCESS] Cache do APT limpo
 
-=== Limpando Arquivos Temporários ===
-[WARNING] DIRETÓRIO: /tmp/* (1.8G) seria removido
-[SUCCESS] Removido: /tmp/* (1.8G)
+=== Limpando Caches de Desenvolvimento ===
+[INFO] Limpando cache do pip...
+[SUCCESS] Cache do pip limpo
+[INFO] Limpando cache do npm...
+[SUCCESS] Cache do npm limpo
+[INFO] Limpando cache do Cargo (Rust)...
+[SUCCESS] Cache Cargo limpo: cache (340M)
+
+=== Limpando Core Dumps e Crash Reports ===
+[INFO] Limpando coredumps do systemd...
+[SUCCESS] Coredumps do systemd removidos (89M)
+
+=== Limpando Pacotes Órfãos e Configurações Residuais ===
+[INFO] Pacotes com configurações residuais: 12
+[SUCCESS] Pacotes residuais purgados: 12
+
+=== Limpando Swap e Memória ===
+[SUCCESS] Cache de memória do kernel liberado
 
 ========================================
            RELATÓRIO DE LIMPEZA
 ========================================
 
 [SUCCESS] Limpeza concluída!
-Operações realizadas: 15
+Operações realizadas: 25
 
 [INFO] Espaço em disco antes/depois:
   /: 45G usado, 78G livre (37% usado)
@@ -175,59 +306,53 @@ Operações realizadas: 15
   - Considere compactar arquivos antigos
 ```
 
-## ⚙️ Opções de Linha de Comando
+## Requisitos
 
-| Opção | Descrição |
-|-------|-----------|
-| `--help, -h` | Exibe mensagem de ajuda |
-| `--dry-run, -d` | Simula a limpeza sem remover arquivos |
-| `--verbose, -v` | Modo detalhado com feedback completo |
-| `--force, -f` | Modo não-interativo (pula confirmações) |
-
-## 🔧 Requisitos
-
-- **Sistema**: Ubuntu/Debian ou derivados
+- **Sistema**: Ubuntu/Debian ou derivados (também suporta Fedora, CentOS, Arch para BleachBit)
 - **Permissões**: Root/sudo obrigatório
-- **Dependências**: Ferramentas padrão do sistema (find, du, df, etc.)
+- **Dependências**: Ferramentas padrão do sistema (find, du, df, free, sync, etc.)
+- **Opcional**: BleachBit, localepurge, deborphan
 
-## 🚨 Avisos Importantes
+## Avisos Importantes
 
-### ⚠️ **AVISO DE SEGURANÇA**
+### AVISO DE SEGURANÇA
 - **Execute como root/sudo** para acesso completo aos arquivos do sistema
 - **Faça backup** antes de executar em produção
 - **Use --dry-run primeiro** para verificar o que será removido
 
-### 📝 **O que NÃO é removido**
+### O que NÃO é removido
 - Logs de segurança críticos (mantidos, conteúdo limpo)
-- Arquivos de configuração
-- Arquivos de usuário em `/home`
+- Arquivos de configuração do sistema
+- Arquivos de usuário em `/home` (exceto caches)
 - Kernels em uso atualmente
 - Pacotes essenciais do sistema
+- Configurações do aaPanel, sites e certificados SSL
+- Bancos de dados (apenas logs e testes)
+- Backups recentes (< 7 dias no aaPanel, < 30 dias em /var/backups)
+- Módulos DKMS (podem ser necessários para o kernel)
 
-### 🔒 **Segurança de Dados**
-- Arquivos importantes são apenas limpos, não removidos
-- Kernels antigos requerem confirmação explícita
-- Modo interativo por padrão para operações críticas
+### Segurança de Dados
+- Arquivos importantes são apenas limpos (truncados), não removidos
+- Kernels antigos, backups e swap requerem confirmação explícita no modo interativo
+- Swap só é limpo quando há RAM livre suficiente
+- Modo interativo ativado por padrão para operações críticas
 
-## � Docker Build Cache
+## Docker Build Cache
 
-O script agora limpa completamente o ambiente Docker incluindo:
+O script limpa completamente o ambiente Docker incluindo:
 
-#### **O que é limpo:**
+### O que é limpo:
 - **Containers parados**: `docker rm` para containers com status "exited"
-- **Imensões não utilizadas**: `docker image prune -f`
+- **Imagens não utilizadas**: `docker image prune -f`
 - **Volumes não utilizados**: `docker volume prune -f`
 - **Redes não utilizadas**: `docker network prune -f`
-- **Build cache**: `docker builder prune -af` (novo!)
+- **Build cache**: `docker builder prune -af`
 - **Sistema completo**: `docker system prune -af`
 
-#### **Build Cache Específico:**
+### Build Cache Específico:
 ```bash
 # Verificar tamanho do build cache
 docker builder du
-
-# Limpar manualmente (se necessário)
-docker builder prune -af
 
 # O que o script faz automaticamente:
 [INFO] Limpando histórico de build do Docker...
@@ -235,102 +360,65 @@ docker builder prune -af
 [SUCCESS] Histórico de build do Docker limpo
 ```
 
-#### **Por que limpar o build cache?**
-- **Economia de espaço**: Build cache pode ocupar vários GB
-- **Performance**: Cache antigo pode desacelerar builds
-- **Segurança**: Remove artefatos de builds anteriores
-- **Consistência**: Fresh builds sem resíduos
+## aaPanel Cleaning
 
-## 🖥️ aaPanel Cleaning
+O script inclui limpeza completa para servidores com aaPanel (13 categorias):
 
-O script agora inclui limpeza completa para servidores com aaPanel:
-
-#### **O que é limpo no aaPanel:**
+### O que é limpo no aaPanel:
 - **Logs do Painel**: error.log, request.log, access.log, panel.log
 - **Logs de Sites**: Todos os logs em /www/wwwlogs/
-- **Logs PostgreSQL**: Todos os logs do PostgreSQL aaPanel
+- **Logs PostgreSQL**: Todos os logs do PostgreSQL aaPanel em múltiplos diretórios
 - **Logs Nginx**: Todos os logs em /www/server/nginx/logs/
-- **Binary Logs MySQL/MariaDB**: mysql-bin.*, relay-bin.*
+- **Binary Logs MySQL/MariaDB**: mysql-bin.*, relay-bin.*, logs de erro
 - **Backups Antigos**: Arquivos com mais de 7 dias
 - **Lixeira**: recycle_bin do painel e sistema
-- **Cache Web**: Nginx/Apache proxy, fastcgi, uwsgi cache e src
-- **Sessões PHP**: Arquivos sess_* em /tmp e diretórios de sessões
+- **Cache Web**: Nginx proxy/fastcgi/uwsgi/scgi temp, src, Apache cache
+- **Sessões PHP**: Arquivos sess_* em /tmp, /var/tmp e diretórios de sessões PHP 5/7/8
+- **Logs PHP**: Logs de todas as versões PHP instaladas
 - **Arquivos de Instalação**: .rpm, .zip, .tar.gz do painel
 - **Diretórios de Teste**: mysql-test, pgsql/test e variantes
 - **Diretório src do Redis**: Arquivos fonte do Redis
-- **Logs PHP**: Logs de todas as versões PHP instaladas
-- **Análise de Espaço**: Top 10 maiores consumidores em /www
 
-#### **Comandos Manuais Equivalentes:**
-```bash
-# Limpar logs do painel
-echo "" > /www/server/panel/logs/error.log
-echo "" > /www/server/panel/logs/request.log
-
-# Limpar logs de sites
-truncate -s 0 /www/wwwlogs/*.log
-
-# Limpar logs do PostgreSQL aaPanel
-find /www/server/pgsql/data -name "*.log" -type f -exec truncate -s 0 {} \;
-find /www/server/pgsql/logs -name "*.log" -type f -exec truncate -s 0 {} \;
-find /var/lib/pgsql/data -name "*.log" -type f -exec truncate -s 0 {} \;
-find /var/log/pgsql -name "*.log" -type f -exec truncate -s 0 {} \;
-
-# Limpar logs do Nginx
-truncate -s 0 /www/server/nginx/logs/*.log
-
-# Remover todos os logs do painel
-rm -rf /www/server/panel/logs/*
-
-# Remover sessões PHP
-find /tmp -name "sess_*" -type f -delete
-find /var/lib/php/sessions -name "sess_*" -type f -delete
-
-# Remover diretório src do Nginx
-rm -rf /www/server/nginx/src
-
-# Remover arquivos de instalação do painel
-rm -rf /www/server/panel/install/*.rpm
-rm -rf /www/server/panel/install/*.zip
-rm -rf /www/server/panel/install/*.tar.gz
-
-# Remover diretórios de teste de bancos de dados
-rm -rf /www/server/mysql/mysql-test
-rm -rf /www/server/pgsql/test
-rm -rf /var/lib/mysql/mysql-test
-rm -rf /var/lib/pgsql/test
-
-# Remover diretório src do Redis
-rm -rf /www/server/redis/src 2>/dev/null
-
-# Remover binary logs (cuidado!)
-rm -f /www/server/mysql/mysql-bin.*
-
-# Esvaziar lixeira
-rm -rf /www/server/panel/recycle_bin/*
-
-# Analisar espaço
-du -h /www --max-depth=2 | sort -hr | head -n 10
-```
-
-#### **Segurança Específica para aaPanel:**
+### Segurança Específica para aaPanel:
 - **Backups**: Requer confirmação antes de remover (padrão: 7+ dias)
 - **Binary Logs**: Avisado sobre impacto na replicação
-- **Logs Ativos**: Apenas limpa conteúdo, preserva arquivos
+- **Logs Ativos**: Apenas limpa conteúdo (truncate), preserva arquivos
 - **Cache Web**: Remoção segura, não afeta funcionamento
 
-#### **O que NÃO é removido:**
+### O que NÃO é removido:
 - Configurações do painel
 - Sites e arquivos de usuário
 - Certificados SSL
 - Bancos de dados (apenas logs)
 - Backups recentes (< 7 dias)
 
-## 🧹 BleachBit Integration
+## Caches de Desenvolvimento
 
-O script agora inclui integração com BleachBit para limpeza profunda do sistema:
+O script detecta e limpa automaticamente caches de 11 ferramentas de desenvolvimento:
 
-#### **O que o BleachBit limpa:**
+| Ferramenta | Comando | O que é limpo |
+|------------|---------|---------------|
+| **pip** (Python) | `pip cache purge` | Cache de pacotes baixados |
+| **npm** | `npm cache clean --force` | Cache global do npm |
+| **yarn** | `yarn cache clean` | Cache global do yarn |
+| **pnpm** | `pnpm store prune` | Store não utilizado |
+| **Cargo** (Rust) | rm registry/cache, registry/src, git/checkouts | Cache de compilação e dependências |
+| **Go** | `go clean -cache -modcache` | Cache de compilação e módulos |
+| **Gradle** (Java) | rm ~/.gradle/caches/ | Cache de build |
+| **Maven** (Java) | rm ~/.m2/repository/ | Repositório local |
+| **Composer** (PHP) | `composer clear-cache` | Cache de pacotes |
+| **NuGet** (.NET) | `dotnet nuget locals all --clear` | Cache de pacotes NuGet |
+| **Gem** (Ruby) | `gem cleanup` | Gems antigas não utilizadas |
+
+Além disso:
+- Remove diretórios `__pycache__` e arquivos `.pyc` em `/home`
+- Limpa caches de virtualenvs (Pipenv, Poetry)
+
+## BleachBit Integration
+
+O script inclui integração com BleachBit para limpeza profunda do sistema:
+
+### O que o BleachBit limpa:
 - **Cache do sistema**: Arquivos temporários e cache de aplicações
 - **Logs rotacionados**: Logs antigos e compactados
 - **Resíduos do APT**: Pacotes não utilizados e cache
@@ -338,51 +426,25 @@ O script agora inclui integração com BleachBit para limpeza profunda do sistem
 - **Lixeira**: Arquivos da lixeira do sistema
 - **Memória swap**: Arquivos de swap temporários
 
-#### **Modos de uso:**
+### Modos de uso:
 ```bash
 # Instalar e executar BleachBit automaticamente
-sudo ./clear-up.sh --bleachbit
+sudo ./clear-up-linux.sh --bleachbit
 
 # Simulação do BleachBit
-sudo ./clear-up.sh --bleachbit --dry-run
+sudo ./clear-up-linux.sh --bleachbit --dry-run
 
-# Execução manual do BleachBit (se já instalado)
-sudo ./clear-up.sh --bleachbit --verbose
+# Execução com BleachBit + verbose
+sudo ./clear-up-linux.sh --bleachbit --verbose
 ```
 
-#### **Instalação automática:**
+### Instalação automática:
 - **Detecção de distribuição**: Ubuntu, Debian, Fedora, CentOS, Arch
 - **Gerenciador de pacotes**: APT, DNF, YUM, Pacman
 - **Instalação silenciosa**: Sem interação do usuário
 - **Execução imediata**: Após instalação, executa limpeza
 
-#### **Comandos específicos:**
-```bash
-# Limpeza focada do BleachBit
-bleachbit --clean system.cache system.rotated_logs system.tmp
-bleachbit --clean apt.autoclean apt.autoremove apt.clean
-
-# Limpeza completa (recomendado)
-bleachbit --clean system.cache system.rotated_logs system.tmp \
-                apt.autoclean apt.autoremove apt.clean \
-                deep.scan registry \
-                thumbnails.cache2 \
-                system.trash
-```
-
-#### **Benefícios do BleachBit:**
-- **Limpeza profunda**: Atinge locais que outras ferramentas ignoram
-- **Segurança**: Remove vestígios de atividades sensíveis
-- **Performance**: Melhora velocidade do sistema
-- **Espaço**: Libera GBs de espaço acumulado
-
-#### **Segurança:**
-- **Instalação verificada**: Apenas fontes oficiais
-- **Execução segura**: Comandos testados e validados
-- **Rollback**: Preserva configurações importantes
-- **Logging**: Registro completo das operações
-
-## 🛠️ Personalização
+## Personalização
 
 ### Adicionar Novos Padrões
 Edite o script e adicione novas chamadas `remove_files()`:
@@ -404,24 +466,29 @@ if [[ "$dir" == "/home/protected" ]]; then
 fi
 ```
 
-## 📊 Estatísticas Típicas
+## Estatísticas Típicas
 
 ### Espaço Liberado (médio)
 - **Logs**: 500MB - 2GB
-- **Cache APT**: 200MB - 1GB  
+- **Cache APT**: 200MB - 1GB
 - **Temporários**: 100MB - 500MB
 - **Cache Apps**: 300MB - 1.5GB
+- **Cache Dev (pip/npm/cargo/etc.)**: 500MB - 5GB
 - **Docker**: 1GB - 5GB (se usado)
 - **aaPanel**: 2GB - 8GB (se instalado)
-- **Total**: 4GB - 18GB
+- **Core dumps**: 100MB - 2GB
+- **Pacotes residuais**: 50MB - 500MB
+- **Logs rotacionados antigos**: 200MB - 1GB
+- **Total**: 5GB - 27GB+
 
 ### Tempo de Execução
 - **Desktop normal**: 2-5 minutos
 - **Server**: 5-15 minutos
 - **Com Docker**: 10-20 minutos
 - **Com aaPanel**: 15-25 minutos
+- **Completo (com BleachBit)**: 20-35 minutos
 
-## 🔄 Automação
+## Automação
 
 ### Cron Job
 ```bash
@@ -429,7 +496,7 @@ fi
 sudo crontab -e
 
 # Executar toda sexta-feira às 23:00
-0 23 * * 5 /usr/local/bin/clear-up --force >> /var/log/cleanup.log 2>&1
+0 23 * * 5 /usr/local/bin/clear-up-linux --force >> /var/log/cleanup.log 2>&1
 ```
 
 ### Systemd Timer
@@ -442,7 +509,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/clear-up --force
+ExecStart=/usr/local/bin/clear-up-linux --force
 EOF
 
 # Criar timer
@@ -464,42 +531,51 @@ sudo systemctl enable cleanup.timer
 sudo systemctl start cleanup.timer
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Problemas Comuns
 
 #### "Permissão negada"
 ```bash
 # Solução: Execute com sudo
-sudo ./clear-up.sh
+sudo ./clear-up-linux.sh
 ```
 
 #### "Arquivo não encontrado"
 ```bash
 # Solução: Verifique o caminho do script
-ls -la clear-up.sh
-chmod +x clear-up.sh
+ls -la clear-up-linux.sh
+chmod +x clear-up-linux.sh
 ```
 
 #### "Espaço não liberou"
 ```bash
 # Solução: Verifique com --dry-run primeiro
-sudo ./clear-up.sh --dry-run --verbose
+sudo ./clear-up-linux.sh --dry-run --verbose
 
 # Limpe manualmente arquivos grandes
 sudo find / -type f -size +1G 2>/dev/null
 ```
 
+#### "Swap não pode ser limpo"
+```bash
+# Verificar RAM livre vs swap em uso
+free -m
+
+# O script verifica automaticamente se há RAM livre suficiente
+# Se não houver, pula a limpeza de swap com mensagem informativa
+```
+
 ### Logs de Depuração
 ```bash
 # Habilitar logging detalhado
-sudo ./clear-up.sh --verbose 2>&1 | tee cleanup.log
+sudo ./clear-up-linux.sh --verbose 2>&1 | tee cleanup.log
 
 # Verificar o que foi feito
 grep -E "(SUCCESS|WARNING|ERROR)" cleanup.log
 ```
 
-## 📝 Contribuição
+## Contribuição
 
 ### Para Contribuir
 1. Faça um fork do repositório
@@ -512,12 +588,13 @@ grep -E "(SUCCESS|WARNING|ERROR)" cleanup.log
 - Mais padrões de limpeza
 - Integração com ferramentas existentes
 - Interface gráfica (GUI)
+- Agendamento automático na instalação
 
-## 📄 Licença
+## Licença
 
 Este script é distribuído sob licença MIT. Sinta-se livre para usar, modificar e distribuir.
 
-## 🤝 Suporte
+## Suporte
 
 - **Issues**: https://github.com/afonsoft/agents-skills/issues
 - **Discussions**: https://github.com/afonsoft/agents-skills/discussions
@@ -525,4 +602,4 @@ Este script é distribuído sob licença MIT. Sinta-se livre para usar, modifica
 
 ---
 
-**⚡ Dica Final**: Sempre execute com `--dry-run` primeiro para entender o que será removido antes de executar a limpeza real!
+**Dica Final**: Sempre execute com `--dry-run` primeiro para entender o que será removido antes de executar a limpeza real!

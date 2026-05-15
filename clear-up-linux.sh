@@ -71,8 +71,18 @@ show_help() {
     echo "  - Docker (se instalado)"
     echo "  - Snap packages antigos"
     echo "  - aaPanel (se instalado)"
-    echo "  - BleachBit para limpeza profunda (com --bleachbit)"
     echo "  - Journal do systemd"
+    echo "  - Caches de desenvolvimento (pip, npm, yarn, cargo, go, gradle, maven, composer, nuget, gem)"
+    echo "  - Flatpak (runtimes não utilizados)"
+    echo "  - Core dumps e crash reports"
+    echo "  - Pacotes órfãos e configurações residuais"
+    echo "  - Locales não utilizados e cache de fontes"
+    echo "  - Swap e cache de memória do kernel"
+    echo "  - Filas de email (Postfix/Exim) e logs de mail"
+    echo "  - Identificação de arquivos grandes (ISO, IMG, VMDK)"
+    echo "  - Arquivos antigos do sistema (.dpkg-old, .bak, logs rotacionados)"
+    echo "  - Caches do sistema (ldconfig, APT lists, PackageKit, ícones)"
+    echo "  - BleachBit para limpeza profunda (com --bleachbit)"
     echo
     echo -e "${YELLOW}AVISO:${NC} Execute como root/sudo para acesso completo"
     echo
@@ -763,6 +773,637 @@ clean_aapanel() {
     fi
 }
 
+# Limpeza de cache de desenvolvimento (pip, npm, yarn, cargo, go, gradle, maven, composer, nuget)
+clean_dev_caches() {
+    log_info "=== Limpando Caches de Desenvolvimento ==="
+    
+    # --- Python pip cache ---
+    if command -v pip3 >/dev/null 2>&1 || command -v pip >/dev/null 2>&1; then
+        log_info "Limpando cache do pip..."
+        local pip_cmd="pip3"
+        command -v pip3 >/dev/null 2>&1 || pip_cmd="pip"
+        
+        if [ "$DRY_RUN" = true ]; then
+            local pip_cache_dir=$($pip_cmd cache dir 2>/dev/null || echo "")
+            if [ -n "$pip_cache_dir" ] && [ -d "$pip_cache_dir" ]; then
+                local pip_size=$(get_size "$pip_cache_dir")
+                log_warning "DRY RUN: Cache do pip ($pip_size) seria limpo"
+            fi
+        else
+            $pip_cmd cache purge 2>/dev/null || log_verbose "Nenhum cache do pip para limpar"
+            log_success "Cache do pip limpo"
+        fi
+    fi
+    
+    # --- Python __pycache__ e .pyc ---
+    log_info "Limpando __pycache__ e arquivos .pyc..."
+    for home_dir in /home/*; do
+        if [ -d "$home_dir" ]; then
+            local pyc_count=$(find "$home_dir" -type d -name "__pycache__" 2>/dev/null | wc -l)
+            if [ "$pyc_count" -gt 0 ]; then
+                if [ "$DRY_RUN" = true ]; then
+                    log_warning "DRY RUN: $pyc_count diretórios __pycache__ seriam removidos em $home_dir"
+                else
+                    find "$home_dir" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null
+                    find "$home_dir" -name "*.pyc" -type f -delete 2>/dev/null
+                    log_success "Removidos $pyc_count diretórios __pycache__ em $home_dir"
+                fi
+            fi
+        fi
+    done
+    
+    # --- Python virtualenvs antigos ---
+    log_info "Limpando caches de virtualenvs..."
+    local venv_cache_dirs=(
+        "/home/*/.local/share/virtualenvs"
+        "/home/*/.cache/pip"
+        "/home/*/.cache/pipenv"
+        "/home/*/.cache/pypoetry"
+    )
+    for venv_dir_pattern in "${venv_cache_dirs[@]}"; do
+        for venv_dir in $venv_dir_pattern; do
+            if [ -d "$venv_dir" ]; then
+                local venv_size=$(get_size "$venv_dir")
+                log_info "Cache Python encontrado: $venv_dir ($venv_size)"
+                if [ "$DRY_RUN" = true ]; then
+                    log_warning "DRY RUN: $venv_dir ($venv_size) seria limpo"
+                else
+                    rm -rf "$venv_dir"/* 2>/dev/null || log_warning "Erro ao limpar $venv_dir"
+                    log_success "Cache Python limpo: $venv_dir"
+                fi
+            fi
+        done
+    done
+    
+    # --- npm cache ---
+    if command -v npm >/dev/null 2>&1; then
+        log_info "Limpando cache do npm..."
+        if [ "$DRY_RUN" = true ]; then
+            local npm_cache_size=$(npm cache ls 2>/dev/null | wc -l || echo "0")
+            log_warning "DRY RUN: Cache do npm seria limpo"
+        else
+            npm cache clean --force 2>/dev/null || log_verbose "Nenhum cache do npm para limpar"
+            log_success "Cache do npm limpo"
+        fi
+    fi
+    
+    # --- yarn cache ---
+    if command -v yarn >/dev/null 2>&1; then
+        log_info "Limpando cache do yarn..."
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Cache do yarn seria limpo"
+        else
+            yarn cache clean 2>/dev/null || log_verbose "Nenhum cache do yarn para limpar"
+            log_success "Cache do yarn limpo"
+        fi
+    fi
+    
+    # --- pnpm cache ---
+    if command -v pnpm >/dev/null 2>&1; then
+        log_info "Limpando cache do pnpm..."
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Cache do pnpm seria limpo"
+        else
+            pnpm store prune 2>/dev/null || log_verbose "Nenhum cache do pnpm para limpar"
+            log_success "Cache do pnpm limpo"
+        fi
+    fi
+    
+    # --- Cargo (Rust) cache ---
+    if [ -d "$HOME/.cargo" ] || ls /home/*/.cargo 2>/dev/null | head -1 >/dev/null 2>&1; then
+        log_info "Limpando cache do Cargo (Rust)..."
+        local cargo_cache_dirs=(
+            "/home/*/.cargo/registry/cache"
+            "/home/*/.cargo/registry/src"
+            "/home/*/.cargo/git/checkouts"
+        )
+        for cargo_pattern in "${cargo_cache_dirs[@]}"; do
+            for cargo_dir in $cargo_pattern; do
+                if [ -d "$cargo_dir" ]; then
+                    local cargo_size=$(get_size "$cargo_dir")
+                    if [ "$DRY_RUN" = true ]; then
+                        log_warning "DRY RUN: $cargo_dir ($cargo_size) seria limpo"
+                    else
+                        rm -rf "$cargo_dir"/* 2>/dev/null || log_warning "Erro ao limpar $cargo_dir"
+                        log_success "Cache Cargo limpo: $(basename "$cargo_dir") ($cargo_size)"
+                    fi
+                fi
+            done
+        done
+    fi
+    
+    # --- Go cache ---
+    if command -v go >/dev/null 2>&1; then
+        log_info "Limpando cache do Go..."
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Cache do Go seria limpo"
+        else
+            go clean -cache 2>/dev/null || log_verbose "Erro ao limpar cache do Go"
+            go clean -modcache 2>/dev/null || log_verbose "Erro ao limpar mod cache do Go"
+            log_success "Cache do Go limpo"
+        fi
+    fi
+    
+    # --- Gradle cache ---
+    local gradle_dirs=(/home/*/.gradle/caches)
+    for gradle_dir in "${gradle_dirs[@]}"; do
+        if [ -d "$gradle_dir" ]; then
+            local gradle_size=$(get_size "$gradle_dir")
+            log_info "Cache do Gradle encontrado: $gradle_dir ($gradle_size)"
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: $gradle_dir ($gradle_size) seria limpo"
+            else
+                rm -rf "$gradle_dir"/* 2>/dev/null || log_warning "Erro ao limpar cache do Gradle"
+                log_success "Cache do Gradle limpo ($gradle_size)"
+            fi
+        fi
+    done
+    
+    # --- Maven cache ---
+    local maven_dirs=(/home/*/.m2/repository)
+    for maven_dir in "${maven_dirs[@]}"; do
+        if [ -d "$maven_dir" ]; then
+            local maven_size=$(get_size "$maven_dir")
+            log_info "Cache do Maven encontrado: $maven_dir ($maven_size)"
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: $maven_dir ($maven_size) seria limpo"
+            else
+                rm -rf "$maven_dir"/* 2>/dev/null || log_warning "Erro ao limpar cache do Maven"
+                log_success "Cache do Maven limpo ($maven_size)"
+            fi
+        fi
+    done
+    
+    # --- Composer (PHP) cache ---
+    if command -v composer >/dev/null 2>&1; then
+        log_info "Limpando cache do Composer..."
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Cache do Composer seria limpo"
+        else
+            composer clear-cache 2>/dev/null || log_verbose "Nenhum cache do Composer para limpar"
+            log_success "Cache do Composer limpo"
+        fi
+    fi
+    
+    # --- NuGet (.NET) cache ---
+    if command -v dotnet >/dev/null 2>&1; then
+        log_info "Limpando cache do NuGet (.NET)..."
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Cache do NuGet seria limpo"
+        else
+            dotnet nuget locals all --clear 2>/dev/null || log_verbose "Nenhum cache do NuGet para limpar"
+            log_success "Cache do NuGet limpo"
+        fi
+    fi
+    
+    # --- Gem (Ruby) cache ---
+    if command -v gem >/dev/null 2>&1; then
+        log_info "Limpando cache do Gem (Ruby)..."
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Cache do Gem seria limpo"
+        else
+            gem cleanup 2>/dev/null || log_verbose "Nenhum cache do Gem para limpar"
+            log_success "Cache do Gem limpo"
+        fi
+    fi
+}
+
+# Limpeza de Flatpak
+clean_flatpak() {
+    if command -v flatpak >/dev/null 2>&1; then
+        log_info "=== Limpando Flatpak ==="
+        
+        if [ "$DRY_RUN" = true ]; then
+            local unused_refs=$(flatpak uninstall --unused 2>/dev/null | wc -l || echo "0")
+            log_warning "DRY RUN: $unused_refs runtimes Flatpak não utilizados seriam removidos"
+        else
+            flatpak uninstall --unused -y 2>/dev/null || log_verbose "Nenhum runtime Flatpak não utilizado"
+            # Limpar cache de repo do Flatpak
+            flatpak repair 2>/dev/null || log_verbose "Erro no reparo do Flatpak"
+            log_success "Flatpak limpo"
+        fi
+    else
+        log_verbose "Flatpak não encontrado"
+    fi
+}
+
+# Limpeza de core dumps e crash reports
+clean_coredumps() {
+    log_info "=== Limpando Core Dumps e Crash Reports ==="
+    
+    # Coredumps do systemd
+    if command -v coredumpctl >/dev/null 2>&1; then
+        log_info "Limpando coredumps do systemd..."
+        local coredump_dir="/var/lib/systemd/coredump"
+        if [ -d "$coredump_dir" ]; then
+            local coredump_size=$(get_size "$coredump_dir")
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: Coredumps ($coredump_size) seriam removidos"
+            else
+                find "$coredump_dir" -type f -delete 2>/dev/null || log_warning "Erro ao limpar coredumps"
+                log_success "Coredumps do systemd removidos ($coredump_size)"
+            fi
+        fi
+    fi
+    
+    # Core dumps em /var/crash (Ubuntu/Debian)
+    if [ -d "/var/crash" ]; then
+        local crash_count=$(find /var/crash -type f 2>/dev/null | wc -l)
+        if [ "$crash_count" -gt 0 ]; then
+            local crash_size=$(get_size "/var/crash")
+            log_info "Crash reports encontrados: $crash_count arquivos ($crash_size)"
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: Crash reports ($crash_size) seriam removidos"
+            else
+                rm -rf /var/crash/* 2>/dev/null || log_warning "Erro ao limpar crash reports"
+                log_success "Crash reports removidos ($crash_size)"
+            fi
+        fi
+    fi
+    
+    # Apport crash files
+    if [ -d "/var/lib/apport/coredump" ]; then
+        local apport_size=$(get_size "/var/lib/apport/coredump")
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Apport coredumps ($apport_size) seriam removidos"
+        else
+            rm -rf /var/lib/apport/coredump/* 2>/dev/null
+            log_success "Apport coredumps removidos ($apport_size)"
+        fi
+    fi
+    
+    # Arquivos core soltos
+    local core_files=$(find / -maxdepth 3 -name "core" -o -name "core.*" -type f 2>/dev/null | head -20)
+    if [ -n "$core_files" ]; then
+        local core_count=$(echo "$core_files" | wc -l)
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: $core_count core dumps soltos seriam removidos"
+            echo "$core_files" | head -5 | sed 's/^/  /'
+        else
+            echo "$core_files" | xargs rm -f 2>/dev/null || log_warning "Erro ao remover core dumps"
+            log_success "Core dumps soltos removidos: $core_count arquivos"
+        fi
+    fi
+}
+
+# Limpeza de pacotes órfãos e configurações residuais
+clean_orphan_packages() {
+    log_info "=== Limpando Pacotes Órfãos e Configurações Residuais ==="
+    
+    if command -v apt-get >/dev/null 2>&1; then
+        # Pacotes com configurações residuais (removidos mas config ainda presente)
+        local residual_pkgs=$(dpkg -l | awk '/^rc/{print $2}' 2>/dev/null)
+        if [ -n "$residual_pkgs" ]; then
+            local residual_count=$(echo "$residual_pkgs" | wc -l)
+            log_info "Pacotes com configurações residuais: $residual_count"
+            
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: $residual_count pacotes residuais seriam purgados"
+                echo "$residual_pkgs" | head -5 | sed 's/^/  /'
+                [ "$residual_count" -gt 5 ] && echo "  ... e $((residual_count - 5)) mais"
+            else
+                echo "$residual_pkgs" | xargs apt-get purge -y 2>/dev/null || log_warning "Erro ao purgar pacotes residuais"
+                log_success "Pacotes residuais purgados: $residual_count"
+            fi
+        else
+            log_verbose "Nenhum pacote residual encontrado"
+        fi
+        
+        # deborphan - pacotes órfãos (se disponível)
+        if command -v deborphan >/dev/null 2>&1; then
+            local orphan_pkgs=$(deborphan 2>/dev/null)
+            if [ -n "$orphan_pkgs" ]; then
+                local orphan_count=$(echo "$orphan_pkgs" | wc -l)
+                log_info "Pacotes órfãos encontrados: $orphan_count"
+                
+                if [ "$DRY_RUN" = true ]; then
+                    log_warning "DRY RUN: $orphan_count pacotes órfãos seriam removidos"
+                else
+                    echo "$orphan_pkgs" | xargs apt-get purge -y 2>/dev/null || log_warning "Erro ao remover pacotes órfãos"
+                    log_success "Pacotes órfãos removidos: $orphan_count"
+                fi
+            fi
+        fi
+    fi
+}
+
+# Limpeza de locales não utilizados
+clean_unused_locales() {
+    log_info "=== Limpando Locales Não Utilizados ==="
+    
+    # Limpar cache de locales
+    if [ -d "/usr/share/locale" ]; then
+        local current_locale=$(locale | grep LANG= | cut -d= -f2 | cut -d. -f1 | head -1)
+        local locale_size=$(get_size "/usr/share/locale")
+        log_info "Locales instalados: $locale_size (locale atual: $current_locale)"
+        
+        if command -v localepurge >/dev/null 2>&1; then
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: Locales não utilizados seriam limpos com localepurge"
+            else
+                localepurge 2>/dev/null || log_verbose "Erro ao executar localepurge"
+                log_success "Locales não utilizados limpos"
+            fi
+        else
+            log_verbose "localepurge não disponível (instale com: apt-get install localepurge)"
+        fi
+    fi
+    
+    # Limpar cache de fontes
+    if [ -d "/var/cache/fontconfig" ]; then
+        local font_cache_size=$(get_size "/var/cache/fontconfig")
+        log_info "Cache de fontes: $font_cache_size"
+        
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Cache de fontes ($font_cache_size) seria limpo"
+        else
+            rm -rf /var/cache/fontconfig/* 2>/dev/null
+            fc-cache -f 2>/dev/null || log_verbose "Erro ao reconstruir cache de fontes"
+            log_success "Cache de fontes limpo e reconstruído"
+        fi
+    fi
+    
+    # Limpar man pages de idiomas não usados
+    if [ -d "/usr/share/man" ]; then
+        local man_dirs=$(find /usr/share/man -mindepth 1 -maxdepth 1 -type d -not -name "man*" 2>/dev/null)
+        if [ -n "$man_dirs" ]; then
+            local man_locale_size=$(echo "$man_dirs" | xargs du -csh 2>/dev/null | tail -1 | cut -f1 || echo "0")
+            log_info "Man pages de outros idiomas: $man_locale_size"
+            log_verbose "Diretórios de man pages de idiomas encontrados (não removidos automaticamente)"
+        fi
+    fi
+}
+
+# Limpeza de swap e memória
+clean_swap_memory() {
+    log_info "=== Limpando Swap e Memória ==="
+    
+    # Limpar PageCache, dentries e inodes
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: Cache de memória do kernel seria liberado"
+    else
+        sync
+        echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || log_verbose "Não foi possível liberar cache de memória"
+        log_success "Cache de memória do kernel liberado"
+    fi
+    
+    # Limpar swap (se possível)
+    local swap_total=$(free -m | awk '/Swap:/{print $2}')
+    local swap_used=$(free -m | awk '/Swap:/{print $3}')
+    
+    if [ "$swap_total" -gt 0 ] && [ "$swap_used" -gt 0 ]; then
+        log_info "Swap em uso: ${swap_used}MB de ${swap_total}MB"
+        
+        local mem_free=$(free -m | awk '/Mem:/{print $7}')
+        if [ "$mem_free" -gt "$swap_used" ]; then
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: Swap seria limpo (${swap_used}MB → RAM disponível: ${mem_free}MB)"
+            else
+                if [ "$INTERACTIVE" = true ]; then
+                    echo -n "Limpar swap? (${swap_used}MB em uso, ${mem_free}MB RAM livre) (y/N): "
+                    read -r response
+                    if [[ "$response" =~ ^[Yy]$ ]]; then
+                        swapoff -a 2>/dev/null && swapon -a 2>/dev/null
+                        log_success "Swap limpo com sucesso"
+                    else
+                        log_info "Pulando limpeza de swap"
+                    fi
+                else
+                    swapoff -a 2>/dev/null && swapon -a 2>/dev/null
+                    log_success "Swap limpo com sucesso"
+                fi
+            fi
+        else
+            log_warning "RAM livre insuficiente para limpar swap (necessário: ${swap_used}MB, disponível: ${mem_free}MB)"
+        fi
+    else
+        log_verbose "Swap não está em uso"
+    fi
+}
+
+# Limpeza de logs de mail e filas de email
+clean_mail_queue() {
+    log_info "=== Limpando Filas de Email e Logs de Mail ==="
+    
+    # Postfix
+    if command -v postfix >/dev/null 2>&1; then
+        log_info "Limpando fila de email do Postfix..."
+        if [ "$DRY_RUN" = true ]; then
+            local queue_count=$(mailq 2>/dev/null | tail -1 | grep -oP '\d+' | head -1 || echo "0")
+            log_warning "DRY RUN: $queue_count emails na fila seriam removidos"
+        else
+            postsuper -d ALL 2>/dev/null || log_verbose "Nenhuma fila de email para limpar"
+            log_success "Fila de email do Postfix limpa"
+        fi
+    fi
+    
+    # Exim
+    if command -v exim >/dev/null 2>&1 || command -v exim4 >/dev/null 2>&1; then
+        log_info "Limpando fila de email do Exim..."
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Fila de email do Exim seria limpa"
+        else
+            if command -v exiqgrep >/dev/null 2>&1; then
+                exiqgrep -i | xargs exim -Mrm 2>/dev/null || log_verbose "Nenhuma fila do Exim para limpar"
+            fi
+            log_success "Fila de email do Exim limpa"
+        fi
+    fi
+    
+    # Logs de mail
+    local mail_logs=(
+        "/var/log/mail.log"
+        "/var/log/mail.err"
+        "/var/log/mail.warn"
+        "/var/log/maillog"
+    )
+    
+    for mail_log in "${mail_logs[@]}"; do
+        if [ -f "$mail_log" ]; then
+            local mail_size=$(get_size "$mail_log")
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: $mail_log ($mail_size) seria limpo"
+            else
+                > "$mail_log" 2>/dev/null || log_warning "Não foi possível limpar $mail_log"
+                log_success "Log de mail limpo: $(basename "$mail_log") ($mail_size)"
+            fi
+        fi
+    done
+}
+
+# Limpeza de arquivos grandes órfãos e duplicados
+clean_large_orphan_files() {
+    log_info "=== Identificando Arquivos Grandes ==="
+    
+    # Encontrar arquivos .iso, .img, .vmdk, .vdi em /home e /tmp
+    local large_patterns=("*.iso" "*.img" "*.vmdk" "*.vdi" "*.ova" "*.qcow2")
+    local search_dirs=("/home" "/tmp" "/var/tmp" "/root")
+    
+    for pattern in "${large_patterns[@]}"; do
+        for search_dir in "${search_dirs[@]}"; do
+            if [ -d "$search_dir" ]; then
+                local large_files=$(find "$search_dir" -name "$pattern" -type f -size +100M 2>/dev/null || true)
+                if [ -n "$large_files" ]; then
+                    local large_count=$(echo "$large_files" | wc -l)
+                    local large_size=$(echo "$large_files" | xargs du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
+                    
+                    log_warning "Arquivos grandes encontrados ($pattern): $large_count arquivos ($large_size) em $search_dir"
+                    echo "$large_files" | head -5 | while read -r file; do
+                        local fsize=$(get_size "$file")
+                        echo "  $file ($fsize)"
+                    done
+                    [ "$large_count" -gt 5 ] && echo "  ... e $((large_count - 5)) mais"
+                fi
+            fi
+        done
+    done
+    
+    # Arquivos de log muito grandes (> 500MB)
+    log_info "Verificando logs excessivamente grandes (> 500MB)..."
+    local huge_logs=$(find /var/log -type f -size +500M 2>/dev/null || true)
+    if [ -n "$huge_logs" ]; then
+        echo "$huge_logs" | while read -r log_file; do
+            local log_size=$(get_size "$log_file")
+            log_warning "Log grande encontrado: $log_file ($log_size)"
+            
+            if [ "$DRY_RUN" = false ]; then
+                if [ "$INTERACTIVE" = true ]; then
+                    echo -n "Limpar conteúdo de $log_file? (y/N): "
+                    read -r response
+                    if [[ "$response" =~ ^[Yy]$ ]]; then
+                        > "$log_file" 2>/dev/null
+                        log_success "Log grande limpo: $log_file"
+                    fi
+                else
+                    > "$log_file" 2>/dev/null
+                    log_success "Log grande limpo: $log_file"
+                fi
+            fi
+        done
+    fi
+}
+
+# Limpeza de arquivos antigos de backup e temporários do sistema
+clean_old_system_files() {
+    log_info "=== Limpando Arquivos Antigos do Sistema ==="
+    
+    # Arquivos .dpkg-old, .dpkg-new, .dpkg-dist, .ucf-old
+    log_info "Limpando arquivos residuais do dpkg..."
+    local dpkg_patterns=("*.dpkg-old" "*.dpkg-new" "*.dpkg-dist" "*.ucf-old" "*.ucf-dist")
+    
+    for pattern in "${dpkg_patterns[@]}"; do
+        local dpkg_files=$(find /etc -name "$pattern" -type f 2>/dev/null || true)
+        if [ -n "$dpkg_files" ]; then
+            local dpkg_count=$(echo "$dpkg_files" | wc -l)
+            log_info "Arquivos $pattern encontrados: $dpkg_count"
+            
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: $dpkg_count arquivos $pattern seriam removidos"
+                echo "$dpkg_files" | head -3 | sed 's/^/  /'
+            else
+                echo "$dpkg_files" | xargs rm -f 2>/dev/null
+                log_success "Arquivos $pattern removidos: $dpkg_count"
+            fi
+        fi
+    done
+    
+    # Limpar /var/backups antigos (> 30 dias)
+    if [ -d "/var/backups" ]; then
+        local old_backups=$(find /var/backups -type f -mtime +30 2>/dev/null || true)
+        if [ -n "$old_backups" ]; then
+            local backup_count=$(echo "$old_backups" | wc -l)
+            local backup_size=$(echo "$old_backups" | xargs du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
+            log_info "Backups antigos do sistema (>30 dias): $backup_count arquivos ($backup_size)"
+            
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: Backups antigos ($backup_size) seriam removidos"
+            else
+                echo "$old_backups" | xargs rm -f 2>/dev/null
+                log_success "Backups antigos do sistema removidos: $backup_count arquivos"
+            fi
+        fi
+    fi
+    
+    # Limpar logs rotacionados antigos compactados (> 7 dias)
+    log_info "Limpando logs rotacionados antigos..."
+    local rotated_logs=$(find /var/log -name "*.gz" -o -name "*.xz" -o -name "*.bz2" -o -name "*.zst" | xargs ls -t 2>/dev/null | tail -n +20 || true)
+    if [ -n "$rotated_logs" ]; then
+        local rotated_count=$(echo "$rotated_logs" | wc -l)
+        local rotated_size=$(echo "$rotated_logs" | xargs du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
+        
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: $rotated_count logs rotacionados antigos ($rotated_size) seriam removidos"
+        else
+            echo "$rotated_logs" | xargs rm -f 2>/dev/null
+            log_success "Logs rotacionados antigos removidos: $rotated_count arquivos ($rotated_size)"
+        fi
+    fi
+    
+    # Arquivos .old e .bak em /etc
+    remove_files "*.old" "Arquivos .old em /etc" "/etc"
+    remove_files "*.bak" "Arquivos .bak em /etc" "/etc"
+}
+
+# Limpeza de caches do sistema (thumbnails, ícones, etc.)
+clean_system_caches() {
+    log_info "=== Limpando Caches do Sistema ==="
+    
+    # Cache do ldconfig
+    if [ -f "/etc/ld.so.cache" ]; then
+        if [ "$DRY_RUN" = false ]; then
+            ldconfig 2>/dev/null || log_verbose "Erro ao reconstruir cache do ldconfig"
+            log_success "Cache do ldconfig reconstruído"
+        fi
+    fi
+    
+    # Cache do apt lists
+    if [ -d "/var/lib/apt/lists" ]; then
+        local apt_lists_size=$(get_size "/var/lib/apt/lists")
+        log_info "Listas do APT: $apt_lists_size"
+        
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Listas do APT ($apt_lists_size) seriam limpas"
+        else
+            rm -rf /var/lib/apt/lists/* 2>/dev/null
+            apt-get update -qq 2>/dev/null || log_warning "Erro ao atualizar listas do APT"
+            log_success "Listas do APT limpas e atualizadas"
+        fi
+    fi
+    
+    # Cache do PackageKit (se existir)
+    if [ -d "/var/cache/PackageKit" ]; then
+        local pk_size=$(get_size "/var/cache/PackageKit")
+        log_info "Cache do PackageKit: $pk_size"
+        
+        if [ "$DRY_RUN" = true ]; then
+            log_warning "DRY RUN: Cache do PackageKit ($pk_size) seria limpo"
+        else
+            rm -rf /var/cache/PackageKit/* 2>/dev/null
+            log_success "Cache do PackageKit limpo ($pk_size)"
+        fi
+    fi
+    
+    # Cache do DKMS (módulos de kernel)
+    if [ -d "/var/lib/dkms" ]; then
+        local dkms_size=$(get_size "/var/lib/dkms")
+        log_info "Módulos DKMS: $dkms_size"
+        log_verbose "Módulos DKMS não são removidos automaticamente (podem ser necessários)"
+    fi
+    
+    # Limpar cache de ícones
+    for home_dir in /home/*; do
+        if [ -d "$home_dir/.cache/icon-cache" ]; then
+            local icon_size=$(get_size "$home_dir/.cache/icon-cache")
+            if [ "$DRY_RUN" = true ]; then
+                log_warning "DRY RUN: Cache de ícones ($icon_size) seria limpo"
+            else
+                rm -rf "$home_dir/.cache/icon-cache"/* 2>/dev/null
+                log_success "Cache de ícones limpo ($icon_size)"
+            fi
+        fi
+    done
+}
+
 # Limpeza de journal do systemd
 clean_journal() {
     if command -v journalctl >/dev/null 2>&1; then
@@ -847,7 +1488,37 @@ run_cleanup() {
     clean_journal
     echo
     
-    # 14. Limpeza com BleachBit (se disponível)
+    clean_dev_caches
+    echo
+    
+    clean_flatpak
+    echo
+    
+    clean_coredumps
+    echo
+    
+    clean_orphan_packages
+    echo
+    
+    clean_unused_locales
+    echo
+    
+    clean_swap_memory
+    echo
+    
+    clean_mail_queue
+    echo
+    
+    clean_large_orphan_files
+    echo
+    
+    clean_old_system_files
+    echo
+    
+    clean_system_caches
+    echo
+    
+    # Limpeza com BleachBit (se disponível)
     clean_bleachbit
     echo
     
