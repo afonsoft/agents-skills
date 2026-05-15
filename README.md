@@ -134,26 +134,43 @@ Cleanup script to remove backup files created during installation:
 
 ### clear-up-linux.sh
 
-Comprehensive Linux system cleanup script with aaPanel and BleachBit support:
+Comprehensive Linux system cleanup script with 20+ cleanup categories ([documentação completa](CLEAR-UP-README.md)):
 ```bash
 # Basic cleanup
 sudo ./clear-up-linux.sh
 
+# Dry run simulation
+sudo ./clear-up-linux.sh --dry-run --verbose
+
+# Non-interactive mode (for cron/automation)
+sudo ./clear-up-linux.sh --force
+
 # With BleachBit deep cleaning
 sudo ./clear-up-linux.sh --bleachbit
 
-# Dry run simulation
-sudo ./clear-up-linux.sh --dry-run --verbose
+# Full combination
+sudo ./clear-up-linux.sh --force --verbose --bleachbit
 ```
 
 **Features:**
 - System logs, APT cache, temporary files cleanup
-- Docker containers, images, volumes, and build cache
-- aaPanel comprehensive cleaning (16 categories)
+- Docker containers, images, volumes, build cache, and system prune
+- aaPanel comprehensive cleaning (13 categories)
+- Development caches: pip, npm, yarn, pnpm, Cargo (Rust), Go, Gradle, Maven, Composer (PHP), NuGet (.NET), Gem (Ruby)
+- Python `__pycache__` and virtualenv caches
+- Flatpak unused runtimes cleanup
+- Core dumps and crash reports removal
+- Orphaned packages and residual configurations purge
+- Unused locales, font cache, and man pages
+- Swap and kernel memory cache cleanup
+- Mail queue cleanup (Postfix/Exim) and mail logs
+- Large orphan file identification (ISO, IMG, VMDK)
+- Old system files (.dpkg-old, .bak, rotated logs)
+- System caches (ldconfig, APT lists, PackageKit, icon cache)
 - PostgreSQL logs, MySQL binary logs, web cache
 - BleachBit integration for deep cleaning
-- Journal cleanup (1-day retention)
-- Interactive and batch modes
+- Journal cleanup (1-day retention, 100MB max)
+- Interactive and batch modes with dry-run support
 
 ### git-cleanup-repos.sh
 
@@ -326,7 +343,7 @@ This is a community-driven project built with ❤️ by developers, for develope
 - **Frameworks**: ASP.NET Boilerplate, ABP.IO, Angular, Blazor, and more
 - **Languages**: C#, TypeScript, Python, PowerShell, and others
 - **IDE Support**: VS Code, Windsurf, Cursor, Devin, Claude, Gemini, OpenClaw
-- **Utility Scripts**: 3 system maintenance and cleanup scripts
+- **Utility Scripts**: 3 system maintenance and cleanup scripts (clear-up-linux.sh com 20+ categorias de limpeza)
 
 ## 📄 License
 
