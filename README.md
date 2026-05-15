@@ -59,11 +59,12 @@ Install skills, rules, and knowledge for your preferred IDE:
 ### Supported IDEs/CLIs
 
 - **VS Code** (GitHub Copilot)
-- **Windsurf** (Cascade) 
+- **Windsurf** (Cascade)
 - **Cursor**
 - **Devin** / Devin Review / Devin CLI
 - **Claude Code**
 - **Gemini CLI** (Google)
+- **OpenClaw**
 
 ## 📋 Categories
 
@@ -216,8 +217,11 @@ Following OpenAI harness engineering principles with structured knowledge organi
 - **create-implementation-plan**: Structured planning for development work
 - **create-github-action-workflow-specification**: CI/CD workflow specifications
 
-### Code Generation
+### Code Generation & Best Practices
 - **csharp-async**: C# async programming best practices
+- **csharp-developer**: Full-stack C# development with .NET 10+, ASP.NET Core, Blazor, EF Core
+- **dotnet-best-practices**: .NET coding standards and quality patterns
+- **modern-csharp-coding-standards**: Modern C# 14 coding standards
 - **migrate-aspnetboilerplate-to-abp**: Complete ASP.NET Boilerplate to ABP.IO migration
 - **github-issues**: GitHub issue management automation
 - **web-design-reviewer**: Web design review and optimization
@@ -226,12 +230,29 @@ Following OpenAI harness engineering principles with structured knowledge organi
 - **postgresql-code-review**: PostgreSQL optimization strategies
 - **sql-optimization**: SQL performance tuning patterns
 - **ef-core**: Entity Framework Core best practices
+- **efcore-patterns**: Advanced EF Core patterns and conventions
 
 ### Harness Engineering
 - **harness-repo-structure**: Create and maintain OpenAI-style repository structure
 - **harness-architecture**: Rigid layered architecture with forward-only dependencies
 - **harness-quality-invariants**: Quality invariants and golden rules for agent-generated code
 - **harness-no-yolo-probing**: Strict prohibition of unvalidated data access
+
+### ABP Framework
+- **abp-angular**: ABP Framework Angular patterns
+- **abp-core**: ABP Core module development
+- **abp-ddd**: Domain-Driven Design with ABP
+- **abp-ef-core**: Entity Framework Core with ABP
+- **abp-testing**: ABP testing patterns
+- **abp-microservice**: ABP microservice architecture
+- **abp-multi-tenancy**: Multi-tenancy patterns with ABP
+
+### Angular Development
+- **angular-component**: Modern Angular standalone components
+- **angular-signals**: Signal-based reactive patterns
+- **angular-forms**: Reactive forms patterns
+- **angular-testing**: Angular testing strategies
+- **angular-ssr**: Server-side rendering with Angular
 
 ## 🔧 Configuration
 
@@ -242,9 +263,10 @@ Each IDE has specific integration patterns:
 - **VS Code**: `~/.github/skills`, `~/.copilot/instructions`
 - **Windsurf**: `~/.windsurf/skills`, `~/.windsurf/rules`
 - **Cursor**: `~/.cursor/skills`, `~/.cursor/rules`
-- **Devin**: `~/.agents/skills`, `~/.devin/skills`
+- **Devin**: `~/.agents/skills`, `~/.devin/skills`, `~/.config/cognition/skills`
 - **Claude**: `~/.claude/skills`, `~/.claude/rules`
 - **Gemini**: `~/.gemini/skills`, `~/.gemini/GEMINI.md`
+- **OpenClaw**: `~/.openclaw/skills`
 
 ### Custom Rules
 
@@ -260,9 +282,9 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 ### Quick Contribution Steps
 
 1. **Fork** the repository
-2. **Create** a feature branch from `staged` branch
+2. **Create** a feature branch from `main` branch
 3. **Add** your skill/rule/knowledge/agent/workflow
-4. **Submit** a pull request to the `staged` branch
+4. **Submit** a pull request to the `main` branch
 
 ### Development Setup
 
@@ -297,14 +319,14 @@ This is a community-driven project built with ❤️ by developers, for develope
 
 ## 📊 Statistics
 
-- **Skills**: 62+ specialized skills across various domains (including harness engineering)
-- **Rules**: 99+ coding standards and best practices (including architecture rules)
+- **Skills**: 85+ specialized skills across various domains (including harness engineering)
+- **Rules**: 107+ coding standards and best practices (including architecture rules)
 - **Workflows**: 7+ agentic workflows for automation
-- **Knowledge**: 18+ comprehensive guides and documents (restructured following OpenAI patterns)
+- **Knowledge**: 23+ comprehensive guides and documents (restructured following OpenAI patterns)
 - **Frameworks**: ASP.NET Boilerplate, ABP.IO, Angular, Blazor, and more
 - **Languages**: C#, TypeScript, Python, PowerShell, and others
-- **IDE Support**: VS Code, Windsurf, Cursor, Devin, Claude, Gemini
-- **Utility Scripts**: 2 system maintenance and cleanup scripts
+- **IDE Support**: VS Code, Windsurf, Cursor, Devin, Claude, Gemini, OpenClaw
+- **Utility Scripts**: 3 system maintenance and cleanup scripts
 
 ## 📄 License
 
