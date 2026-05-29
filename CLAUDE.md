@@ -1,24 +1,20 @@
 @import "AGENTS.md"
 
-# Claude-Specific Instructions
+# Claude Code — Delta
 
-## Memory Management
+## Carregamento Automático
+Claude Code carrega este arquivo automaticamente. O `@import` acima carrega o AGENTS.md como SSoT.
 
-Claude writes learned information to .agents/MEMORY.md automatically. This complements the instructions in AGENTS.md.
+## Memory
+Claude Code mantém memória automática em `.agents/MEMORY.md`.
 
-## Tool Integration
+## Skills
+Skills descobertas em:
+- `.agents/skills/` (workspace)
+- `skills/` (repositório)
+- `~/.claude/skills/` (Claude-specific)
 
-Claude supports Model Context Protocol (MCP) servers for tool integration. Configure in mcp-config.json.
-
-## Skill Discovery
-
-Skills are discovered from:
-- ~/.claude/skills/ (Claude-specific)
-- .agents/skills/ (universal)
-- ~/.agents/skills/ (user-level)
-
-## Rules Loading
-
-Rules are loaded from:
-- ~/.claude/rules/ (Claude-specific)
-- .instructions.md files (path-specific)
+## Guardrails
+- `.agents/RULES.md` — Hard/Soft rules
+- `rules/*.instructions.md` — Rules por domínio (ativadas por glob)
+- `.claudeignore` — Arquivos a ignorar

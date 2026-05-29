@@ -67,10 +67,10 @@ triggers: [optional]
 
 ### Root-Level Context
 
-- **AGENTS.md**: Cross-tool agent context (single source of truth)
-- **CLAUDE.md**: Claude-specific instructions with `@import AGENTS.md`
+- **AGENTS.md**: Cross-tool agent context (single source of truth) — lido por Devin e Windsurf
+- **CLAUDE.md**: Claude-specific delta com `@import AGENTS.md`
 - **llms.txt**: LLM discoverability for web crawlers
-- **.aiignore**: File exclusion patterns for AI agents
+- **.claudeignore / .devinignore / .windsurfignore**: File exclusion patterns por plataforma
 
 ### Memory System
 
