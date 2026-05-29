@@ -43,6 +43,5 @@ This file stores technical decisions, technical debt, and lessons learned to avo
 
 ## Future Considerations
 
-- Consider adding GEMINI.md for Gemini-specific instructions
 - Evaluate Agent Cards specification for skill metadata
 - Monitor Agentic AI Foundation for new conventions
