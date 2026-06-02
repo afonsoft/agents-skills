@@ -15,6 +15,5 @@ Skills descobertas em:
 - `~/.claude/skills/` (Claude-specific)
 
 ## Guardrails
-- `.agents/RULES.md` — Hard/Soft rules
-- `rules/*.instructions.md` — Rules por domínio (ativadas por glob)
+- `.agents/RULES.md` — Hard/Soft rules do harness
 - `.claudeignore` — Arquivos a ignorar

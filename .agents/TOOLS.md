@@ -6,7 +6,7 @@
 
 | Script | Função | Risco |
 |--------|--------|-------|
-| `install.sh` | Instala skills/rules/knowledge para IDEs | Médio (modifica home) |
+| `install.sh` | Instala skills + hooks + AGENTS.md para IDEs | Médio (modifica home) |
 | `clear-up-linux.sh` | Limpeza do sistema Linux | Alto (remove arquivos) |
 | `rm-backup.sh` | Remove backups antigos | Médio |
 | `git-cleanup-repos.sh` | Otimiza repositórios Git | Médio |
@@ -16,14 +16,14 @@
 ```bash
 # install.sh
 --all          # Instala para todos os IDEs
---vscode       # VS Code / GitHub Copilot
+--base         # Apenas ~/.agents/skills
+--devin        # Devin / Devin CLI
+--claude       # Claude Code
 --cursor       # Cursor
---devin        # Devin CLI
---claude        # Claude Code
---gemini       # Gemini CLI
 --windsurf     # Windsurf
---openclaw     # OpenClaw
---verbose      # Output detalhado
+--vscode       # VS Code / GitHub Copilot
+--gemini       # Gemini CLI
+--dry-run      # Simula execução sem modificar
 
 # clear-up-linux.sh / git-cleanup-repos.sh
 --dry-run      # Simula execução sem modificar
@@ -50,6 +50,6 @@ tools:
 | Categoria | Política |
 |-----------|---------|
 | **Read-only** (search, list, read) | Livre |
-| **Write** (create, edit skills/rules) | Requer PR |
+| **Write** (create, edit skills) | Requer PR |
 | **Execute** (install.sh, cleanup) | Sandbox + logging |
 | **External** (MCP, APIs) | Rate-limited |

@@ -12,11 +12,10 @@
 
 ## Soft Rules (warning + confirmação)
 
-1. Modificar `install.sh` → testar com `--all --verbose`
+1. Modificar `install.sh` → testar com `--all` e `--dry-run`
 2. Deletar skills existentes → requer justificativa
-3. Alterar `knowledge/` → verificar referências cruzadas
-4. Modificar scripts de cleanup → testar com `--dry-run`
-5. Adicionar nova plataforma → atualizar paths-reference.md
+3. Modificar scripts de cleanup → testar com `--dry-run`
+4. Adicionar nova plataforma → atualizar paths-reference.md
 
 ## Permissões por Ambiente
 

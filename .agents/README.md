@@ -31,13 +31,12 @@ Skills are discovered in the following order (highest to lowest priority):
 
 Each IDE/CLI has its own skill discovery path:
 
-- **VS Code**: `~/.github/skills/`
-- **Windsurf**: `~/.windsurf/skills/`
-- **Cursor**: `~/.cursor/skills/`
-- **Devin CLI**: `~/.config/cognition/skills/`
+- **Devin / Devin CLI**: `~/.devin/skills/`, `~/.config/devin/skills/`
 - **Claude Code**: `~/.claude/skills/`
+- **Cursor**: `~/.cursor/skills/`
+- **Windsurf**: `~/.windsurf/skills/`
+- **VS Code (Copilot)**: `~/.github/skills/`
 - **Gemini CLI**: `~/.gemini/skills/`
-- **OpenClaw**: `~/.openclaw/skills/`
 
 ### Universal Alias
 
@@ -158,7 +157,7 @@ The `install.sh` script handles cross-platform installation:
 1. Create skill directory: `skills/your-skill/`
 2. Add `SKILL.md` with proper frontmatter
 3. Include bundled resources (scripts, templates)
-4. Validate with `./install.sh --all --verbose`
+4. Validate with `shellcheck install.sh` and `./install.sh --devin --dry-run`
 5. Test with target IDE/CLI
 
 ### Updating Context Files
@@ -184,7 +183,7 @@ This infrastructure follows:
 - Verify SKILL.md frontmatter is valid
 - Check folder name matches `name` field
 - Ensure directory structure follows specification
-- Run `./install.sh --all --verbose` for diagnostics
+- Run `./install.sh --all --dry-run` for diagnostics
 
 ### MCP Servers Not Connecting
 
