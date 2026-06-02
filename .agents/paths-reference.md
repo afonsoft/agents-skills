@@ -1,49 +1,42 @@
 # Installation Paths Reference
 
 This document provides the standard installation paths for each supported IDE/CLI.
+The installer copies **skills + session hooks + AGENTS.md** — there are no rules/knowledge folders.
 
-## Skills Installation Paths
+## Per-tool paths
 
-### VS Code (GitHub Copilot)
-- **Skills**: `~/.github/skills/`
-- **Rules**: `~/.copilot/instructions/`
-- **Knowledge**: `~/.copilot/knowledge/`
-- **Consolidated**: `~/.github/copilot-instructions.md`
+### Base (always installed)
+- **Skills**: `~/.agents/skills/`
 
-### Windsurf (Cascade)
-- **Skills**: `~/.windsurf/skills/`
-- **Rules**: `~/.windsurf/rules/`
-- **Knowledge**: `~/.windsurf/knowledge/`
-- **Consolidated**: `~/.windsurfrules`
-
-### Cursor
-- **Skills**: `~/.cursor/skills/`
-- **Rules**: `~/.cursor/rules/`
-- **Knowledge**: `~/.cursor/knowledge/`
-- **Consolidated**: `~/.cursorrules`
-
-### Devin CLI
-- **Skills**: `~/.config/cognition/skills/`
-- **Knowledge**: `~/.config/cognition/knowledge/`
-- **Legacy**: `~/.cognition/skills/`
-- **Compat**: `~/.devin/skills/`
+### Devin / Devin CLI
+- **Skills**: `~/.devin/skills/`, `~/.cognition/skills/`, `~/.config/devin/skills/`
+- **Hooks**: `~/.devin/hooks/`
+- **Context**: `~/.devin/AGENTS.md`
 
 ### Claude Code
 - **Skills**: `~/.claude/skills/`
-- **Rules**: `~/.claude/rules/`
-- **Knowledge**: `~/.claude/knowledge/`
-- **Context**: `CLAUDE.md` (persistent instructions)
+- **Hooks**: `~/.claude/hooks/`
+- **Context**: `~/.claude/CLAUDE.md`, `~/.claude/AGENTS.md`
+
+### Cursor
+- **Skills**: `~/.cursor/skills/`
+- **Hooks**: `~/.cursor/hooks/`
+- **Context**: `~/.cursor/AGENTS.md`
+
+### Windsurf (Cascade)
+- **Skills**: `~/.windsurf/skills/`
+- **Hooks**: `~/.windsurf/hooks/`
+- **Context**: `~/.windsurf/AGENTS.md`
+
+### VS Code (GitHub Copilot)
+- **Skills**: `~/.github/skills/`
+- **Hooks**: `~/.github/hooks/`
+- **Context**: `~/.github/AGENTS.md`
 
 ### Gemini CLI
 - **Skills**: `~/.gemini/skills/`
-- **Knowledge**: `~/.gemini/knowledge/`
-- **Context**: `~/.gemini/GEMINI.md`
-- **Memory**: `~/.gemini/memory/MEMORY.md`
-
-### OpenClaw
-- **Skills**: `~/.openclaw/skills/`
-- **Memory**: `~/.openclaw/workspace/memory/MEMORY.md`
-- **Daily Logs**: `~/.openclaw/workspace/memory/YYYY-MM-DD.md`
+- **Hooks**: `~/.gemini/hooks/`
+- **Context**: `~/.gemini/AGENTS.md`
 
 ## Universal Paths
 
@@ -66,22 +59,13 @@ This document provides the standard installation paths for each supported IDE/CL
 - `~/.tool-name/skills/`
 - `~/.config/tool-name/skills/` (XDG compliance)
 
-## Aliases and Compatibility
-
-### Generic Alias
-- `.agents/skills/` - Works across all supported tools
-- Provides unified management interface
-
-### Tool-Specific Fallbacks
-Each tool checks its specific path first, then falls back to generic alias.
-
 ## Installation Script Behavior
 
 The `install.sh` script:
 1. Always installs to `~/.agents/skills/` (base)
 2. Creates tool-specific directories as needed
-3. Sets up symlinks for consolidated files
-4. Handles platform-specific paths automatically
+3. Backs up existing dirs/files to `*.backup.<timestamp>`
+4. Supports `--dry-run` to preview actions
 
 ## Examples
 

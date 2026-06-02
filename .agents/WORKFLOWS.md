@@ -11,41 +11,29 @@
 2. Criar `SKILL.md` com YAML frontmatter (`name`, `description`)
 3. Adicionar conteúdo (seções, exemplos, referências)
 4. Opcional: adicionar `references/`, `templates/`, `scripts/`, `assets/`
-5. Validar: `./install.sh --all --verbose`
+5. Validar: `shellcheck install.sh` e `./install.sh --devin --dry-run`
 6. Testar com IDE alvo
-7. Criar PR para `main`
+7. Criar PR
 
 ### Critério de Sucesso
 - SKILL.md válido com frontmatter
 - Folder name = `name` field
 - Instalação sem erros
 
-## Workflow: Adicionar Nova Rule
-
-### Precondições
-- Rule não existe em `rules/`
+## Workflow: Adicionar Novo Workflow Agêntico
 
 ### Passos
-1. Criar `rules/{nome}.instructions.md`
-2. Adicionar frontmatter com `description` e `applyTo`
-3. Escrever conteúdo da rule
-4. Criar PR para `main`
-
-## Workflow: Atualizar Knowledge
-
-### Passos
-1. Identificar documento em `knowledge/`
-2. Atualizar conteúdo
-3. Verificar referências cruzadas
-4. Criar PR para `main`
+1. Criar `workflows/{nome}.md` com frontmatter (`name`, `description`, `on`, `permissions`, `safe-outputs`)
+2. Validar: `gh aw compile --validate --no-emit workflows/{nome}.md`
+3. Criar PR
 
 ## Verification Loop
 
 ```
-Agent Output → ShellCheck → install.sh --all → Validação → PR → Review
+Agent Output → ShellCheck → install.sh --devin --dry-run → Validação → PR → Review
 ```
 
 ## Rollback
 
 - Reverter PR via GitHub
-- `install.sh --all` para reinstalar versão anterior
+- `install.sh --all` para reinstalar versão anterior (usa backups `*.backup.*`)

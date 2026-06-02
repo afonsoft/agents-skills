@@ -34,7 +34,7 @@ skill-name/
 ## Naming Conventions
 
 ### Folder Names
-- Lowercase with hyphens: `angular-component`, `create-github-issue`
+- Lowercase with hyphens: `aspnet-core-api`, `systematic-debugging`
 - Maximum 64 characters
 - Must match `name` field in SKILL.md
 
@@ -70,24 +70,25 @@ skill-name/
 - `~/.agents/skills/` - User skills (medium priority)
 
 ### Tool-Specific Paths
-- `~/.github/skills/` - GitHub Copilot
-- `~/.windsurf/skills/` - Windsurf Cascade
-- `~/.cursor/skills/` - Cursor
+- `~/.devin/skills/`, `~/.config/devin/skills/` - Devin / Devin CLI
 - `~/.claude/skills/` - Claude Code
+- `~/.cursor/skills/` - Cursor
+- `~/.windsurf/skills/` - Windsurf Cascade
+- `~/.github/skills/` - VS Code / GitHub Copilot
 - `~/.gemini/skills/` - Gemini CLI
-- `~/.config/cognition/skills/` - Devin CLI
 
 ## Examples from Repository
 
 ### Framework-Specific Skills
 - `abp-angular` - ABP Framework Angular patterns
-- `angular-component` - Modern Angular standalone components
 - `aspnet-core-api` - Complete ASP.NET Core API development
+- `efcore-patterns` - Advanced EF Core patterns
 
-### Workflow Skills  
-- `create-github-issue-feature-from-specification`
-- `create-github-pull-request-from-specification`
-- `create-implementation-plan`
+### Workflow Skills
+- `brainstorming` - Structured ideation before coding
+- `writing-plans` / `executing-plans` - Plan-driven development
+- `systematic-debugging` - Disciplined root-cause analysis
+- `test-driven-development` - Red/green/refactor loop
 
 ### Code Quality Skills
 - `security-jwt` - JWT authentication implementation
@@ -98,7 +99,7 @@ skill-name/
 
 Use the installation script for validation:
 ```bash
-./install.sh --all --verbose
+./install.sh --all --dry-run
 ```
 
 Skills are automatically discovered by supported agents based on:

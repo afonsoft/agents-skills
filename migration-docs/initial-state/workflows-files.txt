@@ -1,0 +1,7 @@
+workflows/daily-issues-report.md
+workflows/ospo-contributors-report.md
+workflows/ospo-org-health.md
+workflows/ospo-release-compliance-checker.md
+workflows/ospo-stale-repos.md
+workflows/relevance-check.md
+workflows/relevance-summary.md

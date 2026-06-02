@@ -6,23 +6,21 @@
 
 | Tipo | Quando | Exemplos |
 |------|--------|----------|
-| **Always-on** | Sempre carregado | AGENTS.md, RULES.md |
-| **Pattern-matched** | Por tipo de arquivo | `applyTo: '**/*.sh'` → regras Shell |
-| **On-demand** | Quando solicitado | knowledge/, design-docs |
+| **Always-on** | Sempre carregado | AGENTS.md, .agents/RULES.md |
+| **On-demand** | Quando solicitado | skills/{nome}/SKILL.md |
 | **Progressive disclosure** | Codebases grandes | Mapa de dirs → headers → conteúdo |
 
 ### Token Budget
 
 - Reservar 20% para output do agente
-- AGENTS.md + RULES.md: ~2k tokens (always-on)
+- AGENTS.md + .agents/RULES.md: ~2k tokens (always-on)
 - Skills: ~1-3k tokens cada (on-demand)
-- Knowledge: ~2-5k tokens cada (on-demand)
 
 ### Estratégia de Chunking
 
 - Arquivos > 500 linhas: dividir em seções lógicas
 - Skills são autocontidas (sem dependências externas)
-- Rules ativadas por glob pattern, não carregadas em massa
+- Catálogo de skills injetado no session-start; cada SKILL.md carregado on-demand
 
 ### Context Compaction
 
