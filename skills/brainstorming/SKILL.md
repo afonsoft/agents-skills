@@ -1,6 +1,13 @@
 ---
 name: brainstorming
-description: "Turn ideas into fully formed designs and specs through collaborative dialogue. You MUST use this before any creative work — creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation; produces design doc at docs/specs/YYYY-MM-DD-<topic>-design.md and hands off to writing-plans. Do NOT use for direct implementation (proceed to writing-plans after approval) or building MCP servers (use building-mcp-servers)."
+license: UNLICENSED
+description: "Turn ideas into fully formed designs and specs through collaborative dialogue. You MUST use this before any creative work — creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation; produces design doc at docs/specs/YYYY-MM-DD-<topic>-design.md and hands off to writing-plans. Do NOT use for direct implementation (proceed to writing-plans after approval), bootstrapping an agent harness in a repo (use create-agent-harness), or building MCP servers (use building-mcp-servers)."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  squad: '360'
 ---
 
 # Brainstorming Ideas Into Designs
@@ -109,9 +116,8 @@ digraph brainstorming {
 **Documentation:**
 
 - Write the validated design (spec) to `docs/specs/YYYY-MM-DD-<topic>-design.md`
-  - (User preferences for spec location override this default.)
 - Use clear and concise writing — prefer bullets over paragraphs, scale section length to complexity
-- Commit the design document to git in the target repo following your project's branch policy
+- Commit the design document to git in the target repo following the corporate branch policy (`feature/{agent}-{YYYYMMDD}-{descricao}`)
 
 **Spec Self-Review:**
 After writing the spec document, look at it with fresh eyes:
@@ -171,9 +177,9 @@ If they agree to the companion, read the detailed guide before proceeding:
 
 ## Origin
 
-Imported from [`obra/superpowers/skills/brainstorming`](https://github.com/obra/superpowers/tree/main/skills/brainstorming) (MIT) with minor adaptations:
+Imported from [`obra/superpowers/skills/brainstorming`](https://github.com/obra/superpowers/tree/main/skills/brainstorming) and adapted to this catalog:
 
-- Spec destination path changed from `docs/superpowers/specs/` to `docs/specs/`
+- Frontmatter aligned to the repo standard (`license: UNLICENSED`, `metadata.version`, `metadata.author`, tripartite `description` with explicit "Do NOT use for" clause)
 - `start-server.sh` preserved from upstream (full feature parity including `--project-dir`, `--host`, `--url-host`, `--foreground`/`--background` flags)
-- `stop-server.sh` is a minimal reimplementation (reads `server.pid`, SIGTERM then SIGKILL, cleans pidfile); swap in the canonical upstream version (<https://github.com/obra/superpowers/blob/main/skills/brainstorming/scripts/stop-server.sh>) for full feature parity
-- All other content preserved verbatim from upstream.
+- `stop-server.sh` reimplemented as a minimal wrapper — the corporate WAF blocked raw download of this specific file from upstream. Replace with the canonical upstream version (<https://github.com/obra/superpowers/blob/main/skills/brainstorming/scripts/stop-server.sh>) once outside the WAF for full feature parity.
+- All other content (process flow, checklist, key principles, Visual Companion section, helper.js, server.cjs, frame-template.html, visual-companion.md, spec-document-reviewer-prompt.md) preserved verbatim from upstream.

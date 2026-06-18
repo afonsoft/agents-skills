@@ -1,6 +1,13 @@
 ---
 name: receiving-code-review
+license: UNLICENSED
 description: "Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical rigor and verification, not performative agreement or blind implementation. Do NOT use for auto-merge or trivial approvals."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: obra/superpowers
 ---
 
 # Code Review Reception

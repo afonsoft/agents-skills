@@ -1,6 +1,13 @@
 ---
 name: writing-plans
+license: UNLICENSED
 description: "Use when you have a spec or requirements for a multi-step task, before touching code. Creates structured implementation plans with bite-sized steps, verification commands, and no placeholders. Do NOT use for single-step tasks or when a plan already exists (use executing-plans instead)."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: obra/superpowers
 ---
 
 # Writing Plans

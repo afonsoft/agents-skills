@@ -1,6 +1,13 @@
 ---
 name: executing-plans
+license: UNLICENSED
 description: "Use when you have a written implementation plan to execute in a separate session with review checkpoints. Loads plan, reviews critically, executes all tasks sequentially with verification. Do NOT use without a pre-existing plan (use writing-plans first) or when subagents are available (use subagent-driven-development)."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: obra/superpowers
 ---
 
 # Executing Plans

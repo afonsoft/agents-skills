@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 # brainstorming visual companion - stop server
 #
-# NOTE: minimal reimplementation of the upstream stop-server.sh. It:
+# NOTE: adapted from obra/superpowers
+# could not be downloaded directly via raw.githubusercontent.com or jsDelivr in
+# the corporate environment (WAF blocks .sh downloads). This is a minimal
+# reimplementation that:
 #   - Reads server.pid from $BRAINSTORM_DIR/state/
 #   - Sends SIGTERM, falls back to SIGKILL after 2s
 #   - Cleans pidfile and server-info
 #
-# Canonical upstream version (full feature parity):
+# Original (canonical) version:
 #   https://github.com/obra/superpowers/blob/main/skills/brainstorming/scripts/stop-server.sh
+#
+# Re-download the official version once outside the corporate WAF to replace this file.
 
 set -euo pipefail
 

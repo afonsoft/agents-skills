@@ -1,236 +1,1538 @@
 #!/bin/bash
 
-# Installer for agents-skills.
-# Installs SKILLS + session-start HOOKS + AGENTS.md for the selected IDE/CLI.
-# No rules and no knowledge are installed (the repo ships only skills + hooks).
+# Script de instalacao das skills, rules e knowledge do Agent Skills
+# Suporta instalacao seletiva por IDE ou instalacao completa
 #
-# Usage:
-#   ./install.sh --all, -a        Install for all supported IDEs/CLIs
-#   ./install.sh --base, -b       Install only the base (~/.agents/skills)
-#   ./install.sh --devin, -d      Install for Devin / Devin CLI
-#   ./install.sh --claude         Install for Claude Code
-#   ./install.sh --cursor, -c     Install for Cursor
-#   ./install.sh --windsurf, -w   Install for Windsurf
-#   ./install.sh --vscode, -v     Install for VS Code (GitHub Copilot)
-#   ./install.sh --gemini, -g     Install for Gemini CLI
-#   ./install.sh --dry-run        Show what would be done, change nothing
-#   ./install.sh --help, -h       Show this help
+# Uso:
+#   ./install.sh --all, -a        Instala para todas as IDEs/CLIs
+#   ./install.sh --devin, -d      Instala para Devin / Devin Review / Devin CLI
+#   ./install.sh --claude, -c     Instala para Claude Code
+#   ./install.sh --windsurf, -w   Instala para Windsurf (Cascade)
+#   ./install.sh --vscode, -v     Instala para VS Code (GitHub Copilot)
+#   ./install.sh --cursor         Instala para Cursor
+#   ./install.sh --gemini, -g     Instala para Gemini CLI (Google)
+#   ./install.sh --openclaw, -o   Instala para OpenClaw
+#   ./install.sh --github-token <TOKEN>  Token GitHub para download do RTK
+#   ./install.sh --help, -h       Exibe ajuda
 #
-# Multiple targets can be combined: ./install.sh --devin --claude
+# Variaveis de ambiente:
+#   GITHUB_TOKEN                   Token GitHub para download do RTK (alternativa ao --github-token)
+#
+# Multiplas IDEs/CLIs podem ser combinadas:
+#   ./install.sh --devin --claude --windsurf
+#   ./install.sh --all --github-token ghp_xxx
 
-set -euo pipefail
+set -e
 
-# Colors
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; CYAN='\033[0;36m'; NC='\033[0m'
+# Cores para output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
 
-log_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
-log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
-log_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
+# Funcoes de log
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
 
-# Target flags (base is always installed; --base just skips other targets)
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Flags de IDEs selecionadas
 INSTALL_VSCODE=false
 INSTALL_WINDSURF=false
 INSTALL_CURSOR=false
 INSTALL_DEVIN=false
 INSTALL_CLAUDE=false
 INSTALL_GEMINI=false
-DRY_RUN=false
+INSTALL_OPENCLAW=false
 
-# Resolve repo root (directory of this script)
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# GitHub Token para download do RTK (parametro --github-token ou env GITHUB_TOKEN)
+GITHUB_TOKEN_PARAM=""
+
+# ============================================================================
+# HELP
+# ============================================================================
 
 show_help() {
     echo
-    echo -e "${CYAN}agents-skills - installer${NC}"
+    echo -e "${CYAN}Agent Skills - Instalador${NC}"
     echo
-    echo -e "${YELLOW}Usage:${NC} ./install.sh [options]"
+    echo -e "${YELLOW}Uso:${NC}"
+    echo "  ./install.sh [opcoes]"
     echo
-    echo -e "${YELLOW}Targets:${NC}"
-    echo "  --base,     -b   Only base (~/.agents/skills)"
-    echo "  --devin,    -d   Devin / Devin CLI"
-    echo "  --claude         Claude Code"
-    echo "  --cursor,   -c   Cursor"
-    echo "  --windsurf, -w   Windsurf"
-    echo "  --vscode,   -v   VS Code (GitHub Copilot)"
-    echo "  --gemini,   -g   Gemini CLI"
-    echo "  --all,      -a   All of the above"
+    echo -e "${YELLOW}Opcoes de IDE:${NC}"
+    echo "  --devin,    -d          Instala para Devin / Devin Review / Devin CLI"
+    echo "  --claude,   -c          Instala para Claude Code"
+    echo "  --windsurf, -w          Instala para Windsurf (Cascade)"
+    echo "  --vscode,   -v          Instala para VS Code (GitHub Copilot)"
+    echo "  --cursor                Instala para Cursor"
+    echo "  --gemini,   -g          Instala para Gemini CLI (Google)"
+    echo "  --openclaw, -o          Instala para OpenClaw"
+    echo "  --all,      -a          Instala para todas as IDEs/CLIs"
     echo
-    echo -e "${YELLOW}Other:${NC}"
-    echo "  --dry-run        Print actions without changing anything"
-    echo "  --help, -h       Show this help"
+    echo -e "${YELLOW}Outras opcoes:${NC}"
+    echo "  --github-token <TOKEN>  Token GitHub para download do RTK (evita rate-limit)"
+    echo "  --help, -h              Exibe esta mensagem de ajuda"
     echo
-    echo -e "${YELLOW}What gets installed (skills + hooks + AGENTS.md):${NC}"
-    echo "  Base       ~/.agents/skills"
-    echo "  Devin      ~/.agents/skills, ~/.devin/skills, ~/.cognition/skills, ~/.config/devin/skills"
-    echo "             + ~/.devin/hooks + ~/.devin/AGENTS.md"
-    echo "  Claude     ~/.claude/skills + ~/.claude/hooks + ~/.claude/CLAUDE.md + ~/.claude/AGENTS.md"
-    echo "  Cursor     ~/.cursor/skills + ~/.cursor/hooks + ~/.cursor/AGENTS.md"
-    echo "  Windsurf   ~/.windsurf/skills + ~/.windsurf/hooks + ~/.windsurf/AGENTS.md"
-    echo "  VS Code    ~/.github/skills + ~/.github/hooks + ~/.github/AGENTS.md"
-    echo "  Gemini     ~/.gemini/skills + ~/.gemini/hooks + ~/.gemini/AGENTS.md"
+    echo -e "${YELLOW}Variaveis de ambiente:${NC}"
+    echo "  GITHUB_TOKEN            Token GitHub para download do RTK (alternativa ao --github-token)"
+    echo
+    echo -e "${YELLOW}Exemplos:${NC}"
+    echo "  ./install.sh --all                    # Todas as IDEs"
+    echo "  ./install.sh --vscode                 # Apenas VS Code"
+    echo "  ./install.sh --devin --claude         # Devin + Claude"
+    echo "  ./install.sh --windsurf --vscode      # Windsurf + VS Code"
+    echo "  ./install.sh --gemini                 # Apenas Gemini CLI"
+    echo "  ./install.sh -a                       # Todas as IDEs/CLIs (atalho)"
+    echo "  ./install.sh -d -c -w                 # Devin + Claude + Windsurf (atalho)"
+    echo "  ./install.sh -c                       # Apenas Claude Code (atalho)"
+    echo "  ./install.sh --all --github-token ghp_xxx  # Com token GitHub para RTK"
+    echo "  GITHUB_TOKEN=ghp_xxx ./install.sh --all    # Mesmo via env var"
+    echo
+    echo -e "${YELLOW}O que sera instalado:${NC}"
+    echo
+    echo "  IDE/CLI      Skills              Rules                    Knowledge"
+    echo "  ------------ ------------------- ------------------------ -------------------"
+    echo "  VS Code      ~/.github/skills    ~/.copilot/instructions  ~/.copilot/knowledge"
+    echo "                                   ~/.github/copilot-instructions.md (consolidado)"
+    echo "  Windsurf     ~/.windsurf/skills  ~/.windsurf/rules        ~/.windsurf/knowledge"
+    echo "                                   ~/.windsurfrules (consolidado)"
+    echo "                                   ~/.codeium/windsurf/memories/global_rules.md (global, sempre ativo)"
+    echo "  Cursor       ~/.cursor/skills    ~/.cursor/rules          ~/.cursor/knowledge"
+    echo "                                   ~/.cursorrules (consolidado)"
+    echo "  Devin        ~/.agents/skills     (via Cursor/Windsurf)    ~/.devin/knowledge"
+    echo "               + ~/.cognition/skills  (Devin-specific)"
+    echo "               + ~/.devin/skills  (compatibilidade)"
+    echo "               + ~/.config/cognition/skills  (Devin CLI)"
+    echo "               + ~/.config/cognition/knowledge  (Devin CLI)"
+    echo "               + AGENTS.md -> ~/.devin/AGENTS.md"
+    echo "  Claude       ~/.claude/skills    ~/.claude/rules          ~/.claude/knowledge"
+    echo "                                   ~/.claude/CLAUDE.md (instrucoes globais)"
+    echo "                                   ~/.claude/settings.json (permissoes)"
+    echo "                                   ~/.claude/commands/ (slash commands)"
+    echo "  Gemini CLI   ~/.gemini/skills    ~/.gemini/GEMINI.md      ~/.gemini/knowledge"
+    echo "  OpenClaw     ~/.openclaw/skills   ~/.openclaw/rules        ~/.openclaw/knowledge"
+    echo
+    echo "  Base: ~/.agents/skills (sempre instalado)"
+    echo "  Base: ~/.agents/harness/ (templates do Agent Harness)"
+    echo "  Base: ~/.agents/AGENTS_CLI.md (instrucoes genericas)"
+    echo
+    echo -e "${YELLOW}Documentacao:${NC}"
+    echo "  VS Code:   https://code.visualstudio.com/docs/copilot/customization/custom-instructions"
+    echo "  Windsurf:  https://docs.windsurf.com/windsurf/cascade/agents-md"
+    echo "  Cursor:    https://docs.cursor.com/context/rules"
+    echo "  Devin:     https://docs.devin.ai/work-with-devin/devin-review"
+    echo "  Devin CLI: https://cli.devin.ai/docs/extensibility/skills/overview"
+    echo "  Claude:    https://docs.anthropic.com/en/docs/claude-code"
+    echo "             https://docs.anthropic.com/en/docs/claude-code/slash-commands"
+    echo "  Gemini:    https://geminicli.com/docs/"
+    echo "  OpenClaw:  https://openclaw.dev/docs/"
     echo
 }
 
+# ============================================================================
+# PARSE ARGS
+# ============================================================================
+
 parse_args() {
-    if [ $# -eq 0 ]; then show_help; exit 0; fi
+    if [ $# -eq 0 ]; then
+        show_help
+        exit 0
+    fi
+
     while [ $# -gt 0 ]; do
         case "$1" in
-            --help|-h)     show_help; exit 0 ;;
-            --dry-run)     DRY_RUN=true ;;
+            --help|-help|--h|-h)
+                show_help
+                exit 0
+                ;;
             --all|-a)
-                INSTALL_VSCODE=true; INSTALL_WINDSURF=true; INSTALL_CURSOR=true
-                INSTALL_DEVIN=true; INSTALL_CLAUDE=true; INSTALL_GEMINI=true ;;
-            --base|-b)     : ;;   # base is always installed; accepted for clarity
-            --vscode|-v)   INSTALL_VSCODE=true ;;
-            --windsurf|-w) INSTALL_WINDSURF=true ;;
-            --cursor|-c)   INSTALL_CURSOR=true ;;
-            --devin|-d)    INSTALL_DEVIN=true ;;
-            --claude)      INSTALL_CLAUDE=true ;;
-            --gemini|-g)   INSTALL_GEMINI=true ;;
-            *) log_error "Unknown option: $1"; echo "Use --help."; exit 1 ;;
+                INSTALL_VSCODE=true
+                INSTALL_WINDSURF=true
+                INSTALL_CURSOR=true
+                INSTALL_DEVIN=true
+                INSTALL_CLAUDE=true
+                INSTALL_GEMINI=true
+                INSTALL_OPENCLAW=true
+                ;;
+            --vscode|-v)
+                INSTALL_VSCODE=true
+                ;;
+            --windsurf|-w)
+                INSTALL_WINDSURF=true
+                ;;
+            --cursor)
+                INSTALL_CURSOR=true
+                ;;
+            --devin|-d)
+                INSTALL_DEVIN=true
+                ;;
+            --claude|-c)
+                INSTALL_CLAUDE=true
+                ;;
+            --gemini|-g)
+                INSTALL_GEMINI=true
+                ;;
+            --openclaw|-o)
+                INSTALL_OPENCLAW=true
+                ;;
+            --github-token)
+                shift
+                if [ $# -eq 0 ]; then
+                    log_error "--github-token requer um valor. Ex: --github-token ghp_xxx"
+                    exit 1
+                fi
+                GITHUB_TOKEN_PARAM="$1"
+                ;;
+            *)
+                log_error "Opcao desconhecida: $1"
+                echo "Use --help para ver as opcoes disponiveis."
+                exit 1
+                ;;
         esac
         shift
     done
 }
 
-# --- helpers (respect --dry-run) ---
-
-run() {
-    if [ "$DRY_RUN" = true ]; then echo "  + $*"; else "$@"; fi
-}
+# ============================================================================
+# HELPERS
+# ============================================================================
 
 backup_dir_if_exists() {
     local dir_path="$1"
     if [ -d "$dir_path" ] && [ -n "$(ls -A "$dir_path" 2>/dev/null)" ]; then
-        local backup_path
-        backup_path="${dir_path}.backup.$(date +%Y%m%d_%H%M%S)"
+        local backup_path="${dir_path}.backup.$(date +%Y%m%d_%H%M%S)"
         log_info "Backup: $dir_path -> $backup_path"
-        run mv "$dir_path" "$backup_path"
+        mv "$dir_path" "$backup_path"
     fi
-    run mkdir -p "$dir_path"
+    mkdir -p "$dir_path"
 }
 
 backup_file_if_exists() {
     local file_path="$1"
     if [ -f "$file_path" ]; then
-        local backup_path
-        backup_path="${file_path}.backup.$(date +%Y%m%d_%H%M%S)"
+        local backup_path="${file_path}.backup.$(date +%Y%m%d_%H%M%S)"
         log_info "Backup: $file_path -> $backup_path"
-        run cp "$file_path" "$backup_path"
+        cp "$file_path" "$backup_path"
     fi
 }
 
-# install_skills_to <dest_dir>
-install_skills_to() {
-    local dest="$1"
-    backup_dir_if_exists "$dest"
-    run cp -a "$REPO_ROOT/skills/." "$dest/"
-}
-
-# install_hooks_to <ide> <dest_dir>
-install_hooks_to() {
-    local ide="$1" dest="$2"
-    if [ -d "$REPO_ROOT/hooks/$ide" ]; then
-        run mkdir -p "$dest"
-        run cp -a "$REPO_ROOT/hooks/$ide/." "$dest/"
-        # session-start-base.sh is sourced by the per-IDE hook
-        run cp -a "$REPO_ROOT/hooks/session-start-base.sh" "$dest/"
+generate_consolidated_rules() {
+    local output_file="$1"
+    local platform="${2:-}"
+    backup_file_if_exists "$output_file"
+    : > "$output_file"
+    for rule_file in rules/*.instructions.md; do
+        if [ -f "$rule_file" ]; then
+            # Strip YAML frontmatter, --- separators, and squeeze blank lines
+            awk 'BEGIN{fm=0} /^---$/{fm++; if(fm<=2) next} fm>=2||fm==0{print}' "$rule_file" \
+                | sed '/^---$/d' \
+                | cat -s >> "$output_file"
+        fi
+    done
+    # Inject IDE-specific paths row after Base table
+    local ide_row=""
+    case "$platform" in
+        vscode)   ide_row="| VS Code / Copilot | \`~/.github/skills/\` | \`~/.copilot/instructions/\` | \`~/.copilot/knowledge/\` |" ;;
+        windsurf) ide_row="| Windsurf | \`~/.windsurf/skills/\` | \`~/.windsurf/rules/\` | \`~/.windsurf/knowledge/\` |" ;;
+        cursor)   ide_row="| Cursor | \`~/.cursor/skills/\` | \`~/.cursor/rules/\` | \`~/.cursor/knowledge/\` |" ;;
+        claude)   ide_row="| Claude Code | \`~/.claude/skills/\` | \`~/.claude/rules/\` | \`~/.claude/knowledge/\` |" ;;
+        devin)    ide_row="| Devin | \`~/.devin/skills/\` | — | \`~/.devin/knowledge/\` |" ;;
+        gemini)   ide_row="| Gemini CLI | \`~/.gemini/skills/\` | \`~/.gemini/GEMINI.md\` | \`~/.gemini/knowledge/\` |" ;;
+    esac
+    if [ -n "$ide_row" ]; then
+        sed -i "/| Base (todas)/a\\$ide_row" "$output_file"
     fi
 }
 
-# install_agents_md_to <dest_file>
-install_agents_md_to() {
-    local dest="$1"
-    backup_file_if_exists "$dest"
-    run cp "$REPO_ROOT/AGENTS.md" "$dest"
+# ============================================================================
+# HELPER: copiar knowledge sources (subdiretorios) para destino flat
+# ============================================================================
+
+copy_knowledge_sources() {
+    local dest_dir="$1"
+    local ks_dir="devin/knowledge_sources"
+    if [ ! -d "$ks_dir" ]; then
+        return 1
+    fi
+    mkdir -p "$dest_dir"
+    for ks_subdir in "$ks_dir"/*/; do
+        [ -d "$ks_subdir" ] || continue
+        local slug
+        slug=$(basename "$ks_subdir")
+        if [ -f "$ks_subdir/KNOWLEDGE_SOURCE.md" ]; then
+            cp "$ks_subdir/KNOWLEDGE_SOURCE.md" "$dest_dir/${slug}.md"
+        fi
+    done
+    return 0
 }
+
+# ============================================================================
+# VERIFICACAO
+# ============================================================================
 
 check_directory() {
-    if [ ! -d "$REPO_ROOT/skills" ]; then
-        log_error "skills/ folder not found next to install.sh."
+    if [ ! -d "skills" ]; then
+        log_error "Pasta skills nao encontrada no diretorio atual!"
+        log_info "Execute este script a partir do diretorio raiz do repositorio."
         exit 1
+    fi
+    if [ ! -d "rules" ]; then
+        log_warning "Pasta rules nao encontrada no diretorio atual!"
+    fi
+    if [ ! -d "devin/knowledge_sources" ]; then
+        log_warning "Pasta devin/knowledge_sources nao encontrada no diretorio atual!"
+    fi
+    # registry.json e exclusivo do AI Marketplace (AI Marketplace) - nao faz parte da instalacao
+    if [ -d "mcps" ]; then
+        log_info "Diretorio mcps/ encontrado"
+    fi
+    if [ -d "devin/playbooks" ]; then
+        log_info "Diretorio devin/playbooks/ encontrado"
     fi
 }
 
-# --- installers ---
+# ============================================================================
+# INSTALACAO BASE (sempre executa)
+# ============================================================================
 
 install_base() {
-    log_info "Base -> ~/.agents/skills"
-    install_skills_to "$HOME/.agents/skills"
-    log_success "Base installed"
+    log_info "Instalando base (~/.agents/skills)..."
+
+    if [ -d "$HOME/.agents/skills" ]; then
+        local backup_dir="$HOME/.agents/skills.backup.$(date +%Y%m%d_%H%M%S)"
+        log_info "Backup: ~/.agents/skills -> $backup_dir"
+        mv "$HOME/.agents/skills" "$backup_dir"
+    fi
+
+    mkdir -p "$HOME/.agents"
+    cp -a skills "$HOME/.agents/skills"
+    log_success "Base instalada em ~/.agents/skills"
+
+    # AGENTS_CLI.md -> ~/.agents/AGENTS_CLI.md (instrucoes genericas do harness)
+    if [ -f "AGENTS_CLI.md" ]; then
+        backup_file_if_exists "$HOME/.agents/AGENTS_CLI.md"
+        cp AGENTS_CLI.md "$HOME/.agents/AGENTS_CLI.md"
+        log_success "AGENTS_CLI.md -> ~/.agents/AGENTS_CLI.md"
+    fi
+
+    # Criar estrutura de templates do Agent Harness em ~/.agents/harness/
+    install_harness_templates
+
+    # Ignore files -> ~/.agents/ (templates para otimizacao de tokens LLM)
+    local ignore_files=(".aiignore" ".cursorignore" ".geminiignore" ".devinignore" ".claudeignore" ".windsurfignore")
+    local copied_ignores=0
+    for ignore_file in "${ignore_files[@]}"; do
+        if [ -f "$ignore_file" ]; then
+            cp "$ignore_file" "$HOME/.agents/$ignore_file"
+            copied_ignores=$((copied_ignores + 1))
+        fi
+    done
+    if [ "$copied_ignores" -gt 0 ]; then
+        log_success "Ignore files ($copied_ignores) -> ~/.agents/ (templates)"
+    fi
+
+    # registry.json e exclusivo do AI Marketplace (AI Marketplace) - nao copiado na instalacao
+
+    # mcps/ -> ~/.agents/mcps/ (Model Context Protocol Servers)
+    if [ -d "mcps" ]; then
+        backup_dir_if_exists "$HOME/.agents/mcps"
+        cp -a mcps/* "$HOME/.agents/mcps/" 2>/dev/null || true
+        log_success "MCPs -> ~/.agents/mcps"
+    fi
+
+    # devin/playbooks/ -> ~/.agents/playbooks/
+    if [ -d "devin/playbooks" ]; then
+        backup_dir_if_exists "$HOME/.agents/playbooks"
+        cp -a devin/playbooks/* "$HOME/.agents/playbooks/" 2>/dev/null || true
+        log_success "Playbooks -> ~/.agents/playbooks"
+    fi
+
+    # devin/knowledge_sources/ -> ~/.agents/knowledge/
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.agents/knowledge"
+        copy_knowledge_sources "$HOME/.agents/knowledge/"
+        log_success "Knowledge Sources -> ~/.agents/knowledge"
+    fi
+
+    # Hooks sao instalados por IDE/CLI individualmente (install_hooks_for_ide)
+    # Cada IDE tem sua propria estrutura de hooks que deve ser respeitada
 }
 
-install_devin() {
-    log_info "=== Devin ==="
-    # ~/.agents/skills already installed by install_base()
-    install_skills_to "$HOME/.devin/skills"
-    install_skills_to "$HOME/.cognition/skills"
-    install_skills_to "$HOME/.config/devin/skills"
-    install_hooks_to "devin" "$HOME/.devin/hooks"
-    install_agents_md_to "$HOME/.devin/AGENTS.md"
-    log_success "Devin installed"
+# ============================================================================
+# HARNESS TEMPLATES (estrutura de arquivos do Agent Harness)
+# ============================================================================
+
+install_harness_templates() {
+    local harness_dir="$HOME/.agents/harness"
+    mkdir -p "$harness_dir"
+
+    # CONTEXT.md template
+    if [ ! -f "$harness_dir/CONTEXT.md" ]; then
+        cat > "$harness_dir/CONTEXT.md" << 'HARNESS_EOF'
+# Context Engineering
+
+## Estrategias de Carregamento
+
+| Tipo | Quando | Exemplos |
+|------|--------|----------|
+| **Always-on** | Sempre carregado | AGENTS.md, hard rules |
+| **Pattern-matched** | Por tipo de arquivo | `applyTo: '**/*.cs'` → regras C# |
+| **On-demand** | Quando solicitado | Knowledge, design docs |
+| **Progressive disclosure** | Codebases grandes | Mapa → headers → conteudo |
+
+## Token Budget
+
+- Reservar 20% para output
+- Chunking para arquivos >500 linhas
+- Compaction: budget reduction → snip → microcompact → collapse → auto-compact
+
+## Hierarquia de Prioridade
+
+1. Hard Rules (RULES.md)
+2. AGENTS.md (SSoT)
+3. Skills pattern-matched
+4. Knowledge on-demand
+5. Historico de sessao
+HARNESS_EOF
+        log_success "Template -> ~/.agents/harness/CONTEXT.md"
+    fi
+
+    # RULES.md template
+    if [ ! -f "$harness_dir/RULES.md" ]; then
+        cat > "$harness_dir/RULES.md" << 'HARNESS_EOF'
+# Guardrails
+
+## Hard Rules (bloqueio imediato)
+
+- Nunca commitar em main/master/develop
+- Nunca expor secrets em texto
+- Nunca modificar workflows protegidos
+
+## Soft Rules (warning + confirmacao)
+
+- Modificar Dockerfile
+- Deploy para producao
+- Deletar arquivos
+
+## Permissoes por Ambiente
+
+| Ambiente | Read | Write | Execute | Deploy |
+|----------|------|-------|---------|--------|
+| dev | Livre | Livre | Sandbox | CI |
+| hom | Livre | Gate | Sandbox | CI |
+| prod | Livre | Bloqueado | Proibido | Pipeline |
+
+## Tool Permissions
+
+- Read-only por padrao
+- Write via gates de aprovacao
+- Execute em sandbox com logging
+HARNESS_EOF
+        log_success "Template -> ~/.agents/harness/RULES.md"
+    fi
+
+    # MEMORY.md template
+    if [ ! -f "$harness_dir/MEMORY.md" ]; then
+        cat > "$harness_dir/MEMORY.md" << 'HARNESS_EOF'
+# State Management
+
+> Nunca armazenar PII, secrets ou credenciais.
+
+## Decisoes Tecnicas
+
+| Data | Decisao | Motivo | Alternativas Descartadas |
+|------|---------|--------|-------------------------|
+
+## Debitos Tecnicos
+
+| Item | Impacto | Prioridade |
+|------|---------|------------|
+
+## Licoes Aprendidas
+
+| Contexto | Erro | Como Evitar |
+|----------|------|-------------|
+
+## Politicas de Limpeza
+
+- Memorias de branches deletadas devem ser descartadas
+- Fatos desatualizados devem ser removidos
+- Verificar just-in-time contra codigo atual antes de usar memoria cross-session
+HARNESS_EOF
+        log_success "Template -> ~/.agents/harness/MEMORY.md"
+    fi
+
+    # TOOLS.md template
+    if [ ! -f "$harness_dir/TOOLS.md" ]; then
+        cat > "$harness_dir/TOOLS.md" << 'HARNESS_EOF'
+# Ferramentas e MCP
+
+## Categorias
+
+| Categoria | Risco | Politica |
+|-----------|-------|----------|
+| **Read-only** (search, list, grep) | Baixo | Livre |
+| **Write** (edit, create, delete) | Medio | Confirmacao |
+| **Execute** (run, build, deploy) | Alto | Sandboxed + logged |
+| **External** (APIs, webhooks) | Variavel | Rate-limited |
+
+## MCP Servers Disponiveis
+
+- (listar MCP servers configurados)
+
+## APIs Externas
+
+- Headers obrigatorios: (definir por projeto)
+- Timeouts: (definir por servico)
+- Rate limits: (documentar limites)
+HARNESS_EOF
+        log_success "Template -> ~/.agents/harness/TOOLS.md"
+    fi
+
+    # WORKFLOWS.md template
+    if [ ! -f "$harness_dir/WORKFLOWS.md" ]; then
+        cat > "$harness_dir/WORKFLOWS.md" << 'HARNESS_EOF'
+# Automacao e Workflows
+
+## Verification Loop
+
+```
+Agent Output → Lint → Tests → CI → LLM Judge → Human
+```
+
+## Workflow Padrao
+
+1. Receber tarefa
+2. Carregar AGENTS.md + RULES.md (always-on)
+3. Carregar skills e rules pattern-matched
+4. Apresentar Execution Plan — aguardar aprovacao
+5. Verificar guardrails
+6. Executar (sandbox + permissions)
+7. Verification loop: lint → test → CI
+8. Validar resultado (max 2 iteracoes antes de escalar)
+9. Atualizar MEMORY.md
+
+## Trigger Conditions
+
+| Trigger | Workflow |
+|---------|----------|
+| Issue opened | Analise + plano |
+| PR created | Review + validacao |
+| CI failed | Diagnostico + fix |
+| Schedule | Manutencao + drift |
+
+## Rollback
+
+- Reverter ultimo commit se CI falhar apos 2 tentativas
+- Notificar humano antes de rollback em producao
+HARNESS_EOF
+        log_success "Template -> ~/.agents/harness/WORKFLOWS.md"
+    fi
+
+    # README.md template
+    if [ ! -f "$harness_dir/README.md" ]; then
+        cat > "$harness_dir/README.md" << 'HARNESS_EOF'
+# Agent Harness — Documentacao
+
+## O que e
+
+`Agent = Model + Harness`
+
+O harness e o conjunto de arquivos que fornecem contexto, regras e ferramentas
+para agentes IA operarem em um repositorio com confiabilidade.
+
+## Estrutura
+
+```
+.agents/
+├── README.md          # Este arquivo
+├── CONTEXT.md         # Como o contexto e entregue ao agente
+├── RULES.md           # Guardrails (hard + soft rules)
+├── MEMORY.md          # Estado cross-session
+├── TOOLS.md           # Ferramentas e MCP
+├── WORKFLOWS.md       # Automacao e loops de verificacao
+├── skills/            # Uma skill por dominio
+│   └── <nome>/SKILL.md
+├── rules/             # Uma rule por stack
+│   └── <dominio>.instructions.md
+└── knowledge/         # Knowledge autocontido
+    └── <dominio>.md
+```
+
+## Como Skills sao Carregadas
+
+1. **Always-on**: AGENTS.md e RULES.md (carregados em toda sessao)
+2. **Pattern-matched**: Rules com `applyTo` ativam por glob de arquivo
+3. **On-demand**: Skills e knowledge carregados quando solicitados
+
+## Como Adicionar uma Skill
+
+1. Criar diretorio `.agents/skills/<nome>/`
+2. Criar `SKILL.md` com frontmatter YAML (name, description com What/When/Do NOT)
+3. Validar: descricao tripartite, sem dependencias implicitas, autocontida
+
+## Compatibilidade por Plataforma
+
+| Plataforma | Le AGENTS.md | Le .agents/ | Skills | Rules |
+|------------|-------------|-------------|--------|-------|
+| Devin | Sim | Sim | Sim | Via .cursor/rules |
+| Claude Code | Sim (CLAUDE.md) | Sim | Sim | Sim |
+| Windsurf | Sim | Sim | Sim | Sim |
+| VS Code | Sim | Parcial | Sim | Via copilot-instructions |
+| Cursor | Sim | Sim | Sim | Sim |
+HARNESS_EOF
+        log_success "Template -> ~/.agents/harness/README.md"
+    fi
+
+    log_success "Harness templates instalados em ~/.agents/harness/"
 }
 
-install_claude() {
-    log_info "=== Claude Code ==="
-    install_skills_to "$HOME/.claude/skills"
-    install_hooks_to "claude" "$HOME/.claude/hooks"
-    backup_file_if_exists "$HOME/.claude/CLAUDE.md"
-    run cp "$REPO_ROOT/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
-    install_agents_md_to "$HOME/.claude/AGENTS.md"
-    log_success "Claude installed"
-}
+# ============================================================================
+# INSTALACAO POR IDE
+# ============================================================================
 
-install_cursor() {
-    log_info "=== Cursor ==="
-    install_skills_to "$HOME/.cursor/skills"
-    install_hooks_to "cursor" "$HOME/.cursor/hooks"
-    install_agents_md_to "$HOME/.cursor/AGENTS.md"
-    log_success "Cursor installed"
+install_vscode() {
+    log_info "=== Instalando para VS Code (GitHub Copilot) ==="
+
+    # Skills -> ~/.github/skills
+    backup_dir_if_exists "$HOME/.github/skills"
+    cp -a skills/* "$HOME/.github/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.github/skills"
+
+    # Rules -> ~/.copilot/instructions + consolidado
+    if [ -d "rules" ]; then
+        backup_dir_if_exists "$HOME/.copilot/instructions"
+        cp -a rules/*.instructions.md "$HOME/.copilot/instructions/" 2>/dev/null || true
+        log_success "Rules -> ~/.copilot/instructions"
+
+        mkdir -p "$HOME/.github"
+        generate_consolidated_rules "$HOME/.github/copilot-instructions.md" "vscode"
+        log_success "Rules consolidadas -> ~/.github/copilot-instructions.md"
+    fi
+
+    # Knowledge -> ~/.copilot/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.copilot/knowledge"
+        copy_knowledge_sources "$HOME/.copilot/knowledge/"
+        log_success "Knowledge -> ~/.copilot/knowledge"
+    fi
+
+    # Windows: Visual Studio
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]] || [[ "$(uname -s)" == *MINGW* || "$(uname -s)" == *MSYS* ]]; then
+        log_info "Detectado ambiente Windows - copiando skills para Visual Studio..."
+        local docs_path="${USERPROFILE:-$HOME}/Documents"
+        for vs_version in "2022" "2026"; do
+            local vs_path="$docs_path/Visual Studio/$vs_version/Skills"
+            if [ -d "$(dirname "$vs_path")" ]; then
+                backup_dir_if_exists "$vs_path"
+                cp -a skills/* "$vs_path/" 2>/dev/null || true
+                log_success "Skills -> Visual Studio $vs_version"
+            fi
+        done
+    fi
+
+    # AGENTS_CLI.md -> ~/.github/AGENTS.md (instrucoes genericas do harness)
+    if [ -f "AGENTS_CLI.md" ]; then
+        mkdir -p "$HOME/.github"
+        backup_file_if_exists "$HOME/.github/AGENTS.md"
+        cp AGENTS_CLI.md "$HOME/.github/AGENTS.md"
+        log_success "AGENTS_CLI.md -> ~/.github/AGENTS.md"
+    elif [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.github"
+        backup_file_if_exists "$HOME/.github/AGENTS.md"
+        cp AGENTS.md "$HOME/.github/AGENTS.md"
+        log_success "AGENTS.md -> ~/.github/AGENTS.md"
+    fi
+
+    # .aiignore -> ~/.github/.aiignore (ignore file para LLMs)
+    if [ -f ".aiignore" ]; then
+        cp ".aiignore" "$HOME/.github/.aiignore"
+        log_success ".aiignore -> ~/.github/.aiignore"
+    fi
+
+    # Hooks -> ~/.github/hooks
+    install_hooks_for_ide "vscode" "$HOME/.github/hooks"
+
+    log_success "VS Code (GitHub Copilot) instalado!"
 }
 
 install_windsurf() {
-    log_info "=== Windsurf ==="
-    install_skills_to "$HOME/.windsurf/skills"
-    install_hooks_to "windsurf" "$HOME/.windsurf/hooks"
-    install_agents_md_to "$HOME/.windsurf/AGENTS.md"
-    log_success "Windsurf installed"
+    log_info "=== Instalando para Windsurf (Cascade) ==="
+
+    # Skills -> ~/.windsurf/skills
+    backup_dir_if_exists "$HOME/.windsurf/skills"
+    cp -a skills/* "$HOME/.windsurf/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.windsurf/skills"
+
+    # Rules -> ~/.windsurf/rules + consolidados
+    if [ -d "rules" ]; then
+        backup_dir_if_exists "$HOME/.windsurf/rules"
+        cp -a rules/*.instructions.md "$HOME/.windsurf/rules/" 2>/dev/null || true
+        log_success "Rules -> ~/.windsurf/rules"
+
+        generate_consolidated_rules "$HOME/.windsurfrules" "windsurf"
+        log_success "Rules consolidadas -> ~/.windsurfrules"
+
+        # Global Rules -> ~/.codeium/windsurf/memories/global_rules.md
+        # Ref: https://docs.windsurf.com/windsurf/cascade/memories
+        # Escopo global (todos os workspaces), sempre ativo, limite 6.000 chars
+        mkdir -p "$HOME/.codeium/windsurf/memories"
+        backup_file_if_exists "$HOME/.codeium/windsurf/memories/global_rules.md"
+        generate_consolidated_rules "$HOME/.codeium/windsurf/memories/global_rules.md" "windsurf"
+        log_success "Global Rules -> ~/.codeium/windsurf/memories/global_rules.md"
+        local rules_size
+        rules_size=$(wc -c < "$HOME/.codeium/windsurf/memories/global_rules.md" 2>/dev/null || echo 0)
+        if [ "$rules_size" -gt 6000 ]; then
+            log_warning "global_rules.md excede o limite de 6.000 chars (${rules_size} chars). Windsurf pode truncar o conteudo."
+        fi
+    fi
+
+    # Knowledge -> ~/.windsurf/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.windsurf/knowledge"
+        copy_knowledge_sources "$HOME/.windsurf/knowledge/"
+        log_success "Knowledge -> ~/.windsurf/knowledge"
+    fi
+
+    # AGENTS_CLI.md -> ~/.windsurf/AGENTS.md (instrucoes genericas do harness)
+    if [ -f "AGENTS_CLI.md" ]; then
+        mkdir -p "$HOME/.windsurf"
+        backup_file_if_exists "$HOME/.windsurf/AGENTS.md"
+        cp AGENTS_CLI.md "$HOME/.windsurf/AGENTS.md"
+        log_success "AGENTS_CLI.md -> ~/.windsurf/AGENTS.md"
+    elif [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.windsurf"
+        backup_file_if_exists "$HOME/.windsurf/AGENTS.md"
+        cp AGENTS.md "$HOME/.windsurf/AGENTS.md"
+        log_success "AGENTS.md -> ~/.windsurf/AGENTS.md"
+    fi
+
+    # .windsurfignore -> ~/.windsurf/.windsurfignore
+    if [ -f ".windsurfignore" ]; then
+        cp ".windsurfignore" "$HOME/.windsurf/.windsurfignore"
+        log_success ".windsurfignore -> ~/.windsurf/.windsurfignore"
+    fi
+
+    # Hooks -> ~/.windsurf/hooks
+    install_hooks_for_ide "windsurf" "$HOME/.windsurf/hooks"
+
+    log_success "Windsurf (Cascade) instalado!"
 }
 
-install_vscode() {
-    log_info "=== VS Code (GitHub Copilot) ==="
-    install_skills_to "$HOME/.github/skills"
-    install_hooks_to "vscode" "$HOME/.github/hooks"
-    install_agents_md_to "$HOME/.github/AGENTS.md"
-    log_success "VS Code installed"
+install_cursor() {
+    log_info "=== Instalando para Cursor ==="
+
+    # Skills -> ~/.cursor/skills
+    backup_dir_if_exists "$HOME/.cursor/skills"
+    cp -a skills/* "$HOME/.cursor/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.cursor/skills"
+
+    # Rules -> ~/.cursor/rules + consolidado
+    if [ -d "rules" ]; then
+        backup_dir_if_exists "$HOME/.cursor/rules"
+        cp -a rules/*.instructions.md "$HOME/.cursor/rules/" 2>/dev/null || true
+        log_success "Rules -> ~/.cursor/rules"
+
+        generate_consolidated_rules "$HOME/.cursorrules" "cursor"
+        log_success "Rules consolidadas -> ~/.cursorrules"
+    fi
+
+    # Knowledge -> ~/.cursor/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.cursor/knowledge"
+        copy_knowledge_sources "$HOME/.cursor/knowledge/"
+        log_success "Knowledge -> ~/.cursor/knowledge"
+    fi
+
+    # AGENTS_CLI.md -> ~/.cursor/AGENTS.md (instrucoes genericas do harness)
+    if [ -f "AGENTS_CLI.md" ]; then
+        mkdir -p "$HOME/.cursor"
+        backup_file_if_exists "$HOME/.cursor/AGENTS.md"
+        cp AGENTS_CLI.md "$HOME/.cursor/AGENTS.md"
+        log_success "AGENTS_CLI.md -> ~/.cursor/AGENTS.md"
+    elif [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.cursor"
+        backup_file_if_exists "$HOME/.cursor/AGENTS.md"
+        cp AGENTS.md "$HOME/.cursor/AGENTS.md"
+        log_success "AGENTS.md -> ~/.cursor/AGENTS.md"
+    fi
+
+    # .cursorignore -> ~/.cursor/.cursorignore
+    if [ -f ".cursorignore" ]; then
+        cp ".cursorignore" "$HOME/.cursor/.cursorignore"
+        log_success ".cursorignore -> ~/.cursor/.cursorignore"
+    fi
+
+    # Hooks -> ~/.cursor/hooks
+    install_hooks_for_ide "cursor" "$HOME/.cursor/hooks"
+
+    log_success "Cursor instalado!"
+}
+
+install_devin() {
+    log_info "=== Instalando para Devin / Devin Review / Devin CLI ==="
+
+    # Devin suporta skills em repo-relative paths que tambem funcionam em ~/.devin/
+    # Ref: https://docs.devin.ai/product-guides/skills#supported-skill-file-locations
+    # Paths suportados (repo-relative):
+    #   .agents/skills/<name>/SKILL.md  (recomendado)
+    #   .github/skills/<name>/SKILL.md
+    #   .claude/skills/<name>/SKILL.md
+    #   .cursor/skills/<name>/SKILL.md
+    #   .codex/skills/<name>/SKILL.md
+    #   .cognition/skills/<name>/SKILL.md
+    #   .windsurf/skills/<name>/SKILL.md
+
+    # Skills -> ~/.agents/skills (path recomendado pela doc oficial)
+    # Ja instalado pelo install_base(), verificamos aqui
+    if [ -d "$HOME/.agents/skills" ]; then
+        log_success "Skills -> ~/.agents/skills (recomendado, instalado via base)"
+    fi
+
+    # Skills -> ~/.cognition/skills (path Devin-specific)
+    backup_dir_if_exists "$HOME/.cognition/skills"
+    cp -a skills/* "$HOME/.cognition/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.cognition/skills"
+
+    # Skills -> ~/.devin/skills (compatibilidade)
+    backup_dir_if_exists "$HOME/.devin/skills"
+    cp -a skills/* "$HOME/.devin/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.devin/skills"
+
+    # Knowledge -> ~/.devin/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.devin/knowledge"
+        copy_knowledge_sources "$HOME/.devin/knowledge/"
+        log_success "Knowledge -> ~/.devin/knowledge"
+    fi
+
+    # Devin CLI (Terminal) - Skills -> ~/.config/cognition/skills/
+    # Ref: https://cli.devin.ai/docs/extensibility/skills/overview#where-skills-live
+    backup_dir_if_exists "$HOME/.config/cognition/skills"
+    cp -a skills/* "$HOME/.config/cognition/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.config/cognition/skills (Devin CLI)"
+
+    # Devin CLI - Knowledge -> ~/.config/cognition/knowledge/
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.config/cognition/knowledge"
+        copy_knowledge_sources "$HOME/.config/cognition/knowledge/"
+        log_success "Knowledge -> ~/.config/cognition/knowledge (Devin CLI)"
+    fi
+
+    # Rules -> ~/.cursor/rules e ~/.windsurfrules (para Devin Review)
+    # Devin CLI le rules de .cursor/rules/*.md, .cursorrules, .windsurf/rules/*.md, AGENTS.md
+    # Ref: https://cli.devin.ai/docs/extensibility/rules
+    if [ -d "rules" ]; then
+        if [ ! -d "$HOME/.cursor/rules" ] || [ -z "$(ls -A "$HOME/.cursor/rules" 2>/dev/null)" ]; then
+            backup_dir_if_exists "$HOME/.cursor/rules"
+            cp -a rules/*.instructions.md "$HOME/.cursor/rules/" 2>/dev/null || true
+            log_success "Rules -> ~/.cursor/rules (para Devin Review / Devin CLI)"
+        else
+            log_info "~/.cursor/rules ja existe, pulando (instale --cursor para atualizar)"
+        fi
+
+        if [ ! -f "$HOME/.windsurfrules" ]; then
+            generate_consolidated_rules "$HOME/.windsurfrules" "devin"
+            log_success "Rules consolidadas -> ~/.windsurfrules (para Devin Review / Devin CLI)"
+        else
+            log_info "~/.windsurfrules ja existe, pulando (instale --windsurf para atualizar)"
+        fi
+    fi
+
+    # AGENTS_CLI.md -> ~/.devin/AGENTS.md (instrucoes genericas do harness)
+    if [ -f "AGENTS_CLI.md" ]; then
+        mkdir -p "$HOME/.devin"
+        backup_file_if_exists "$HOME/.devin/AGENTS.md"
+        cp AGENTS_CLI.md "$HOME/.devin/AGENTS.md"
+        log_success "AGENTS_CLI.md -> ~/.devin/AGENTS.md"
+    elif [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.devin"
+        backup_file_if_exists "$HOME/.devin/AGENTS.md"
+        cp AGENTS.md "$HOME/.devin/AGENTS.md"
+        log_success "AGENTS.md -> ~/.devin/AGENTS.md"
+    fi
+
+    # .devinignore -> ~/.devin/.devinignore
+    if [ -f ".devinignore" ]; then
+        cp ".devinignore" "$HOME/.devin/.devinignore"
+        log_success ".devinignore -> ~/.devin/.devinignore"
+    fi
+
+    # registry.json e exclusivo do AI Marketplace (AI Marketplace) - nao copiado na instalacao
+
+    # mcps/ -> ~/.devin/mcps/
+    if [ -d "mcps" ]; then
+        backup_dir_if_exists "$HOME/.devin/mcps"
+        cp -a mcps/* "$HOME/.devin/mcps/" 2>/dev/null || true
+        log_success "MCPs -> ~/.devin/mcps"
+    fi
+
+    # devin/playbooks/ -> ~/.devin/playbooks/
+    if [ -d "devin/playbooks" ]; then
+        backup_dir_if_exists "$HOME/.devin/playbooks"
+        cp -a devin/playbooks/* "$HOME/.devin/playbooks/" 2>/dev/null || true
+        log_success "Playbooks -> ~/.devin/playbooks"
+    fi
+
+    # devin/knowledge_sources/ -> ~/.devin/knowledge_sources/
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.devin/knowledge_sources"
+        copy_knowledge_sources "$HOME/.devin/knowledge_sources/"
+        log_success "Knowledge Sources -> ~/.devin/knowledge_sources"
+    fi
+
+    # Hooks -> ~/.devin/hooks
+    install_hooks_for_ide "devin" "$HOME/.devin/hooks"
+
+    log_success "Devin / Devin Review / Devin CLI instalado!"
+}
+
+install_claude() {
+    log_info "=== Instalando para Claude Code ==="
+
+    # Garantir que o diretorio base existe
+    mkdir -p "$HOME/.claude"
+
+    # Skills -> ~/.claude/skills
+    backup_dir_if_exists "$HOME/.claude/skills"
+    cp -a skills/* "$HOME/.claude/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.claude/skills"
+
+    # Rules -> ~/.claude/rules
+    if [ -d "rules" ]; then
+        backup_dir_if_exists "$HOME/.claude/rules"
+        cp -a rules/*.instructions.md "$HOME/.claude/rules/" 2>/dev/null || true
+        log_success "Rules -> ~/.claude/rules"
+    fi
+
+    # Knowledge -> ~/.claude/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.claude/knowledge"
+        copy_knowledge_sources "$HOME/.claude/knowledge/"
+        log_success "Knowledge -> ~/.claude/knowledge"
+    fi
+
+    # AGENTS_CLI.md -> ~/.claude/CLAUDE.md (instrucoes globais para Claude Code)
+    if [ -f "AGENTS_CLI.md" ]; then
+        backup_file_if_exists "$HOME/.claude/CLAUDE.md"
+        cp AGENTS_CLI.md "$HOME/.claude/CLAUDE.md"
+        log_success "AGENTS_CLI.md -> ~/.claude/CLAUDE.md"
+    fi
+
+    # settings.json -> ~/.claude/settings.json (configuracoes e permissoes)
+    # Ref: https://docs.anthropic.com/en/docs/claude-code/settings
+    # Configura permissoes padrao e preferencias globais do Claude Code
+    if [ ! -f "$HOME/.claude/settings.json" ]; then
+        cat > "$HOME/.claude/settings.json" << 'SETTINGS_EOF'
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "Glob",
+      "Grep",
+      "LS",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git checkout -b *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(npm run *)",
+      "Bash(npx *)",
+      "Bash(dotnet build*)",
+      "Bash(dotnet test*)",
+      "Bash(mvn *)",
+      "Bash(terraform plan*)",
+      "Bash(terraform validate*)",
+      "Bash(pytest*)",
+      "Bash(cat *)",
+      "Bash(find *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)"
+    ],
+    "deny": [
+      "Bash(git merge * main)",
+      "Bash(git merge * master)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_ENABLE_SKILLS": "true"
+  }
+}
+SETTINGS_EOF
+        log_success "settings.json -> ~/.claude/settings.json"
+    else
+        log_info "~/.claude/settings.json ja existe, mantendo configuracoes do usuario"
+    fi
+
+    # commands/ -> ~/.claude/commands (slash commands customizados)
+    # Ref: https://docs.anthropic.com/en/docs/claude-code/slash-commands
+    mkdir -p "$HOME/.claude/commands"
+    
+    # Comando /plan — gerar execution plan
+    cat > "$HOME/.claude/commands/plan.md" << 'CMD_EOF'
+Gere um Execution Plan seguindo o formato obrigatorio:
+
+1. Goal and context
+2. Impacted files and modules
+3. Implementation strategy
+4. Risks and mitigations
+5. Validation steps (tests, build, lint)
+
+Analise o contexto atual do projeto e a solicitacao do usuario: $ARGUMENTS
+CMD_EOF
+    
+    # Comando /review — revisar codigo
+    cat > "$HOME/.claude/commands/review.md" << 'CMD_EOF'
+Revise o codigo seguindo as rules do Agent Skills:
+
+- Verifique aderencia aos padroes em ~/.claude/rules/
+- Valide seguranca (OWASP Top 10, secrets, headers)
+- Cheque convencoes de nomenclatura
+- Verifique cobertura de testes minima
+- Identifique riscos e sugira mitigacoes
+
+Contexto: $ARGUMENTS
+CMD_EOF
+
+    # Comando /skill — listar ou carregar skills
+    cat > "$HOME/.claude/commands/skill.md" << 'CMD_EOF'
+Liste as skills disponiveis em ~/.claude/skills/ ou carregue uma skill especifica.
+
+Se nenhum argumento for fornecido, liste todas as skills com nome e descricao.
+Se um nome de skill for fornecido, leia e aplique o SKILL.md correspondente.
+
+Argumento: $ARGUMENTS
+CMD_EOF
+
+    log_success "Commands -> ~/.claude/commands/"
+
+    # .claudeignore -> ~/.claude/.claudeignore
+    if [ -f ".claudeignore" ]; then
+        cp ".claudeignore" "$HOME/.claude/.claudeignore"
+        log_success ".claudeignore -> ~/.claude/.claudeignore"
+    fi
+
+    # Hooks -> ~/.claude/hooks
+    install_hooks_for_ide "claude" "$HOME/.claude/hooks"
+
+    log_success "Claude Code instalado!"
 }
 
 install_gemini() {
-    log_info "=== Gemini CLI ==="
-    install_skills_to "$HOME/.gemini/skills"
-    install_hooks_to "gemini" "$HOME/.gemini/hooks"
-    install_agents_md_to "$HOME/.gemini/AGENTS.md"
-    log_success "Gemini installed"
+    log_info "=== Instalando para Gemini CLI (Google) ==="
+
+    # Garantir que o diretorio base existe
+    mkdir -p "$HOME/.gemini"
+
+    # Skills -> ~/.gemini/skills
+    # Gemini CLI descobre skills em ~/.gemini/skills/ (user-level)
+    # Cada skill e um diretorio contendo SKILL.md
+    # Ref: https://geminicli.com/docs/
+    backup_dir_if_exists "$HOME/.gemini/skills"
+    cp -a skills/* "$HOME/.gemini/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.gemini/skills"
+
+    # Rules -> ~/.gemini/GEMINI.md (contexto global consolidado)
+    # Gemini CLI usa GEMINI.md como arquivo de contexto e instrucoes globais
+    # Similar ao .cursorrules e .windsurfrules para outros agentes
+    if [ -d "rules" ]; then
+        generate_consolidated_rules "$HOME/.gemini/GEMINI.md" "gemini"
+        log_success "Rules consolidadas -> ~/.gemini/GEMINI.md"
+    fi
+
+    # Knowledge -> ~/.gemini/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.gemini/knowledge"
+        copy_knowledge_sources "$HOME/.gemini/knowledge/"
+        log_success "Knowledge -> ~/.gemini/knowledge"
+    fi
+
+    # AGENTS_CLI.md -> ~/.gemini/AGENTS.md (instrucoes genericas do harness)
+    if [ -f "AGENTS_CLI.md" ]; then
+        mkdir -p "$HOME/.gemini"
+        backup_file_if_exists "$HOME/.gemini/AGENTS.md"
+        cp AGENTS_CLI.md "$HOME/.gemini/AGENTS.md"
+        log_success "AGENTS_CLI.md -> ~/.gemini/AGENTS.md"
+    elif [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.gemini"
+        backup_file_if_exists "$HOME/.gemini/AGENTS.md"
+        cp AGENTS.md "$HOME/.gemini/AGENTS.md"
+        log_success "AGENTS.md -> ~/.gemini/AGENTS.md"
+    fi
+
+    # .geminiignore -> ~/.gemini/.geminiignore
+    if [ -f ".geminiignore" ]; then
+        cp ".geminiignore" "$HOME/.gemini/.geminiignore"
+        log_success ".geminiignore -> ~/.gemini/.geminiignore"
+    fi
+
+    # Hooks -> ~/.gemini/hooks
+    install_hooks_for_ide "gemini" "$HOME/.gemini/hooks"
+
+    log_success "Gemini CLI (Google) instalado!"
 }
 
-main() {
-    parse_args "$@"
-    check_directory
-    [ "$DRY_RUN" = true ] && log_warning "DRY-RUN: no changes will be made"
+install_openclaw() {
+    log_info "=== Instalando para OpenClaw ==="
 
-    # base always runs unless a specific target already covers it
-    install_base
+    # Garantir que o diretorio base existe
+    mkdir -p "$HOME/.openclaw"
 
-    [ "$INSTALL_DEVIN" = true ]    && install_devin
-    [ "$INSTALL_CLAUDE" = true ]   && install_claude
-    [ "$INSTALL_CURSOR" = true ]   && install_cursor
-    [ "$INSTALL_WINDSURF" = true ] && install_windsurf
-    [ "$INSTALL_VSCODE" = true ]   && install_vscode
-    [ "$INSTALL_GEMINI" = true ]   && install_gemini
+    # Skills -> ~/.openclaw/skills
+    backup_dir_if_exists "$HOME/.openclaw/skills"
+    cp -a skills/* "$HOME/.openclaw/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.openclaw/skills"
+
+    # Rules -> ~/.openclaw/rules
+    if [ -d "rules" ]; then
+        backup_dir_if_exists "$HOME/.openclaw/rules"
+        cp -a rules/*.instructions.md "$HOME/.openclaw/rules/" 2>/dev/null || true
+        log_success "Rules -> ~/.openclaw/rules"
+    fi
+
+    # Knowledge -> ~/.openclaw/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.openclaw/knowledge"
+        copy_knowledge_sources "$HOME/.openclaw/knowledge/"
+        log_success "Knowledge -> ~/.openclaw/knowledge"
+    fi
+
+    # AGENTS_CLI.md -> ~/.openclaw/AGENTS.md (instrucoes genericas do harness)
+    if [ -f "AGENTS_CLI.md" ]; then
+        mkdir -p "$HOME/.openclaw"
+        backup_file_if_exists "$HOME/.openclaw/AGENTS.md"
+        cp AGENTS_CLI.md "$HOME/.openclaw/AGENTS.md"
+        log_success "AGENTS_CLI.md -> ~/.openclaw/AGENTS.md"
+    elif [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.openclaw"
+        backup_file_if_exists "$HOME/.openclaw/AGENTS.md"
+        cp AGENTS.md "$HOME/.openclaw/AGENTS.md"
+        log_success "AGENTS.md -> ~/.openclaw/AGENTS.md"
+    fi
+
+    log_success "OpenClaw instalado!"
+}
+
+# ============================================================================
+# RTK (Rust Token Killer) — CLI proxy para reducao de tokens
+# ============================================================================
+
+install_rtk() {
+    log_info "=== Instalando RTK (Rust Token Killer) ==="
+
+    local RTK_VERSION="${RTK_VERSION:-0.42.0}"
+    local RTK_INSTALL_DIR="${HOME}/.local/bin"
+    local RTK_BINARY="${RTK_INSTALL_DIR}/rtk"
+    # Prioridade: --github-token param > GITHUB_TOKEN env var
+    local TOKEN="${GITHUB_TOKEN_PARAM:-${GITHUB_TOKEN:-}}"
+    local GH_AUTH_HEADER=""
+
+    [ -n "${TOKEN}" ] && GH_AUTH_HEADER="Authorization: Bearer ${TOKEN}"
+
+    # ---- 1. Verificar se ja esta instalado -----------------------------------
+    if command -v rtk &>/dev/null; then
+        local current_version
+        current_version=$(rtk --version 2>/dev/null || echo "unknown")
+        log_info "RTK ja instalado: $current_version"
+        return 0
+    fi
+
+    if [ -f "$RTK_BINARY" ]; then
+        local current_version
+        current_version=$("$RTK_BINARY" --version 2>/dev/null || echo "unknown")
+        log_info "RTK ja instalado: $current_version"
+        return 0
+    fi
+
+    # ---- 2. Detectar OS, arquitetura e target --------------------------------
+    local OS ARCH TARGET ASSET_FILTER EXT="tar.gz"
+
+    case "$(uname -s)" in
+        Linux*)          OS="linux";;
+        Darwin*)         OS="darwin";;
+        MINGW*|MSYS*|CYGWIN*|Windows_NT) OS="windows";;
+        *)
+            log_warning "WARNING: OS nao suportado para RTK: $(uname -s). Pulando instalacao do RTK."
+            return 0
+            ;;
+    esac
+
+    case "$(uname -m)" in
+        x86_64|amd64)  ARCH="x86_64";;
+        arm64|aarch64) ARCH="aarch64";;
+        *)
+            log_warning "WARNING: Arquitetura nao suportada para RTK: $(uname -m). Pulando instalacao do RTK."
+            return 0
+            ;;
+    esac
+
+    case "${OS}-${ARCH}" in
+        linux-x86_64)   TARGET="x86_64-unknown-linux-musl";;
+        linux-aarch64)  TARGET="aarch64-unknown-linux-gnu";;
+        darwin-x86_64)  TARGET="x86_64-apple-darwin";;
+        darwin-aarch64) TARGET="aarch64-apple-darwin";;
+        windows-x86_64) TARGET="x86_64-pc-windows-msvc"; EXT="zip";;
+        windows-aarch64)
+            log_warning "WARNING: Windows ARM nao suportado pelo RTK. Pulando instalacao."
+            return 0
+            ;;
+    esac
+
+    ASSET_FILTER="$TARGET"
+    log_info "Detectado: $OS $ARCH (target: $TARGET)"
+
+    # ---- 3. Obter asset ID via GitHub API ------------------------------------
+    local API_RESP ASSET_ID=""
+
+    API_RESP=$(curl -sL ${GH_AUTH_HEADER:+-H "$GH_AUTH_HEADER"} \
+        "https://api.github.com/repos/rtk-ai/rtk/releases/tags/v${RTK_VERSION}" 2>/dev/null || echo "")
+
+    if [ -n "$API_RESP" ] && command -v python3 &>/dev/null; then
+        ASSET_ID=$(echo "$API_RESP" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    ids = [str(a['id']) for a in data.get('assets', [])
+           if '${ASSET_FILTER}' in a.get('name', '')]
+    if ids: print(ids[0])
+except: pass
+" 2>/dev/null || echo "")
+    fi
+
+    # Fallback: asset IDs conhecidos para versoes estáveis
+    if [ -z "$ASSET_ID" ]; then
+        case "${RTK_VERSION}-${TARGET}" in
+            0.42.0-x86_64-unknown-linux-musl) ASSET_ID="419581643";;
+        esac
+        if [ -n "$ASSET_ID" ]; then
+            log_info "Usando asset ID do cache local para v${RTK_VERSION}."
+        fi
+    fi
+
+    # ---- 4. Download via GitHub API (asset ID) ou URL direta -----------------
+    local TEMP_DIR
+    TEMP_DIR=$(mktemp -d)
+    local DOWNLOAD_OK=false
+
+    # Tentativa 1: GitHub API com asset ID
+    if [ -n "$ASSET_ID" ]; then
+        log_info "Baixando RTK v${RTK_VERSION} (asset=${ASSET_ID})..."
+        if curl -fsSL ${GH_AUTH_HEADER:+-H "$GH_AUTH_HEADER"} \
+            -H "Accept: application/octet-stream" \
+            "https://api.github.com/repos/rtk-ai/rtk/releases/assets/${ASSET_ID}" \
+            -o "${TEMP_DIR}/rtk.${EXT}" 2>/dev/null; then
+            DOWNLOAD_OK=true
+        fi
+    fi
+
+    # Tentativa 2: URL direta do release
+    if [ "$DOWNLOAD_OK" = false ]; then
+        local DIRECT_URL="https://github.com/rtk-ai/rtk/releases/download/v${RTK_VERSION}/rtk-${TARGET}.${EXT}"
+        log_info "Tentando download direto: $DIRECT_URL"
+        if curl -fsSL "$DIRECT_URL" -o "${TEMP_DIR}/rtk.${EXT}" 2>/dev/null; then
+            DOWNLOAD_OK=true
+        fi
+    fi
+
+    if [ "$DOWNLOAD_OK" = false ]; then
+        log_warning "WARNING: Falha ao baixar RTK (sem rede/proxy ou API rate-limited). Pulando instalacao do RTK."
+        rm -rf "$TEMP_DIR"
+        return 0
+    fi
+
+    # ---- 5. Extrair e instalar -----------------------------------------------
+    mkdir -p "$RTK_INSTALL_DIR"
+
+    if [ "$EXT" = "zip" ]; then
+        # Windows: extrair .zip
+        if command -v unzip &>/dev/null; then
+            unzip -qo "${TEMP_DIR}/rtk.${EXT}" -d "$TEMP_DIR" 2>/dev/null
+        else
+            log_warning "WARNING: unzip nao disponivel. Pulando instalacao do RTK no Windows."
+            rm -rf "$TEMP_DIR"
+            return 0
+        fi
+        if [ -f "${TEMP_DIR}/rtk.exe" ]; then
+            mv "${TEMP_DIR}/rtk.exe" "${RTK_INSTALL_DIR}/rtk.exe"
+            RTK_BINARY="${RTK_INSTALL_DIR}/rtk.exe"
+        else
+            log_warning "WARNING: Binario rtk.exe nao encontrado no archive. Pulando instalacao do RTK."
+            rm -rf "$TEMP_DIR"
+            return 0
+        fi
+    else
+        # Linux/macOS: extrair .tar.gz
+        if ! tar -xzf "${TEMP_DIR}/rtk.${EXT}" -C "$TEMP_DIR" 2>/dev/null; then
+            log_warning "WARNING: Falha ao extrair RTK. Arquivo corrompido? Pulando instalacao do RTK."
+            rm -rf "$TEMP_DIR"
+            return 0
+        fi
+        if [ -f "${TEMP_DIR}/rtk" ]; then
+            mv "${TEMP_DIR}/rtk" "$RTK_BINARY"
+            chmod +x "$RTK_BINARY"
+        else
+            log_warning "WARNING: Binario rtk nao encontrado no archive. Pulando instalacao do RTK."
+            rm -rf "$TEMP_DIR"
+            return 0
+        fi
+    fi
+
+    rm -rf "$TEMP_DIR"
+
+    # ---- 6. Verificar instalacao ---------------------------------------------
+    if [ -f "$RTK_BINARY" ]; then
+        local installed_version
+        installed_version=$("$RTK_BINARY" --version 2>/dev/null || echo "v${RTK_VERSION}")
+        log_success "RTK instalado: $installed_version em $RTK_BINARY"
+
+        if ! echo "$PATH" | grep -q "$RTK_INSTALL_DIR"; then
+            log_info "Adicione ao PATH: export PATH=\"\$HOME/.local/bin:\$PATH\""
+        fi
+    else
+        log_warning "WARNING: Instalacao do RTK falhou silenciosamente. Pulando."
+    fi
+}
+
+install_hooks_for_ide() {
+    local ide="$1"
+    local hooks_dest="$2"
+    local hooks_src="hooks/${ide}"
+
+    if [ ! -d "$hooks_src" ]; then
+        return 0
+    fi
+
+    mkdir -p "$hooks_dest"
+
+    # Copiar todos os arquivos do subdiretorio da IDE
+    cp -a "$hooks_src"/* "$hooks_dest/" 2>/dev/null || true
+
+    # Copiar session-start-base.sh para dentro do hooks dir da IDE
+    if [ -f "hooks/session-start-base.sh" ]; then
+        cp "hooks/session-start-base.sh" "$hooks_dest/session-start-base.sh"
+    fi
+
+    # Garantir que scripts sao executaveis
+    chmod +x "$hooks_dest"/session-start 2>/dev/null || true
+    chmod +x "$hooks_dest"/*.sh 2>/dev/null || true
+
+    log_success "Hooks -> $hooks_dest ($ide)"
+}
+
+# ============================================================================
+# VERIFICACAO POS-INSTALACAO
+# ============================================================================
+
+verify_installation() {
+    echo
+    log_info "=== Verificacao da instalacao ==="
+
+    if [ -d "$HOME/.agents/skills" ]; then
+        local count
+        count=$(find "$HOME/.agents/skills" -maxdepth 1 -type d | wc -l)
+        count=$((count - 1))
+        log_success "Base: ~/.agents/skills ($count skills)"
+    fi
+    [ -f "$HOME/.agents/AGENTS_CLI.md" ] && log_success "Base: ~/.agents/AGENTS_CLI.md (harness instructions)"
+    [ -d "$HOME/.agents/harness" ] && log_success "Base: ~/.agents/harness/ (harness templates)"
+
+    [ -d "$HOME/.agents/mcps" ] && log_success "Base: ~/.agents/mcps"
+    [ -d "$HOME/.agents/playbooks" ] && log_success "Base: ~/.agents/playbooks"
+    [ -d "$HOME/.agents/knowledge" ] && log_success "Base: ~/.agents/knowledge"
+
+    if [ "$INSTALL_VSCODE" = true ]; then
+        echo
+        log_info "VS Code (GitHub Copilot):"
+        [ -d "$HOME/.github/skills" ] && log_success "  Skills: ~/.github/skills"
+        [ -d "$HOME/.copilot/instructions" ] && log_success "  Rules: ~/.copilot/instructions"
+        [ -f "$HOME/.github/copilot-instructions.md" ] && log_success "  Rules consolidadas: ~/.github/copilot-instructions.md"
+        [ -d "$HOME/.copilot/knowledge" ] && log_success "  Knowledge: ~/.copilot/knowledge"
+        [ -f "$HOME/.github/AGENTS.md" ] && log_success "  AGENTS.md: ~/.github/AGENTS.md"
+    fi
+
+    if [ "$INSTALL_WINDSURF" = true ]; then
+        echo
+        log_info "Windsurf (Cascade):"
+        [ -d "$HOME/.windsurf/skills" ] && log_success "  Skills: ~/.windsurf/skills"
+        [ -d "$HOME/.windsurf/rules" ] && log_success "  Rules: ~/.windsurf/rules"
+        [ -f "$HOME/.windsurfrules" ] && log_success "  Rules consolidadas: ~/.windsurfrules"
+        [ -f "$HOME/.codeium/windsurf/memories/global_rules.md" ] && log_success "  Global Rules: ~/.codeium/windsurf/memories/global_rules.md"
+        [ -d "$HOME/.windsurf/knowledge" ] && log_success "  Knowledge: ~/.windsurf/knowledge"
+        [ -f "$HOME/.windsurf/AGENTS.md" ] && log_success "  AGENTS.md: ~/.windsurf/AGENTS.md"
+    fi
+
+    if [ "$INSTALL_CURSOR" = true ]; then
+        echo
+        log_info "Cursor:"
+        [ -d "$HOME/.cursor/skills" ] && log_success "  Skills: ~/.cursor/skills"
+        [ -d "$HOME/.cursor/rules" ] && log_success "  Rules: ~/.cursor/rules"
+        [ -f "$HOME/.cursorrules" ] && log_success "  Rules consolidadas: ~/.cursorrules"
+        [ -d "$HOME/.cursor/knowledge" ] && log_success "  Knowledge: ~/.cursor/knowledge"
+        [ -f "$HOME/.cursor/AGENTS.md" ] && log_success "  AGENTS.md: ~/.cursor/AGENTS.md"
+    fi
+
+    if [ "$INSTALL_DEVIN" = true ]; then
+        echo
+        log_info "Devin / Devin Review / Devin CLI:"
+        [ -d "$HOME/.agents/skills" ] && log_success "  Skills (recomendado): ~/.agents/skills"
+        [ -d "$HOME/.cognition/skills" ] && log_success "  Skills (Devin-specific): ~/.cognition/skills"
+        [ -d "$HOME/.devin/skills" ] && log_success "  Skills (compatibilidade): ~/.devin/skills"
+        [ -d "$HOME/.devin/knowledge" ] && log_success "  Knowledge: ~/.devin/knowledge"
+
+        [ -d "$HOME/.devin/mcps" ] && log_success "  MCPs: ~/.devin/mcps"
+        [ -d "$HOME/.devin/playbooks" ] && log_success "  Playbooks: ~/.devin/playbooks"
+        [ -d "$HOME/.devin/knowledge_sources" ] && log_success "  Knowledge Sources: ~/.devin/knowledge_sources"
+        [ -d "$HOME/.config/cognition/skills" ] && log_success "  Skills (Devin CLI): ~/.config/cognition/skills"
+        [ -d "$HOME/.config/cognition/knowledge" ] && log_success "  Knowledge (Devin CLI): ~/.config/cognition/knowledge"
+        [ -d "$HOME/.cursor/rules" ] && log_success "  Rules (Devin Review/CLI): ~/.cursor/rules"
+        [ -f "$HOME/.windsurfrules" ] && log_success "  Rules (Devin Review/CLI): ~/.windsurfrules"
+        [ -f "$HOME/.devin/AGENTS.md" ] && log_success "  AGENTS.md: ~/.devin/AGENTS.md"
+    fi
+
+    if [ "$INSTALL_CLAUDE" = true ]; then
+        echo
+        log_info "Claude Code:"
+        [ -d "$HOME/.claude/skills" ] && log_success "  Skills: ~/.claude/skills"
+        [ -d "$HOME/.claude/rules" ] && log_success "  Rules: ~/.claude/rules"
+        [ -d "$HOME/.claude/knowledge" ] && log_success "  Knowledge: ~/.claude/knowledge"
+        [ -f "$HOME/.claude/CLAUDE.md" ] && log_success "  CLAUDE.md: ~/.claude/CLAUDE.md"
+        [ -f "$HOME/.claude/settings.json" ] && log_success "  Settings: ~/.claude/settings.json"
+        [ -d "$HOME/.claude/commands" ] && log_success "  Commands: ~/.claude/commands/"
+        [ -f "$HOME/.claude/AGENTS.md" ] && log_success "  AGENTS.md: ~/.claude/AGENTS.md"
+    fi
+
+    if [ "$INSTALL_GEMINI" = true ]; then
+        echo
+        log_info "Gemini CLI (Google):"
+        [ -d "$HOME/.gemini/skills" ] && log_success "  Skills: ~/.gemini/skills"
+        [ -f "$HOME/.gemini/GEMINI.md" ] && log_success "  Rules consolidadas: ~/.gemini/GEMINI.md"
+        [ -d "$HOME/.gemini/knowledge" ] && log_success "  Knowledge: ~/.gemini/knowledge"
+        [ -f "$HOME/.gemini/AGENTS.md" ] && log_success "  AGENTS.md: ~/.gemini/AGENTS.md"
+    fi
+
+    if [ "$INSTALL_OPENCLAW" = true ]; then
+        echo
+        log_info "OpenClaw:"
+        [ -d "$HOME/.openclaw/skills" ] && log_success "  Skills: ~/.openclaw/skills"
+        [ -d "$HOME/.openclaw/rules" ] && log_success "  Rules: ~/.openclaw/rules"
+        [ -d "$HOME/.openclaw/knowledge" ] && log_success "  Knowledge: ~/.openclaw/knowledge"
+        [ -f "$HOME/.openclaw/AGENTS.md" ] && log_success "  AGENTS.md: ~/.openclaw/AGENTS.md"
+    fi
 
     echo
-    log_success "Done."
+    log_info "Skills disponiveis:"
+    find "$HOME/.agents/skills" -maxdepth 1 -type d -not -path "$HOME/.agents/skills" | \
+        sed 's|.*/||' | \
+        sort | \
+        while read -r skill; do
+        echo "  - $skill"
+    done
 }
 
-main "$@"
+# ============================================================================
+# INSTRUCOES POS-INSTALACAO
+# ============================================================================
+
+show_post_install() {
+    echo
+    echo "Desinstalacao:"
+    echo "  rm -rf ~/.agents"
+
+    if [ "$INSTALL_VSCODE" = true ]; then
+        echo "  rm -rf ~/.github/skills ~/.copilot/instructions ~/.copilot/knowledge"
+        echo "  rm -f ~/.github/copilot-instructions.md ~/.github/AGENTS.md"
+    fi
+    if [ "$INSTALL_WINDSURF" = true ]; then
+        echo "  rm -rf ~/.windsurf/skills ~/.windsurf/rules ~/.windsurf/knowledge"
+        echo "  rm -f ~/.windsurfrules ~/.windsurf/AGENTS.md"
+        echo "  rm -f ~/.codeium/windsurf/memories/global_rules.md"
+    fi
+    if [ "$INSTALL_CURSOR" = true ]; then
+        echo "  rm -rf ~/.cursor/skills ~/.cursor/rules ~/.cursor/knowledge"
+        echo "  rm -f ~/.cursorrules ~/.cursor/AGENTS.md"
+    fi
+    if [ "$INSTALL_DEVIN" = true ]; then
+        echo "  rm -rf ~/.cognition/skills"
+        echo "  rm -rf ~/.devin/skills ~/.devin/knowledge"
+        echo "  rm -f ~/.devin/AGENTS.md"
+        echo "  rm -rf ~/.devin/mcps ~/.devin/playbooks ~/.devin/knowledge_sources"
+        echo "  rm -rf ~/.config/cognition/skills ~/.config/cognition/knowledge"
+    fi
+    if [ "$INSTALL_CLAUDE" = true ]; then
+        echo "  rm -rf ~/.claude/skills ~/.claude/rules ~/.claude/knowledge ~/.claude/commands"
+        echo "  rm -f ~/.claude/AGENTS.md ~/.claude/CLAUDE.md ~/.claude/settings.json"
+    fi
+    if [ "$INSTALL_GEMINI" = true ]; then
+        echo "  rm -rf ~/.gemini/skills ~/.gemini/knowledge"
+        echo "  rm -f ~/.gemini/GEMINI.md ~/.gemini/AGENTS.md"
+    fi
+    if [ "$INSTALL_OPENCLAW" = true ]; then
+        echo "  rm -rf ~/.openclaw/skills ~/.openclaw/rules ~/.openclaw/knowledge"
+        echo "  rm -f ~/.openclaw/AGENTS.md"
+    fi
+
+    echo
+    echo "  Para limpar backups: ./rm-backup.sh"
+    echo
+}
+
+# ============================================================================
+# MAIN
+# ============================================================================
+
+main() {
+    echo "========================================"
+    echo "  Agent Skills - Instalador"
+    echo "========================================"
+    echo
+
+    local ides_selecionadas=""
+    [ "$INSTALL_VSCODE" = true ] && ides_selecionadas="${ides_selecionadas} VS-Code"
+    [ "$INSTALL_WINDSURF" = true ] && ides_selecionadas="${ides_selecionadas} Windsurf"
+    [ "$INSTALL_CURSOR" = true ] && ides_selecionadas="${ides_selecionadas} Cursor"
+    [ "$INSTALL_DEVIN" = true ] && ides_selecionadas="${ides_selecionadas} Devin"
+    [ "$INSTALL_CLAUDE" = true ] && ides_selecionadas="${ides_selecionadas} Claude"
+    [ "$INSTALL_GEMINI" = true ] && ides_selecionadas="${ides_selecionadas} Gemini"
+    [ "$INSTALL_OPENCLAW" = true ] && ides_selecionadas="${ides_selecionadas} OpenClaw"
+    log_info "IDEs/CLIs selecionadas:${ides_selecionadas}"
+    echo
+
+    check_directory
+    install_base
+    install_rtk
+
+    [ "$INSTALL_VSCODE" = true ] && install_vscode
+    [ "$INSTALL_WINDSURF" = true ] && install_windsurf
+    [ "$INSTALL_CURSOR" = true ] && install_cursor
+    [ "$INSTALL_DEVIN" = true ] && install_devin
+    [ "$INSTALL_CLAUDE" = true ] && install_claude
+    [ "$INSTALL_GEMINI" = true ] && install_gemini
+    [ "$INSTALL_OPENCLAW" = true ] && install_openclaw
+
+    verify_installation
+    show_post_install
+
+    log_success "Instalacao concluida com sucesso!"
+}
+
+parse_args "$@"
+main

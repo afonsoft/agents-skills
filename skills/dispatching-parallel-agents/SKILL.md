@@ -1,6 +1,13 @@
 ---
 name: dispatching-parallel-agents
+license: UNLICENSED
 description: "Dispatch specialized subagents in parallel — one per independent problem domain — with isolated, hand-crafted context. Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies: multiple failing test files with distinct root causes, broken subsystems that don't share state, or independent investigations across modules. Do NOT use for related failures where one fix might cascade, exploratory debugging where the broken domain is unknown yet, tasks needing full system context, or work involving shared state where agents would interfere with each other."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  squad: '360'
 ---
 
 # Dispatching Parallel Agents

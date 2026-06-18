@@ -1,6 +1,13 @@
 ---
 name: subagent-driven-development
+license: UNLICENSED
 description: "Use when executing implementation plans with independent tasks in the current session. Dispatches fresh subagent per task with two-stage review (spec compliance + code quality). Do NOT use for tightly coupled tasks requiring shared state or when no subagent support is available (use executing-plans instead)."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: obra/superpowers
 ---
 
 # Subagent-Driven Development

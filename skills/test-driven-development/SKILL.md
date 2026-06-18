@@ -1,6 +1,13 @@
 ---
 name: test-driven-development
+license: UNLICENSED
 description: "Use when implementing any feature or bugfix, before writing implementation code. Enforces red-green-refactor cycle: write failing test first, minimal code to pass, then refactor. Do NOT use for exploratory prototyping or when explicitly told to skip tests."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: obra/superpowers
 ---
 
 # Test-Driven Development (TDD)

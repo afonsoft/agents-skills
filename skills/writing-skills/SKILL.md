@@ -1,6 +1,13 @@
 ---
 name: writing-skills
-description: "Apply Test-Driven Development to skill authoring — write pressure scenarios with subagents (test cases), observe baseline failures (RED), write the skill (GREEN), close loopholes through refactor cycles. Use when creating new skills, editing existing skills, or verifying skills work before deployment. Do NOT use for one-off solutions, project-specific conventions (put in AGENTS.md/CLAUDE.md), or mechanical constraints enforceable via regex/validation. Companion skill: brainstorming (for design phase)."
+license: UNLICENSED
+description: "Apply Test-Driven Development to skill authoring — write pressure scenarios with subagents (test cases), observe baseline failures (RED), write the skill (GREEN), close loopholes through refactor cycles. Use when creating new skills, editing existing skills, or verifying skills work before deployment. Do NOT use for one-off solutions, project-specific conventions (put in AGENTS.md/CLAUDE.md), or mechanical constraints enforceable via regex/validation. Companion skills: brainstorming (for design phase), create-agent-harness (for bootstrapping agent harness in a repo)."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  squad: '360'
 ---
 
 # Writing Skills
@@ -666,12 +673,15 @@ Load these references lazily — only when needed for the current task.
 
 ## Adaptations for this catalog
 
-This skill was imported from [`obra/superpowers/skills/writing-skills`](https://github.com/obra/superpowers/tree/main/skills/writing-skills) with minor adaptations:
+This skill was imported from upstream and adapted for this agent catalog. Key adaptations:
 
-- **`superpowers:*` references** in the upstream text point to skills in the upstream `obra/superpowers` repo. The equivalents in this catalog are:
-  - `superpowers:test-driven-development` → the `test-driven-development` skill in this repo
-  - `superpowers:systematic-debugging` → the `systematic-debugging` skill in this repo
-- **Skill destinations**: skills are distributed by `install.sh` to the supported IDE/CLI paths (base `~/.agents/skills/`, plus `~/.devin/skills/`, `~/.claude/skills/`, `~/.cursor/skills/`, `~/.windsurf/skills/`, `~/.copilot/skills/`, `~/.gemini/skills/`).
+- **Frontmatter** aligned to repo standard: `license: UNLICENSED`, `metadata.version`, `metadata.author`, tripartite `description` with explicit `Do NOT use for` clause
+- **`superpowers:*` references** kept verbatim (e.g. `superpowers:test-driven-development`, `superpowers:systematic-debugging`) — these point to skills in the upstream `obra/superpowers` repo, NOT to skills in this catalog. They are intentionally preserved as conceptual references; the upstream content is not vendored here. When applying this skill, treat them as external prerequisites or substitute with internal equivalents:
+  - `superpowers:test-driven-development` → standard TDD discipline (no specific skill in this catalog)
+  - `superpowers:systematic-debugging` → general debugging discipline
+- **Skill destinations**: the original mentions `~/.claude/skills` for Claude Code and `~/.agents/skills/` for Codex. In this catalog, skills are distributed by `install.sh --all` to all supported IDEs (`~/.copilot/skills/`, `~/.windsurf/skills/`, `~/.cursor/skills/`, `~/.devin/skills/`, `~/.claude/skills/`, `~/.gemini/skills/`, plus base `~/.agents/skills/`).
+- **`agentskills.io/specification` reference** kept verbatim; in this catalog the equivalent constraints are validated by `@ai-stack/skill-scanner` (run `npm run scan:ci` before opening any PR).
+- **Branch policy for committing a new skill**: follow the corporate convention `feature/{agent}-{YYYYMMDD}-{descricao-curta}` from `rules/global-rules.instructions.md`.
 
 ## Origin
 

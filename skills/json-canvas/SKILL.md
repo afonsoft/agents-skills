@@ -1,6 +1,13 @@
 ---
 name: json-canvas
+license: UNLICENSED
 description: "Create and edit JSON Canvas files (.canvas) with nodes, edges, groups, and connections. Use when working with .canvas files, creating visual canvases, mind maps, flowcharts, or when the user mentions Canvas files. Do NOT use for Mermaid diagrams or standard image formats."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: kepano/obsidian-skills
 ---
 
 # JSON Canvas Skill
