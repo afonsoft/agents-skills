@@ -1,6 +1,7 @@
 ---
 name: abp-mongodb
-description: ABP MongoDB patterns - AbpMongoDbContext, IMongoCollection, MongoDbRepository, no migrations, embedded documents vs references, manual UpdateAsync required. Use when working in MongoDB projects or implementing MongoDB repositories in ABP.
+license: UNLICENSED
+description: Use when working in MongoDB projects or implementing MongoDB repositories in ABP. Covers AbpMongoDbContext, IMongoCollection, MongoDbRepository, no migrations, embedded documents vs references, and manual UpdateAsync required.
 ---
 
 # ABP MongoDB

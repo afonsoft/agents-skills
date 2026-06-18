@@ -1,6 +1,7 @@
 ---
 name: performance-optimization
-description: Comprehensive performance optimization strategies, profiling techniques, and best practices for .NET applications
+license: UNLICENSED
+description: Use when identifying and resolving performance bottlenecks in .NET applications, implementing caching strategies and optimization techniques, profiling and analyzing application performance, optimizing database queries and data access, improving memory management and resource utilization, or scaling applications for high-performance scenarios.
 ---
 
 # Performance Optimization Skill

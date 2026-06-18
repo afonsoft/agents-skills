@@ -1,6 +1,7 @@
 ---
 name: aspnet-core-api
-description: Complete ASP.NET Core REST API development with best practices, security, testing, and deployment patterns
+license: UNLICENSED
+description: Use when designing and implementing RESTful APIs with ASP.NET Core, applying security best practices with JWT authentication, implementing proper error handling and validation, creating comprehensive API documentation with OpenAPI/Swagger, setting up testing strategies for API endpoints, or optimizing API performance and caching.
 ---
 
 # ASP.NET Core API Skill

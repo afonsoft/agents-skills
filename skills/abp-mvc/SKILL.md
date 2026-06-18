@@ -1,6 +1,7 @@
 ---
 name: abp-mvc
-description: ABP MVC and Razor Pages UI - AbpPageModel, abp tag helpers (abp-card, abp-dynamic-form, abp-modal), JavaScript abp.ajax/abp.auth/abp.notify, DataTables integration, bundle/minification. Use when working on MVC or Razor Pages UI in ABP projects.
+license: UNLICENSED
+description: Use when working on MVC or Razor Pages UI in ABP projects. Covers AbpPageModel, abp tag helpers (abp-card, abp-dynamic-form, abp-modal), JavaScript abp.ajax/abp.auth/abp.notify, DataTables integration, and bundle/minification.
 ---
 
 # ABP MVC / Razor Pages UI

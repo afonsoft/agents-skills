@@ -1,6 +1,7 @@
 ---
 name: abp-testing
-description: ABP testing patterns - integration tests over unit tests, GetRequiredService, IDataSeedContributor, Shouldly assertions, AddAlwaysAllowAuthorization, NSubstitute mocking, WithUnitOfWorkAsync. Use when writing or reviewing tests for application services, domain services, or repositories in ABP projects.
+license: UNLICENSED
+description: Use when writing or reviewing tests for application services, domain services, or repositories in ABP projects. Covers integration tests over unit tests, GetRequiredService, IDataSeedContributor, Shouldly assertions, AddAlwaysAllowAuthorization, NSubstitute mocking, and WithUnitOfWorkAsync.
 ---
 
 # ABP Testing Patterns

@@ -1,6 +1,7 @@
 ---
 name: abp-angular
-description: ABP Angular UI patterns - generate-proxy, ListService, PermissionGuard, abpLocalization pipe, ConfirmationService, ToasterService, ConfigStateService. Use when building or reviewing Angular UI components, routing, or service integration in ABP Angular projects.
+license: UNLICENSED
+description: Use when building or reviewing Angular UI components, routing, or service integration in ABP Angular projects. Covers generate-proxy, ListService, PermissionGuard, abpLocalization pipe, ConfirmationService, ToasterService, ConfigStateService.
 ---
 
 # ABP Angular UI

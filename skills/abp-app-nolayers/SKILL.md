@@ -1,6 +1,7 @@
 ---
 name: abp-app-nolayers
-description: ABP Single-Layer (No-Layers / nolayers) application template - single project structure, feature-based file organization, no separate Domain/Application.Contracts projects. Use when working with the single-layer web application template or when the project has no layered separation.
+license: UNLICENSED
+description: Use when working with the single-layer web application template or when the project has no layered separation. Covers single project structure, feature-based file organization, and no separate Domain/Application.Contracts projects.
 ---
 
 # ABP Single-Layer Application Template

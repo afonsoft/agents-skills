@@ -1,6 +1,7 @@
 ---
 name: abp-core
-description: Core ABP Framework conventions - module system, DI registration, base classes (ApplicationService, DomainService), IClock, BusinessException, localization, async patterns. Use when working on any ABP project, asking about ABP fundamentals, or unsure which skill applies.
+license: UNLICENSED
+description: Use when working on any ABP project, asking about ABP fundamentals, or unsure which skill applies. Covers module system, DI registration, base classes (ApplicationService, DomainService), IClock, BusinessException, localization, and async patterns.
 ---
 
 # ABP Core Conventions

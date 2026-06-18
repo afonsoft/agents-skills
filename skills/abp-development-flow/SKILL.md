@@ -1,6 +1,7 @@
 ---
 name: abp-development-flow
-description: ABP development workflow - step-by-step guide for adding new entities, migrations, application services, localization, permissions, and tests. Use when adding new features or entities to an ABP project.
+license: UNLICENSED
+description: Use when adding new features or entities to an ABP project. Covers step-by-step guide for adding new entities, migrations, application services, localization, permissions, and tests.
 ---
 
 # ABP Development Workflow

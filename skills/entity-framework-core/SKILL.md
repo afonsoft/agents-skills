@@ -1,6 +1,7 @@
 ---
 name: entity-framework-core
-description: Master Entity Framework Core with best practices, performance optimization, and proper data access patterns
+license: UNLICENSED
+description: Use when designing EF Core models and relationships, optimizing database queries for performance, implementing proper data access patterns, handling migrations and database updates, or troubleshooting EF Core performance issues.
 ---
 
 # Entity Framework Core Skill

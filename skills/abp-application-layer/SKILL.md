@@ -1,6 +1,7 @@
 ---
 name: abp-application-layer
-description: ABP Application Services, DTOs, CRUD service, object mapping (Mapperly/AutoMapper), validation, error handling. Use when creating or reviewing application services, DTOs, or working in the Application or Application.Contracts projects.
+license: UNLICENSED
+description: Use when creating or reviewing application services, DTOs, or working in the Application or Application.Contracts projects. Covers Application Services, DTOs, CRUD service, object mapping (Mapperly/AutoMapper), validation, and error handling.
 ---
 
 # ABP Application Layer Patterns

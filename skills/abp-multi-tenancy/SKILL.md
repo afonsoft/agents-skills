@@ -1,6 +1,7 @@
 ---
 name: abp-multi-tenancy
-description: ABP Multi-Tenancy - IMultiTenant interface, CurrentTenant, CurrentTenant.Change(), DataFilter.Disable(IMultiTenant), tenant resolution order, database-per-tenant. Use when working with multi-tenant features, tenant-specific data isolation, or switching tenant context.
+license: UNLICENSED
+description: Use when working with multi-tenant features, tenant-specific data isolation, or switching tenant context. Covers IMultiTenant interface, CurrentTenant, CurrentTenant.Change(), DataFilter.Disable(IMultiTenant), tenant resolution order, and database-per-tenant.
 ---
 
 # ABP Multi-Tenancy

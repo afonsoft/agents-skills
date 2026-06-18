@@ -1,6 +1,7 @@
 ---
 name: ef-core
-description: 'Get best practices for Entity Framework Core'
+license: UNLICENSED
+description: Use when working with Entity Framework Core in .NET applications, needing guidance on data context design, entity design, performance optimization, migrations, querying patterns, change tracking, security, or testing strategies.
 ---
 
 # Entity Framework Core Best Practices

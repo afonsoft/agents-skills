@@ -1,6 +1,7 @@
 ---
 name: design-patterns
-description: Comprehensive guide to software design patterns, SOLID principles, and architectural patterns for .NET applications
+license: UNLICENSED
+description: Use when implementing SOLID principles in your code, applying Gang of Four (GoF) design patterns, choosing appropriate architectural patterns, refactoring code to improve design and maintainability, solving common design problems with proven patterns, or creating flexible and extensible software architecture.
 ---
 
 # Design Patterns Skill

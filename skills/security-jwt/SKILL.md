@@ -1,6 +1,7 @@
 ---
 name: security-jwt
-description: Comprehensive JWT authentication and authorization implementation with security best practices for .NET applications
+license: UNLICENSED
+description: Use when implementing JWT-based authentication in .NET applications, configuring secure authorization policies and roles, handling token generation, validation, and refresh, implementing proper security middleware and filters, applying security best practices and preventing common vulnerabilities, or setting up secure API endpoints with proper authorization.
 ---
 
 # JWT Security Skill

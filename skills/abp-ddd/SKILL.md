@@ -1,6 +1,7 @@
 ---
 name: abp-ddd
-description: ABP DDD patterns - Entities, Aggregate Roots, value objects, Repositories, Domain Services, Domain Events, Specifications. Use when designing domain layer, creating entities, repositories, or domain services in ABP projects.
+license: UNLICENSED
+description: Use when designing domain layer, creating entities, repositories, or domain services in ABP projects. Covers Entities, Aggregate Roots, value objects, Repositories, Domain Services, Domain Events, and Specifications.
 ---
 
 # ABP DDD Patterns
