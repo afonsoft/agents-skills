@@ -1,0 +1,27 @@
+{
+  "name": "agents-skills",
+  "version": "1.0.0",
+  "description": "Agent Skills - Skills, Rules e Knowledge para agentes de IA",
+  "private": true,
+  "scripts": {
+    "postinstall": "node tools/patch-scanner.cjs",
+    "scan": "npx @ai-stack/skill-scanner scan-all ./skills --recursive --format table",
+    "scan:json": "npx @ai-stack/skill-scanner scan-all ./skills --recursive --format json --output-json scan-results.json",
+    "scan:markdown": "npx @ai-stack/skill-scanner scan-all ./skills --recursive --format markdown --output-markdown scan-results.md",
+    "scan:full": "npx @ai-stack/skill-scanner scan-all ./skills --recursive --use-behavioral --use-trigger --check-overlap --format table",
+    "scan:ci": "npx @ai-stack/skill-scanner scan-all ./skills --recursive --format json --output-json scan-results.json --fail-on-severity critical",
+    "build": "npm run scan",
+    "validate": "npm run scan",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "skills",
+    "agent",
+    "ai-stack"
+  ],
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@ai-stack/skill-scanner": "1.1.0",
+    "husky": "9.1.7"
+  }
+}

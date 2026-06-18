@@ -1,6 +1,13 @@
 ---
 name: finishing-a-development-branch
+license: UNLICENSED
 description: "Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting structured options for merge, PR, or cleanup. Do NOT use before tests pass or when work is still in progress."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: obra/superpowers
 ---
 
 # Finishing a Development Branch

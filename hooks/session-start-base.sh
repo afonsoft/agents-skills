@@ -46,4 +46,4 @@ escape_for_json() {
 }
 
 SKILLS_ESCAPED=$(escape_for_json "$SKILLS_LIST")
-SESSION_CONTEXT="<skills-catalog>\nSkills available in this catalog:\n\n${SKILLS_ESCAPED}\n\nUse the appropriate skill for each context. See each skill's SKILL.md for detailed instructions.\n</skills-catalog>"
+SESSION_CONTEXT="<skills-catalog>\nSkills disponiveis no catalogo de skills:\n\n${SKILLS_ESCAPED}\n\nUse a skill apropriada para cada contexto. Consulte SKILL.md de cada skill para instrucoes detalhadas.\n</skills-catalog>"

@@ -1,6 +1,7 @@
 ---
 name: caveman
-description: Ultra-compressed communication mode. Cuts token usage ~75% by dropping filler, articles, pleasantries, and hedging — keeps full technical accuracy. Use when the operator explicitly says "caveman mode", "talk like caveman", "use caveman", "less tokens", "be brief", or invokes `/caveman`. Do NOT use as default style (opt-in only) or when communication clarity outweighs token savings (e.g. building-mcp-servers for protocol specs).
+license: UNLICENSED
+description: Ultra-compressed communication mode. Cuts token usage ~75% by dropping filler, articles, pleasantries, and hedging — keeps full technical accuracy. Use when the operator explicitly says "caveman mode", "talk like caveman", "use caveman", "less tokens", "be brief", or invokes `/caveman`. Do NOT use as default style (opt-in only) or when communication clarity outweighs token savings (use create-agent-harness for harness bootstrap discussions, building-mcp-servers for protocol specs).
 when_to_use: |
   Trigger ONLY when the operator explicitly opts in: "caveman mode", "caveman", "/caveman", "be terse", "less tokens", "shut up and ship".
   Once triggered, ACTIVE on every response until operator says "stop caveman" or "normal mode".
@@ -14,6 +15,12 @@ allowed-tools:
   - exec
   - grep
   - glob
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  squad: '360'
 ---
 
 # Skill: caveman
@@ -157,6 +164,7 @@ Examples — operator question → caveman response:
 
 ## Related knowledges
 
+- `create-agent-harness` — caveman is a STYLE mode within the broader harness; does not interfere with planning artifacts, verification loops, or context delivery
 - `building-mcp-servers` — MCP protocol specs always full prose (auto-suspend if generating protocol docs)
 
 ## Origin
@@ -177,6 +185,7 @@ Added in adaptation for this catalog:
 - Explicit opt-in-only stance in `when_to_use` (operator must ask first)
 - Anti-patterns: "smart caveman" caricature, abbreviating context-specific names, treating caveman as license to be rude, asking clarifying questions in compressed form
 - "When to stop and ask" handling for ambiguous opt-ins, audience changes, repeated clarification requests
-- Cross-reference to `building-mcp-servers`
+- Cross-references to `create-agent-harness` and `building-mcp-servers` from this catalog
+- Standard frontmatter aligned to this repo (`license: UNLICENSED`, `metadata.version`, `metadata.author`)
 
 > **Operator note:** caveman is a divisive style. Including it as opt-in only. Remove this skill from the catalog if the team prefers verbose communication as the only mode.

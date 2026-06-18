@@ -1,6 +1,13 @@
 ---
 name: requesting-code-review
+license: UNLICENSED
 description: "Use when completing tasks, implementing major features, or before merging to verify work meets requirements. Dispatches a code reviewer subagent with precisely crafted context. Do NOT use for trivial single-line changes or when no subagent support is available."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: obra/superpowers
 ---
 
 # Requesting Code Review

@@ -1,6 +1,13 @@
 ---
 name: systematic-debugging
+license: UNLICENSED
 description: "Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes. Enforces root-cause analysis with evidence gathering before attempting any fix. Do NOT use for known simple typos or config errors where the cause is already obvious."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: obra/superpowers
 ---
 
 # Systematic Debugging

@@ -1,6 +1,13 @@
 ---
 name: caveman-compress
+license: UNLICENSED
 description: "Compress natural language memory files (CLAUDE.md, todos, preferences) into caveman format to save input tokens. Preserves all technical substance, code, URLs, and structure. Compressed version overwrites the original file. Human-readable backup saved as FILE.original.md. Trigger: /caveman-compress FILEPATH or 'compress memory file'. Do NOT use for customer-facing docs or compliance artifacts."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: JuliusBrussee/caveman
 ---
 
 # Caveman Compress

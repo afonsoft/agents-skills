@@ -749,7 +749,6 @@ For a **stdio / local** server, use the plain `Microsoft.NET.Sdk` and the lighte
 </Project>
 ```
 
-> **Versions:** the MCP C# SDK is GA — use the latest stable `1.x` (e.g. `1.3.0`); do not pin `0.x` previews. `TargetFramework` may be `net8.0`, `net9.0` or `net10.0` depending on your runtime.
 
 ### appsettings.json
 
@@ -1055,6 +1054,7 @@ dotnet nuget push bin/Release/*.nupkg --api-key <key> --source https://api.nuget
   }
 }
 ```
+
 
 ## VS Code / MCP Host Configuration
 

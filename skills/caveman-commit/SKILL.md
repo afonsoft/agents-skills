@@ -1,6 +1,13 @@
 ---
 name: caveman-commit
+license: UNLICENSED
 description: "Ultra-compressed commit message generator. Cuts noise from commit messages while preserving intent and reasoning. Conventional Commits format. Subject <=50 chars, body only when 'why' isn't obvious. Use when user says 'write a commit', 'commit message', 'generate commit', '/commit', or invokes /caveman-commit. Do NOT use for merge commits or automated release messages."
+metadata:
+  version: "1.0.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  origin: JuliusBrussee/caveman
 ---
 
 Write commit messages terse and exact. Conventional Commits format. No fluff. Why over what.

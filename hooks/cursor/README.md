@@ -6,6 +6,7 @@
 |---------|--------|
 | `hooks.json` | Configuracao de hooks do Cursor (sessionStart) |
 | `session-start` | Script que injeta catalogo de skills no inicio da sessao |
+| `rtk-rewrite.sh` | Hook preToolUse que reescreve comandos para RTK |
 
 ## Instalacao
 

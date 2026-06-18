@@ -1,6 +1,13 @@
 ---
 name: building-mcp-servers
+license: UNLICENSED
 description: Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in TypeScript (MCP SDK), Python (FastMCP), or C# (ModelContextProtocol.AspNetCore).
+metadata:
+  version: "1.1.0"
+  author: afonsoft
+  visibility: public
+  rt: Portais
+  squad: '360'
 ---
 
 # MCP Server Development Guide

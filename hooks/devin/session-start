@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SessionStart hook for Devin
-# Injects the skills catalog context at session start.
+# Injects Itau skills catalog context at session start.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/session-start-base.sh"
