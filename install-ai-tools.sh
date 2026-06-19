@@ -5,7 +5,7 @@
 # Suporta: Claude Code, Cursor, Gemini CLI, Devin CLI, VS Code Copilot, etc.
 # Cross-platform: Windows, Linux, macOS
 
-set -e
+# Não usamos set -e para permitir continuação em caso de erros individuais
 
 # Cores para output
 RED='\033[0;31m'
@@ -23,6 +23,12 @@ INSTALL_ALL=false
 DRY_RUN=false
 VERBOSE=false
 GITHUB_TOKEN=""
+
+# Variáveis de rastreamento de erros
+RTK_SUCCESS=false
+CAVEMAN_SUCCESS=false
+SUPERPOWERS_SUCCESS=false
+HAS_ERRORS=false
 
 # Funções de log
 log_info() {
@@ -167,6 +173,7 @@ install_rtk() {
             if rtk gain &> /dev/null; then
                 log_success "RTK correto (Token Killer) detectado"
                 log_info "Estatísticas de economia: $(rtk gain | head -1)"
+                RTK_SUCCESS=true
                 return 0
             else
                 log_warning "RTK incorreto (Type Kit) detectado. Será reinstalado."
@@ -178,6 +185,7 @@ install_rtk() {
     
     if [ "$DRY_RUN" = true ]; then
         log_warning "DRY RUN: RTK seria instalado"
+        RTK_SUCCESS=true
         return 0
     fi
     
@@ -189,14 +197,22 @@ install_rtk() {
             log_info "Baixando e executando instalador oficial..."
             if curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh; then
                 log_success "RTK instalado com sucesso"
+                RTK_SUCCESS=true
             else
-                log_error "Falha na instalacao via script. Tentando via cargo..."
+                log_warning "Falha na instalacao via script. Tentando via cargo..."
                 if command_exists cargo; then
-                    cargo install --git https://github.com/rtk-ai/rtk rtk
-                    log_success "RTK instalado via cargo"
+                    if cargo install --git https://github.com/rtk-ai/rtk rtk; then
+                        log_success "RTK instalado via cargo"
+                        RTK_SUCCESS=true
+                    else
+                        log_error "Falha na instalacao via cargo"
+                        HAS_ERRORS=true
+                        return 0
+                    fi
                 else
                     log_error "Cargo não encontrado. Instale Rust primeiro."
-                    return 1
+                    HAS_ERRORS=true
+                    return 0
                 fi
             fi
             ;;
@@ -207,16 +223,25 @@ install_rtk() {
             
             # Tenta instalar via cargo se disponível
             if command_exists cargo; then
-                cargo install --git https://github.com/rtk-ai/rtk rtk
-                log_success "RTK instalado via cargo (suporte limitado no Windows)"
+                if cargo install --git https://github.com/rtk-ai/rtk rtk; then
+                    log_success "RTK instalado via cargo (suporte limitado no Windows)"
+                    RTK_SUCCESS=true
+                else
+                    log_error "Falha na instalacao via cargo no Windows"
+                    log_warning "No Windows, use WSL para suporte completo."
+                    HAS_ERRORS=true
+                    return 0
+                fi
             else
                 log_error "Cargo não encontrado. No Windows, use WSL para suporte completo."
-                return 1
+                HAS_ERRORS=true
+                return 0
             fi
             ;;
         *)
             log_error "Sistema operacional não suportado: $OS"
-            return 1
+            HAS_ERRORS=true
+            return 0
             ;;
     esac
     
@@ -227,21 +252,28 @@ install_rtk() {
         # Inicializa hooks globais para Claude Code
         if command_exists claude; then
             log_info "Inicializando RTK para Claude Code..."
-            rtk init --global
-            log_success "RTK inicializado para Claude Code"
+            if rtk init --global; then
+                log_success "RTK inicializado para Claude Code"
+            else
+                log_warning "Falha ao inicializar RTK para Claude Code"
+            fi
         fi
         
         # Inicializa para Cursor se disponível
         if [ -d "$HOME/.cursor" ]; then
             log_info "Inicializando RTK para Cursor..."
-            rtk init --global --cursor
-            log_success "RTK inicializado para Cursor"
+            if rtk init --global --cursor; then
+                log_success "RTK inicializado para Cursor"
+            else
+                log_warning "Falha ao inicializar RTK para Cursor"
+            fi
         fi
         
         log_info "Execute 'rtk gain' para ver estatísticas de economia de tokens"
+        RTK_SUCCESS=true
     else
         log_error "Falha na instalacao do RTK"
-        return 1
+        HAS_ERRORS=true
     fi
 }
 
@@ -251,6 +283,7 @@ install_caveman() {
     
     if [ "$DRY_RUN" = true ]; then
         log_warning "DRY RUN: Caveman seria instalado"
+        CAVEMAN_SUCCESS=true
         return 0
     fi
     
@@ -261,9 +294,11 @@ install_caveman() {
             log_info "Baixando e executando instalador oficial..."
             if curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash; then
                 log_success "Caveman instalado com sucesso"
+                CAVEMAN_SUCCESS=true
             else
                 log_error "Falha na instalacao do Caveman"
-                return 1
+                HAS_ERRORS=true
+                return 0
             fi
             ;;
         Windows)
@@ -272,19 +307,23 @@ install_caveman() {
                 log_info "Execute manualmente no PowerShell:"
                 echo "irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex"
                 log_warning "Instalacao manual requerida no Windows"
-                return 1
+                HAS_ERRORS=true
+                return 0
             else
                 log_error "PowerShell não encontrado"
-                return 1
+                HAS_ERRORS=true
+                return 0
             fi
             ;;
         *)
             log_error "Sistema operacional não suportado: $OS"
-            return 1
+            HAS_ERRORS=true
+            return 0
             ;;
     esac
     
     log_success "Caveman instalado e configurado para todos os agentes detectados"
+    CAVEMAN_SUCCESS=true
 }
 
 # Instala Superpowers
@@ -295,11 +334,13 @@ install_superpowers() {
     if ! command_exists claude; then
         log_warning "Claude Code não encontrado. Superpowers requer Claude Code."
         log_info "Instale Claude Code primeiro: https://code.claude.com"
-        return 1
+        HAS_ERRORS=true
+        return 0
     fi
     
     if [ "$DRY_RUN" = true ]; then
         log_warning "DRY RUN: Superpowers seria instalado via Claude Code"
+        SUPERPOWERS_SUCCESS=true
         return 0
     fi
     
@@ -316,6 +357,7 @@ install_superpowers() {
     log_info "Instalando Superpowers..."
     if claude plugin install superpowers@claude-plugins-official; then
         log_success "Superpowers instalado com sucesso via marketplace oficial"
+        SUPERPOWERS_SUCCESS=true
     else
         log_warning "Falha na instalacao via marketplace oficial. Tentando marketplace community..."
         
@@ -330,9 +372,11 @@ install_superpowers() {
         log_info "Instalando Superpowers via marketplace community..."
         if claude plugin install superpowers@superpowers-marketplace; then
             log_success "Superpowers instalado com sucesso via marketplace community"
+            SUPERPOWERS_SUCCESS=true
         else
             log_error "Falha na instalacao do Superpowers"
-            return 1
+            HAS_ERRORS=true
+            return 0
         fi
     fi
     
@@ -381,11 +425,50 @@ main() {
     
     # Resumo
     echo "========================================"
-    echo "  Instalação concluída!"
+    echo "  Resumo da Instalação"
     echo "========================================"
     echo
     
     if [ "$INSTALL_RTK" = true ]; then
+        if [ "$RTK_SUCCESS" = true ]; then
+            echo -e "${GREEN}✓${NC} RTK: Instalado com sucesso"
+        else
+            echo -e "${YELLOW}✗${NC} RTK: Falha na instalação"
+        fi
+    fi
+    
+    if [ "$INSTALL_CAVEMAN" = true ]; then
+        if [ "$CAVEMAN_SUCCESS" = true ]; then
+            echo -e "${GREEN}✓${NC} Caveman: Instalado com sucesso"
+        else
+            echo -e "${YELLOW}✗${NC} Caveman: Falha na instalação"
+        fi
+    fi
+    
+    if [ "$INSTALL_SUPERPOWERS" = true ]; then
+        if [ "$SUPERPOWERS_SUCCESS" = true ]; then
+            echo -e "${GREEN}✓${NC} Superpowers: Instalado com sucesso"
+        else
+            echo -e "${YELLOW}✗${NC} Superpowers: Falha na instalação"
+        fi
+    fi
+    
+    echo
+    
+    if [ "$HAS_ERRORS" = true ]; then
+        echo -e "${YELLOW}⚠ Alguns componentes falharam na instalação${NC}"
+        echo "Verifique os warnings acima para detalhes"
+    else
+        echo -e "${GREEN}✓ Todos os componentes foram instalados com sucesso${NC}"
+    fi
+    
+    echo
+    echo "========================================"
+    echo "  Informações Pós-Instalação"
+    echo "========================================"
+    echo
+    
+    if [ "$INSTALL_RTK" = true ] && [ "$RTK_SUCCESS" = true ]; then
         echo "RTK:"
         echo "  - Verifique: rtk --version"
         echo "  - Estatísticas: rtk gain"
@@ -393,14 +476,14 @@ main() {
         echo
     fi
     
-    if [ "$INSTALL_CAVEMAN" = true ]; then
+    if [ "$INSTALL_CAVEMAN" = true ] && [ "$CAVEMAN_SUCCESS" = true ]; then
         echo "Caveman:"
         echo "  - Instalado para todos os agentes detectados"
         echo "  - Skills disponíveis: /caveman, /caveman-commit, /caveman-compress, etc."
         echo
     fi
     
-    if [ "$INSTALL_SUPERPOWERS" = true ]; then
+    if [ "$INSTALL_SUPERPOWERS" = true ] && [ "$SUPERPOWERS_SUCCESS" = true ]; then
         echo "Superpowers:"
         echo "  - Plugin instalado no Claude Code"
         echo "  - Skills: brainstorming, test-driven-development, systematic-debugging"
@@ -408,7 +491,11 @@ main() {
         echo
     fi
     
-    log_success "Processo concluído!"
+    if [ "$HAS_ERRORS" = false ]; then
+        log_success "Processo concluído sem erros!"
+    else
+        log_warning "Processo concluído com alguns erros. Verifique acima."
+    fi
 }
 
 # Execução
