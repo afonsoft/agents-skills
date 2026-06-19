@@ -4,6 +4,8 @@ A collection of **Agent Skills** (and session-start **hooks**) to enhance AI cod
 
 > This repository distributes **skills + hooks only**. There is no `rules/` or `knowledge/` folder — project-specific guidance belongs in your own `AGENTS.md`/`CLAUDE.md`.
 
+**🌐 Languages**: [English](README.md) | [Português](README.pt-br.md)
+
 ## 🚀 Features
 
 - **📋 Skills** — Self-contained, task-specific instructions with bundled resources
@@ -11,6 +13,7 @@ A collection of **Agent Skills** (and session-start **hooks**) to enhance AI cod
 - **⚡ Workflows** — Agentic workflows for GitHub Actions automation
 - **🛠️ Installer** — One script to install skills + hooks across IDEs/CLIs
 - **🧹 Utility scripts** — System maintenance and cleanup tools
+- **⚡ AI Tools** — Unified installer for RTK, Caveman, and Superpowers
 
 ## 📁 Repository Structure
 
@@ -21,6 +24,7 @@ agents-skills/
 ├── workflows/           # Agentic workflows for automation
 ├── .agents/             # Harness infrastructure (CONTEXT, RULES, TOOLS, ...)
 ├── install.sh           # Installer (--all, --devin, --claude, --cursor, ...)
+├── install-ai-tools.sh  # AI Tools Installer (RTK, Caveman, Superpowers)
 ├── rm-backup.sh         # Removes *.backup.* files created by the installer
 ├── clear-up-linux.sh    # Linux system cleanup script
 └── git-cleanup-repos.sh # Git repository maintenance script
@@ -48,9 +52,10 @@ agents-skills/
 | Tool | Skills | Hooks |
 |------|--------|-------|
 | Devin / Devin CLI | `~/.devin/skills`, `~/.config/devin/skills` | `~/.devin/hooks` |
+| Devin Desktop | `~/.devin/skills`, `~/.codeium/windsurf/skills` (legacy) | `~/.devin/hooks` |
 | Claude Code | `~/.claude/skills` | `~/.claude/hooks` |
 | Cursor | `~/.cursor/skills` | `~/.cursor/hooks` |
-| Windsurf | `~/.windsurf/skills` | `~/.windsurf/hooks` |
+| Windsurf (legacy) | `~/.windsurf/skills` | `~/.windsurf/hooks` |
 | VS Code (Copilot) | `~/.github/skills` | `~/.github/hooks` |
 | Gemini CLI | `~/.gemini/skills` | `~/.gemini/hooks` |
 | Base (all) | `~/.agents/skills` | — |
@@ -80,12 +85,129 @@ agents-skills/
 
 > Run `./install.sh --all` then start a session — the session-start hook injects the catalog so the agent can pick the right skill via each skill's `description` / `when_to_use`.
 
+## ⚡ AI Tools Installer
+
+The `install-ai-tools.sh` script provides unified installation of popular AI optimization tools:
+
+### RTK (Rust Token Killer)
+- **Purpose**: Token optimizer that automatically rewrites terminal commands
+- **Savings**: Reduces token usage by filtering command output (e.g., showing only test failures)
+- **Support**: Claude Code, VS Code Copilot, Cursor, Gemini CLI, OpenCode, OpenClaw
+- **Installation**: Auto-detects correct RTK (Token Killer vs Type Kit), initializes hooks
+
+### Caveman
+- **Purpose**: Token optimization stack with 5 integrated tools
+- **Features**: Compressed communication, commit optimization, review enhancement
+- **Support**: Claude Code, Cursor, Gemini CLI, OpenCode, OpenClaw, Codex CLI
+- **Installation**: One-line install that auto-detects and configures all installed agents
+
+### Superpowers
+- **Purpose**: Structured development skills framework
+- **Skills**: Brainstorming, TDD, systematic debugging, writing-skills, subagent development
+- **Support**: Claude Code (plugin marketplace), Cursor, OpenCode, Codex, Gemini CLI
+- **Installation**: Via Claude Code plugin marketplace (official or community)
+
+### Usage
+```bash
+# Install all AI tools
+./install-ai-tools.sh --all
+
+# Install specific tools
+./install-ai-tools.sh --rtk
+./install-ai-tools.sh --caveman
+./install-ai-tools.sh --superpowers
+
+# Combine tools
+./install-ai-tools.sh --rtk --caveman
+
+# Configure for specific agents
+./install-ai-tools.sh --rtk --gemini              # RTK for Gemini CLI
+./install-ai-tools.sh --caveman --devin           # Caveman for Devin CLI
+./install-ai-tools.sh --rtk --devin               # RTK for Devin CLI
+./install-ai-tools.sh --all --all-agents          # All tools for all agents
+
+# Safe preview mode
+./install-ai-tools.sh --all --dry-run
+
+# Verbose mode
+./install-ai-tools.sh --all --verbose
+```
+
+**Error Handling**: The script continues installation even if individual components fail. Each installation attempt is tracked separately, and warnings are displayed for failures. A summary at the end shows which components succeeded and which failed, allowing you to address specific issues without re-running successful installations.
+
+### Agent-Specific Configuration
+
+The installer supports agent-specific configuration for optimal integration:
+
+#### Gemini CLI
+- **RTK**: Native support via `rtk init -g --gemini`
+- **Caveman**: Auto-detected and installed by Caveman installer
+- **Superpowers**: Not yet supported (use Claude Code instead)
+
+#### Devin CLI
+- **RTK**: Manual configuration via AGENTS.md (no native support yet)
+- **Caveman**: Installed via `npx skills add JuliusBrussee/caveman -a devin`
+- **Superpowers**: Manual skill installation (no native support yet)
+
+#### Devin Desktop
+- **RTK**: Same as Devin CLI (manual configuration)
+- **Caveman**: Auto-detected if Devin Desktop is installed
+- **Superpowers**: Use Claude Code integration (Devin Desktop uses Claude Code backend)
+
+#### Claude Code
+- **RTK**: Native support via `rtk init -g`
+- **Caveman**: Auto-detected and installed
+- **Superpowers**: Native plugin marketplace support
+
+#### Cursor
+- **RTK**: Native support via `rtk init -g --agent cursor`
+- **Caveman**: Auto-detected and installed
+- **Superpowers**: Native plugin support
+
+### Support Matrix
+
+| Tool | Gemini CLI | Devin CLI | Devin Desktop | Claude Code | Cursor |
+|------|------------|----------|---------------|-------------|--------|
+| **RTK** | ✅ Native | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native |
+| **Caveman** | ✅ Auto | ✅ npx | ✅ Auto | ✅ Auto | ✅ Auto |
+| **Superpowers** | ❌ No | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native |
+
+**Legend:**
+- ✅ Native/Full: Automatic installation with full support
+- ⚠️ Manual: Requires manual configuration or partial support
+- ❌ No: Not supported or requires alternative solution
+
+### Cross-Platform Support
+- **Linux**: Full support via shell scripts
+- **macOS**: Full support via shell scripts and Homebrew
+- **Windows**: Support via WSL or Git Bash (native Windows has limited hook support)
+
+### Features
+- **Auto-detection**: Detects OS and installed agents automatically
+- **Safety checks**: Pre-installation verification to avoid conflicts
+- **Dry-run mode**: Preview changes before execution
+- **Verbose logging**: Detailed installation progress
+- **Post-installation verification**: Confirms successful setup
+- **Error handling**: Continues installation even if individual components fail, with clear warnings
+
 ## 🛠️ Utility Scripts
+
+### install-ai-tools.sh
+Unified installer for AI optimization tools (RTK, Caveman, Superpowers):
+```bash
+./install-ai-tools.sh --all                    # Install all tools
+./install-ai-tools.sh --rtk --caveman         # Install specific tools
+./install-ai-tools.sh --all --dry-run         # Preview changes
+./install-ai-tools.sh --all --verbose         # Detailed output
+```
 
 ### rm-backup.sh
 Removes `*.backup.*` files/dirs created by the installer:
 ```bash
-./rm-backup.sh
+./rm-backup.sh                    # Remove backups only
+./rm-backup.sh --uninstall       # Remove backups AND complete installations
+./rm-backup.sh --dry-run         # Preview what would be removed
+./rm-backup.sh --verbose         # Detailed output
 ```
 
 ### clear-up-linux.sh
@@ -96,10 +218,20 @@ sudo ./clear-up-linux.sh --force               # non-interactive
 ```
 
 ### git-cleanup-repos.sh
-Recursive Git repository maintenance (fetch, gc, reflog cleanup, build-artifact removal):
+Recursive Git repository maintenance with disk space tracking:
 ```bash
 chmod +x git-cleanup-repos.sh && ./git-cleanup-repos.sh
+./git-cleanup-repos.sh --verbose           # Detailed output
+./git-cleanup-repos.sh --dry-run           # Preview changes
 ```
+**Features:**
+- Git fetch, pull, reflog cleanup, garbage collection
+- Build artifact removal (bin, obj, .vs, node_modules)
+- Package manager cache cleanup (npm, yarn, nuget)
+- Windows-specific cache directory cleanup
+- **Disk space tracking**: Measures space before/after cleanup, displays recovered space
+- **Cross-platform**: Linux, macOS, Windows support
+- **Detailed logging**: All operations logged with timestamps
 
 ## 🤝 Contributing
 
@@ -114,9 +246,35 @@ See the [Contributing Guidelines](CONTRIBUTING.md).
 ## 📖 Documentation
 
 - [AGENTS.md](AGENTS.md) — Repository index and conventions
+- [AI Tools Installer Guide](AI-TOOLS-INSTALLER.md) — Comprehensive guide for RTK, Caveman, Superpowers installation
 - [Contributing Guidelines](CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security Policy](SECURITY.md)
+
+## 📝 Recent Updates
+
+### AI Tools Installer Enhancements
+- **Agent-Specific Configuration**: Added support for Gemini CLI, Devin CLI, and Devin Desktop
+- **Shell Detection**: Improved Windows support with PowerShell, Git Bash, and WSL detection
+- **Error Handling**: Enhanced error handling with continuation on individual failures
+- **Configuration Matrix**: Added support matrix showing tool support per agent
+- **Comprehensive Documentation**: Created detailed AI-TOOLS-INSTALLER.md guide
+
+### Tool Path Updates
+- **Devin Desktop Support**: Added support for Devin Desktop (formerly Windsurf) with new path structure
+- **Devin CLI Paths**: Updated from `~/.config/cognition/` to `~/.config/devin/`
+- **Legacy Compatibility**: Maintains backward compatibility with Windsurf paths during transition
+
+### Enhanced Scripts
+- **git-cleanup-repos.sh**: Added cross-platform package manager cleanup (npm, yarn, nuget) and disk space tracking
+- **rm-backup.sh**: Added `--uninstall` option for complete removal of installations and backups
+- **install-ai-tools.sh**: New unified installer for RTK, Caveman, and Superpowers with agent-specific configuration
+
+### Skill Quality Improvements
+- Updated 11 skill descriptions to follow writing-skills specification
+- All descriptions now start with "Use when..." pattern
+- Removed process details from descriptions, focusing on triggering conditions
+- Enhanced Claude Search Optimization (CSO) compliance
 
 ## 📄 License
 
@@ -126,4 +284,6 @@ Licensed under the [MIT License](LICENSE).
 
 - [Agent Skills Specification](https://agentskills.io/specification)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
-- [Agentic Workflows](https://github.github.com/gh-aw)
+- [RTK - Rust Token Killer](https://www.rtk-ai.app/)
+- [Caveman - Token Optimization Stack](https://getcaveman.dev/)
+- [Superpowers - Structured Development Skills](https://claude.com/plugins/superpowers)
