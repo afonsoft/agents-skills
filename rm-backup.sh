@@ -2,7 +2,8 @@
 
 # Script para remover todos os backups criados pelo install.sh
 # Remove diretórios e arquivos terminados em .backup.* nos diretórios HOME dos agentes
-# Suporta: VS Code, Windsurf, Cursor, Devin, Claude, Gemini CLI, OpenClaw
+# Suporta: VS Code, Devin Desktop, Windsurf, Cursor, Devin, Claude, Gemini CLI, OpenClaw
+# Opção --uninstall remove backups e instalações completas
 
 set -e
 
@@ -36,24 +37,37 @@ show_help() {
     echo "  ./rm-backup.sh [opcoes]"
     echo
     echo -e "${YELLOW}Opcoes:${NC}"
-    echo "  --help, -h     Exibe esta mensagem de ajuda"
-    echo "  --dry-run, -d  Lista os backups que seriam removidos (sem remover)"
-    echo "  --verbose, -v  Modo verboso"
+    echo "  --help, -h       Exibe esta mensagem de ajuda"
+    echo "  --dry-run, -d    Lista os arquivos que seriam removidos (sem remover)"
+    echo "  --verbose, -v    Modo verboso"
+    echo "  --uninstall, -u  Remove backups E instalações completas (cuidado!)"
     echo
-    echo -e "${YELLOW}O que sera limpo:${NC}"
-    echo "  - Backups de skills em ~/.agents/, ~/.windsurf/, ~/.cursor/, etc."
-    echo "  - Backups de rules consolidadas (.cursorrules)"
+    echo -e "${YELLOW}O que sera limpo (modo padrao - apenas backups):${NC}"
+    echo "  - Backups de skills em ~/.agents/, ~/.devin/, ~/.windsurf/, ~/.cursor/, etc."
+    echo "  - Backups de rules consolidadas (.cursorrules, .windsurfrules, etc.)"
     echo "  - Backups de arquivos de conhecimento (knowledge/)"
     echo "  - Backups de arquivos de memoria (OpenClaw, Gemini)"
     echo "  - Backups do Visual Studio (Windows)"
     echo "  - Backups de Windsurf global rules (~/.windsurf/rules/global_rules.md)"
     echo "  - Backups de Claude CLAUDE.md, settings.json, commands/"
+    echo "  - Backups de Devin Desktop skills e rules"
+    echo
+    echo -e "${YELLOW}O que sera removido (modo --uninstall):${NC}"
+    echo "  - Todos os backups (como acima)"
+    echo "  - Instalações completas de skills, rules, knowledge"
+    echo "  - Arquivos de configuração (settings.json, CLAUDE.md, etc.)"
+    echo "  - Diretórios inteiros de cada ferramenta"
+    echo
+    echo -e "${YELLOW}Aviso:${NC}"
+    echo "  O modo --uninstall é IRREVERSÍVEL e removerá todas as instalações."
+    echo "  Use --dry-run primeiro para ver o que será removido."
     echo
 }
 
 # Variaveis de controle
 DRY_RUN=false
 VERBOSE=false
+UNINSTALL=false
 
 remove_backups() {
     local total_removed=0
@@ -69,6 +83,7 @@ remove_backups() {
         "$HOME/.cognition"
         "$HOME/.config/cognition"
         "$HOME/.config/devin"
+        "$HOME/.config/Devin"
         "$HOME/.openclaw"
         "$HOME/.codeium"
     )
@@ -110,11 +125,14 @@ remove_backups() {
     # Remove backups de arquivos consolidados no nível HOME
     local consolidated_files=(
         ".cursorrules.backup.*"
+        ".windsurfrules.backup.*"
+        ".devinrules.backup.*"
         "AGENTS.md.backup.*"
         "CLAUDE.md.backup.*"
         "GEMINI.md.backup.*"
         "settings.json.backup.*"
         "config.json.backup.*"
+        "rules.md.backup.*"
     )
 
     for pattern in "${consolidated_files[@]}"; do
@@ -319,6 +337,98 @@ remove_backups() {
     fi
 }
 
+complete_uninstall() {
+    log_warning "MODO UNINSTALL - Isso removerá TODAS as instalações e backups!"
+    echo
+    
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: Nenhum arquivo será removido"
+    else
+        echo -e "${RED}Esta ação é IRREVERSÍVEL!${NC}"
+        echo -e "${YELLOW}Tem certeza que deseja continuar? (s/N)${NC}"
+        read -r response
+        if [[ ! "$response" =~ ^[SsYy]$ ]]; then
+            log_info "Uninstall cancelado pelo usuário"
+            exit 0
+        fi
+    fi
+    
+    echo
+    log_info "Iniciando uninstall completo..."
+    
+    local total_removed=0
+    
+    # Remove instalações completas
+    local install_dirs=(
+        "$HOME/.agents"
+        "$HOME/.devin"
+        "$HOME/.claude"
+        "$HOME/.windsurf"
+        "$HOME/.github"
+        "$HOME/.copilot"
+        "$HOME/.cursor"
+        "$HOME/.gemini"
+        "$HOME/.cognition"
+        "$HOME/.config/cognition"
+        "$HOME/.config/devin"
+        "$HOME/.config/Devin"
+        "$HOME/.openclaw"
+        "$HOME/.codeium"
+    )
+    
+    for dir in "${install_dirs[@]}"; do
+        if [ -d "$dir" ]; then
+            if [ "$DRY_RUN" = true ]; then
+                log_info "Seria removido: $dir"
+                total_removed=$((total_removed + 1))
+            else
+                log_info "Removendo: $dir"
+                rm -rf "$dir"
+                log_success "Removido: $dir"
+                total_removed=$((total_removed + 1))
+            fi
+        fi
+    done
+    
+    # Remove arquivos consolidados no nível HOME
+    local consolidated_files=(
+        "$HOME/.cursorrules"
+        "$HOME/.windsurfrules"
+        "$HOME/.devinrules"
+        "$HOME/AGENTS.md"
+        "$HOME/CLAUDE.md"
+        "$HOME/GEMINI.md"
+        "$HOME/.claude.json"
+    )
+    
+    for file in "${consolidated_files[@]}"; do
+        if [ -f "$file" ]; then
+            if [ "$DRY_RUN" = true ]; then
+                log_info "Seria removido: $file"
+                total_removed=$((total_removed + 1))
+            else
+                log_info "Removendo: $file"
+                rm -f "$file"
+                log_success "Removido: $file"
+                total_removed=$((total_removed + 1))
+            fi
+        fi
+    done
+    
+    # Remove backups também
+    log_info "Removendo backups restantes..."
+    remove_backups
+    
+    echo
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: $total_removed diretórios/arquivos seriam removidos"
+        log_info "Execute novamente sem --dry-run para realizar o uninstall"
+    else
+        log_success "Uninstall completo! $total_removed diretórios/arquivos removidos"
+        log_info "Para reinstalar, execute: ./install.sh --all"
+    fi
+}
+
 # Parse arguments
 parse_args() {
     while [ $# -gt 0 ]; do
@@ -332,6 +442,9 @@ parse_args() {
                 ;;
             --verbose|-v)
                 VERBOSE=true
+                ;;
+            --uninstall|-u)
+                UNINSTALL=true
                 ;;
             *)
                 log_error "Opção desconhecida: $1"
@@ -358,9 +471,17 @@ main() {
         log_info "Modo verboso ativado"
     fi
     
+    if [ "$UNINSTALL" = true ]; then
+        log_warning "MODO UNINSTALL ativado"
+    fi
+    
     echo
     
-    remove_backups
+    if [ "$UNINSTALL" = true ]; then
+        complete_uninstall
+    else
+        remove_backups
+    fi
 }
 
 parse_args "$@"
