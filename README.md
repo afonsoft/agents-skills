@@ -4,6 +4,8 @@ A collection of **Agent Skills** (and session-start **hooks**) to enhance AI cod
 
 > This repository distributes **skills + hooks only**. There is no `rules/` or `knowledge/` folder — project-specific guidance belongs in your own `AGENTS.md`/`CLAUDE.md`.
 
+**🌐 Languages**: [English](README.md) | [Português](README.pt-br.md)
+
 ## 🚀 Features
 
 - **📋 Skills** — Self-contained, task-specific instructions with bundled resources
@@ -139,54 +141,28 @@ The installer supports agent-specific configuration for optimal integration:
 
 #### Gemini CLI
 - **RTK**: Native support via `rtk init -g --gemini`
-  - Creates `~/.gemini/hooks/rtk-hook-gemini.sh`
-  - Patches `~/.gemini/settings.json` with BeforeTool hook
-  - Creates `~/.gemini/GEMINI.md` with RTK awareness
 - **Caveman**: Auto-detected and installed by Caveman installer
 - **Superpowers**: Not yet supported (use Claude Code instead)
 
 #### Devin CLI
 - **RTK**: Manual configuration via AGENTS.md (no native support yet)
-  - Creates `~/.config/devin/AGENTS.md` with RTK instructions
-  - Manual usage: `rtk git status`, `rtk cargo test`, etc.
-  - Check savings with `rtk gain`
 - **Caveman**: Installed via `npx skills add JuliusBrussee/caveman -a devin`
-  - Skills: `/caveman`, `/caveman-commit`, `/caveman-compress`, `/caveman-review`
 - **Superpowers**: Manual skill installation (no native support yet)
-  - Requires manual skill copying to `~/.config/devin/skills/`
 
 #### Devin Desktop
 - **RTK**: Same as Devin CLI (manual configuration)
-  - Uses same AGENTS.md approach as Devin CLI
-  - Located at `~/.config/devin/AGENTS.md` or `%APPDATA%\devin\AGENTS.md`
 - **Caveman**: Auto-detected if Devin Desktop is installed
-  - Also detects legacy Windsurf paths for compatibility
 - **Superpowers**: Use Claude Code integration (Devin Desktop uses Claude Code backend)
-  - Install via Claude Code plugin marketplace
-  - Skills will be available in Devin Desktop sessions
 
 #### Claude Code
 - **RTK**: Native support via `rtk init -g`
-  - Creates `~/.claude/hooks/rtk-rewrite.sh`
-  - Patches `~/.claude/settings.json` with PreToolUse hook
-  - Creates `~/.claude/RTK.md` with meta commands
 - **Caveman**: Auto-detected and installed
-  - Via `claude plugin marketplace add JuliusBrussee/caveman`
-  - Skills: `/caveman`, `/caveman-commit`, `/caveman-compress`, `/caveman-review`
 - **Superpowers**: Native plugin marketplace support
-  - Via `/plugin install superpowers@claude-plugins-official`
-  - Skills: brainstorming, TDD, systematic debugging, writing-skills
 
 #### Cursor
 - **RTK**: Native support via `rtk init -g --agent cursor`
-  - Creates Cursor hook in `~/.cursor/hooks.json`
-  - Transparent command rewriting
 - **Caveman**: Auto-detected and installed
-  - Via `npx skills add JuliusBrussee/caveman -a cursor`
-  - Skills: `/caveman`, `/caveman-commit`, `/caveman-compress`, `/caveman-review`
 - **Superpowers**: Native plugin support
-  - Via Cursor plugin marketplace
-  - Skills: brainstorming, TDD, systematic debugging
 
 ### Support Matrix
 
@@ -277,6 +253,13 @@ See the [Contributing Guidelines](CONTRIBUTING.md).
 
 ## 📝 Recent Updates
 
+### AI Tools Installer Enhancements
+- **Agent-Specific Configuration**: Added support for Gemini CLI, Devin CLI, and Devin Desktop
+- **Shell Detection**: Improved Windows support with PowerShell, Git Bash, and WSL detection
+- **Error Handling**: Enhanced error handling with continuation on individual failures
+- **Configuration Matrix**: Added support matrix showing tool support per agent
+- **Comprehensive Documentation**: Created detailed AI-TOOLS-INSTALLER.md guide
+
 ### Tool Path Updates
 - **Devin Desktop Support**: Added support for Devin Desktop (formerly Windsurf) with new path structure
 - **Devin CLI Paths**: Updated from `~/.config/cognition/` to `~/.config/devin/`
@@ -286,13 +269,6 @@ See the [Contributing Guidelines](CONTRIBUTING.md).
 - **git-cleanup-repos.sh**: Added cross-platform package manager cleanup (npm, yarn, nuget) and disk space tracking
 - **rm-backup.sh**: Added `--uninstall` option for complete removal of installations and backups
 - **install-ai-tools.sh**: New unified installer for RTK, Caveman, and Superpowers with agent-specific configuration
-
-### AI Tools Installer Enhancements
-- **Agent-Specific Configuration**: Added support for Gemini CLI, Devin CLI, and Devin Desktop
-- **Shell Detection**: Improved Windows support with PowerShell, Git Bash, and WSL detection
-- **Error Handling**: Enhanced error handling with continuation on individual failures
-- **Configuration Matrix**: Added support matrix showing tool support per agent
-- **Comprehensive Documentation**: Created detailed AI-TOOLS-INSTALLER.md guide
 
 ### Skill Quality Improvements
 - Updated 11 skill descriptions to follow writing-skills specification
