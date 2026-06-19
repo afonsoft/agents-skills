@@ -479,13 +479,21 @@ install_caveman() {
             if [ "$SHELL" = "GitBash" ]; then
                 log_info "Usando Git Bash para instalacao automatica..."
                 
-                # Usa npx skills add diretamente para agentes que suportam --yes
                 if command_exists npx; then
-                    log_info "Instalando Caveman para agentes com suporte automatico..."
+                    log_info "Instalando Caveman via npx..."
                     
                     local caveman_installed=false
                     
-                    # Instala para Devin (suporta --yes)
+                    # Instala para Gemini CLI (usa echo Y para responder prompt)
+                    log_info "Instalando Caveman para Gemini CLI..."
+                    if echo "Y" | npx -y github:JuliusBrussee/caveman; then
+                        log_success "Caveman instalado para Gemini CLI"
+                        caveman_installed=true
+                    else
+                        log_warning "Falha na instalacao para Gemini CLI"
+                    fi
+                    
+                    # Instala para Devin CLI (suporta --yes)
                     log_info "Instalando Caveman para Devin CLI..."
                     if npx -y skills add JuliusBrussee/caveman --skill * -a devin --yes; then
                         log_success "Caveman instalado para Devin CLI"
@@ -505,9 +513,7 @@ install_caveman() {
                     
                     if [ "$caveman_installed" = true ]; then
                         CAVEMAN_SUCCESS=true
-                        log_info "Caveman instalado com sucesso para agentes compatíveis"
-                        log_warning "Gemini CLI requer instalacao manual devido a prompts interativos"
-                        log_info "Para Gemini CLI: gemini extensions install https://github.com/JuliusBrussee/caveman"
+                        log_success "Caveman instalado com sucesso para agentes compatíveis"
                     else
                         log_error "Falha na instalacao para todos os agentes"
                         HAS_ERRORS=true
@@ -521,7 +527,7 @@ install_caveman() {
             elif [ "$SHELL" = "PowerShell" ] || [ "$SHELL" = "PowerShell-Core" ]; then
                 log_info "Usando PowerShell para instalacao..."
                 log_info "Execute no PowerShell:"
-                echo "npx -y skills add JuliusBrussee/caveman --skill * -a devin --yes"
+                echo "echo \"Y\" | npx -y github:JuliusBrussee/caveman"
                 log_warning "Instalacao manual requerida no PowerShell"
                 log_info "Ou use Git Bash para instalacao automatica"
                 HAS_ERRORS=true
@@ -529,9 +535,9 @@ install_caveman() {
             else
                 log_warning "Nenhum shell compatível detectado (PowerShell ou Git Bash)"
                 log_info "Opções:"
-                log_info "  1. Git Bash: npx -y skills add JuliusBrussee/caveman --skill * -a devin --yes"
-                log_info "  2. PowerShell: npx -y skills add JuliusBrussee/caveman --skill * -a devin --yes"
-                log_info "  3. WSL: wsl bash -c 'npx -y skills add JuliusBrussee/caveman --skill * -a devin --yes'"
+                log_info "  1. Git Bash: echo \"Y\" | npx -y github:JuliusBrussee/caveman"
+                log_info "  2. PowerShell: echo \"Y\" | npx -y github:JuliusBrussee/caveman"
+                log_info "  3. WSL: wsl bash -c 'echo \"Y\" | npx -y github:JuliusBrussee/caveman'"
                 HAS_ERRORS=true
                 return 0
             fi
