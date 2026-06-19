@@ -39,6 +39,8 @@ agents-skills/
 # Install for a specific tool
 ./install.sh --devin
 ./install.sh --claude
+./install.sh --antigravity
+./install.sh --agy
 
 # Combine targets
 ./install.sh --cursor --vscode
@@ -58,6 +60,8 @@ agents-skills/
 | Windsurf (legacy) | `~/.windsurf/skills` | `~/.windsurf/hooks` |
 | VS Code (Copilot) | `~/.github/skills` | `~/.github/hooks` |
 | Gemini CLI | `~/.gemini/skills` | `~/.gemini/hooks` |
+| Google Antigravity IDE | `~/.gemini/skills` | `~/.gemini/hooks` |
+| Google Antigravity CLI (agy) | `~/.gemini/antigravity-cli/skills` | `~/.gemini/antigravity-cli/hooks` |
 | Base (all) | `~/.agents/skills` | — |
 
 ## 🧰 Skills Catalog
@@ -247,6 +251,7 @@ See the [Contributing Guidelines](CONTRIBUTING.md).
 
 - [AGENTS.md](AGENTS.md) — Repository index and conventions
 - [AI Tools Installer Guide](AI-TOOLS-INSTALLER.md) — Comprehensive guide for RTK, Caveman, Superpowers installation
+- [RTK & Caveman Support Matrix](RTK_CAVEMAN_SUPPORT.md) — Platform support status and configuration guidance
 - [Contributing Guidelines](CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security Policy](SECURITY.md)

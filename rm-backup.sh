@@ -2,7 +2,7 @@
 
 # Script para remover todos os backups criados pelo install.sh
 # Remove diretórios e arquivos terminados em .backup.* nos diretórios HOME dos agentes
-# Suporta: VS Code, Devin Desktop, Windsurf, Cursor, Devin, Claude, Gemini CLI, OpenClaw
+# Suporta: VS Code, Devin Desktop, Windsurf, Cursor, Devin, Claude, Gemini CLI, Google Antigravity, OpenClaw
 # Opção --uninstall remove backups e instalações completas
 
 set -e
@@ -50,6 +50,7 @@ show_help() {
     echo "  - Backups do Visual Studio (Windows)"
     echo "  - Backups de Windsurf global rules (~/.windsurf/rules/global_rules.md)"
     echo "  - Backups de Claude CLAUDE.md, settings.json, commands/"
+    echo "  - Backups de Google Antigravity ANTIGRAVITY.md, AGY.md"
     echo "  - Backups de Devin Desktop skills e rules"
     echo
     echo -e "${YELLOW}O que sera removido (modo --uninstall):${NC}"
@@ -80,6 +81,7 @@ remove_backups() {
         "$HOME/.copilot"
         "$HOME/.cursor"
         "$HOME/.gemini"
+        "$HOME/.gemini/antigravity-cli"
         "$HOME/.cognition"
         "$HOME/.config/cognition"
         "$HOME/.config/devin"
@@ -130,6 +132,8 @@ remove_backups() {
         "AGENTS.md.backup.*"
         "CLAUDE.md.backup.*"
         "GEMINI.md.backup.*"
+        "ANTIGRAVITY.md.backup.*"
+        "AGY.md.backup.*"
         "settings.json.backup.*"
         "config.json.backup.*"
         "rules.md.backup.*"
@@ -201,9 +205,10 @@ remove_backups() {
     if [ -d "$HOME/.gemini" ]; then
         local gemini_files=(
             "GEMINI.md.backup.*"
+            "ANTIGRAVITY.md.backup.*"
             "settings.json.backup.*"
         )
-        
+
         for pattern in "${gemini_files[@]}"; do
             local found_files
             if [ "$DRY_RUN" = true ]; then
@@ -217,6 +222,32 @@ remove_backups() {
                 removed_count=$(find "$HOME/.gemini" -maxdepth 1 -name "$pattern" -exec rm -f {} + 2>/dev/null | wc -l || true)
                 if [ "$removed_count" -gt 0 ]; then
                     log_success "Removidos $removed_count backups de Gemini ($pattern)"
+                    total_removed=$((total_removed + removed_count))
+                fi
+            fi
+        done
+    fi
+
+    # Remove backups de arquivos específicos do Antigravity CLI (agy)
+    if [ -d "$HOME/.gemini/antigravity-cli" ]; then
+        local agy_files=(
+            "AGY.md.backup.*"
+            "settings.json.backup.*"
+        )
+
+        for pattern in "${agy_files[@]}"; do
+            local found_files
+            if [ "$DRY_RUN" = true ]; then
+                found_files=$(find "$HOME/.gemini/antigravity-cli" -maxdepth 1 -name "$pattern" 2>/dev/null || true)
+                if [ -n "$found_files" ]; then
+                    echo "$found_files"
+                    total_removed=$((total_removed + $(echo "$found_files" | wc -l)))
+                fi
+            else
+                local removed_count
+                removed_count=$(find "$HOME/.gemini/antigravity-cli" -maxdepth 1 -name "$pattern" -exec rm -f {} + 2>/dev/null | wc -l || true)
+                if [ "$removed_count" -gt 0 ]; then
+                    log_success "Removidos $removed_count backups de Antigravity CLI ($pattern)"
                     total_removed=$((total_removed + removed_count))
                 fi
             fi

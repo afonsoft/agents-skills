@@ -57,13 +57,13 @@ rtk init -g --codex            # Codex (OpenAI)
 rtk init -g --gemini           # Gemini CLI
 ```
 
-### Devin
-For Devin, add to environment blueprint initialize section:
+### Google Antigravity
 ```bash
-curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
-export PATH="$HOME/.local/bin:$PATH"
-rtk init -g
+rtk init --agent antigravity    # Creates .agents/rules/antigravity-rtk-rules.md
 ```
+
+### Devin
+Devin is not officially supported by RTK. The install.sh script installs the RTK binary globally, but you'll need to manually configure RTK for Devin if needed.
 
 ## How It Works
 
