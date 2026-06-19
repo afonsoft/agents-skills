@@ -54,32 +54,21 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Verifica se comando existe
+command_exists() {
+    command -v "$1" &> /dev/null
+}
+
 # Detect operating system and available shells
 detect_os() {
     case "$(uname -s)" in
-        Linux*)     OS="Linux";;
-        Darwin*)    OS="Mac";;
+        Linux*)     OS="Linux"; SHELL="Bash";;
+        Darwin*)    OS="Mac"; SHELL="Bash";;
         CYGWIN*)    OS="Windows"; SHELL="Cygwin";;
         MINGW*)     OS="Windows"; SHELL="GitBash";;
         MSYS*)      OS="Windows"; SHELL="GitBash";;
-        *)          OS="Unknown";;
+        *)          OS="Unknown"; SHELL="Unknown";;
     esac
-    
-    # Detecta PowerShell no Windows
-    if [ "$OS" = "Windows" ]; then
-        if command_exists powershell.exe || command_exists pwsh; then
-            if command_exists pwsh; then
-                SHELL="PowerShell-Core"
-            else
-                SHELL="PowerShell"
-            fi
-        elif [ -n "$SHELL" ]; then
-            # Já detectado como Cygwin ou GitBash
-            :
-        else
-            SHELL="Unknown"
-        fi
-    fi
     
     export OS
     export SHELL
@@ -724,6 +713,7 @@ main() {
     log_info "Sistema operacional detectado: $OS"
     if [ "$OS" = "Windows" ]; then
         log_info "Shell detectado: $SHELL"
+        log_info "Usando Git Bash para suporte completo de hooks"
     fi
     echo
     
