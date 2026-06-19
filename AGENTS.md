@@ -2,7 +2,7 @@
 
 ## Missão
 
-**agents-skills** — Coleção de skills (e hooks de sessão) para agentes de IA, seguindo a especificação Agent Skills (agentskills.io) e princípios de harness engineering. Compatível com Devin, Claude Code, Cursor, Windsurf, VS Code/Copilot e Gemini CLI.
+**agents-skills** — Coleção de skills (e hooks de sessão) para agentes de IA, seguindo a especificação Agent Skills (agentskills.io) e princípios de harness engineering. Compatível com Devin, Claude Code, Cursor, Windsurf, VS Code/Copilot, Gemini CLI e Google Antigravity.
 
 ## Stack Tecnológica
 
@@ -57,6 +57,8 @@ flowchart LR
 | Windsurf | `AGENTS.md` | `~/.windsurf/skills/` | `~/.windsurf/hooks/` |
 | VS Code / Copilot | `AGENTS.md` | `~/.github/skills/` | `~/.github/hooks/` |
 | Gemini CLI | `AGENTS.md` | `~/.gemini/skills/` | `~/.gemini/hooks/` |
+| Google Antigravity IDE | `AGENTS.md` | `~/.gemini/skills/` | `~/.gemini/hooks/` |
+| Google Antigravity CLI (agy) | `AGENTS.md` | `~/.gemini/antigravity-cli/skills/` | `~/.gemini/antigravity-cli/hooks/` |
 
 ## Comandos
 
@@ -67,6 +69,8 @@ flowchart LR
 # Instalar para ferramenta específica
 ./install.sh --devin
 ./install.sh --claude
+./install.sh --antigravity
+./install.sh --agy
 
 # Pré-visualizar sem alterar nada
 ./install.sh --devin --dry-run

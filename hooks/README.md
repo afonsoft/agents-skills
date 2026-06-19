@@ -12,6 +12,8 @@ Cada subdiretorio contem os artefatos especificos de uma IDE/agente:
 - **[`vscode/`](vscode/)** — Shell hook (`sessionStart`), hooks.json (formato Copilot)
 - **[`devin/`](devin/)** — Shell hook de session-start
 - **[`gemini/`](gemini/)** — Shell hook de session-start
+- **[`antigravity/`](antigravity/)** — Shell hook de session-start (Google Antigravity IDE)
+- **[`agy/`](agy/)** — Shell hook de session-start (Google Antigravity CLI)
 
 ## Como funciona
 
@@ -42,3 +44,5 @@ O `install.sh` copia os hooks do subdiretorio correspondente para o diretorio de
 | VS Code / Copilot | Shell hook (`sessionStart`) | Sim | Nao |
 | Devin | Shell hook | Sim | Nao |
 | Gemini CLI | Shell hook | Sim | Nao |
+| Google Antigravity IDE | Shell hook | Sim | Nao |
+| Google Antigravity CLI (agy) | Shell hook | Sim | Nao |
