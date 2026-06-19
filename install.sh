@@ -283,6 +283,8 @@ generate_consolidated_rules() {
         claude)        ide_row="| Claude Code | \`~/.claude/skills/\` | \`~/.claude/rules/\` | \`~/.claude/knowledge/\` |" ;;
         devin)         ide_row="| Devin | \`~/.devin/skills/\` | — | \`~/.devin/knowledge/\` |" ;;
         gemini)        ide_row="| Gemini CLI | \`~/.gemini/skills/\` | \`~/.gemini/GEMINI.md\` | \`~/.gemini/knowledge/\` |" ;;
+        antigravity)   ide_row="| Google Antigravity IDE | \`~/.gemini/skills/\` | \`~/.gemini/ANTIGRAVITY.md\` | \`~/.gemini/knowledge/\` |" ;;
+        agy)           ide_row="| Google Antigravity CLI (agy) | \`~/.gemini/antigravity-cli/skills/\` | \`~/.gemini/antigravity-cli/AGY.md\` | \`~/.gemini/antigravity-cli/knowledge/\` |" ;;
     esac
     if [ -n "$ide_row" ]; then
         sed -i "/| Base (todas)/a\\$ide_row" "$output_file"
@@ -1197,9 +1199,14 @@ install_antigravity() {
     # Antigravity IDE descobre skills em ~/.gemini/skills/ (shared across all Antigravity tools)
     # Cada skill e um diretorio contendo SKILL.md
     # Ref: https://antigravity.google/docs/ide-overview
-    backup_dir_if_exists "$HOME/.gemini/skills"
-    cp -a skills/* "$HOME/.gemini/skills/" 2>/dev/null || true
-    log_success "Skills -> ~/.gemini/skills"
+    # Nota: Este diretorio e compartilhado com Gemini CLI
+    if [ ! -d "$HOME/.gemini/skills" ] || [ -z "$(ls -A $HOME/.gemini/skills 2>/dev/null)" ]; then
+        backup_dir_if_exists "$HOME/.gemini/skills"
+        cp -a skills/* "$HOME/.gemini/skills/" 2>/dev/null || true
+        log_success "Skills -> ~/.gemini/skills"
+    else
+        log_info "Skills -> ~/.gemini/skills (ja existe, pulando)"
+    fi
 
     # Rules -> ~/.gemini/ANTIGRAVITY.md (contexto global consolidado)
     # Antigravity IDE usa ANTIGRAVITY.md como arquivo de contexto e instrucoes globais
@@ -1208,34 +1215,52 @@ install_antigravity() {
         log_success "Rules consolidadas -> ~/.gemini/ANTIGRAVITY.md"
     fi
 
-    # Knowledge -> ~/.gemini/knowledge
+    # Knowledge -> ~/.gemini/knowledge (compartilhado com Gemini CLI)
     if [ -d "devin/knowledge_sources" ]; then
-        backup_dir_if_exists "$HOME/.gemini/knowledge"
-        copy_knowledge_sources "$HOME/.gemini/knowledge/"
-        log_success "Knowledge -> ~/.gemini/knowledge"
+        if [ ! -d "$HOME/.gemini/knowledge" ] || [ -z "$(ls -A $HOME/.gemini/knowledge 2>/dev/null)" ]; then
+            backup_dir_if_exists "$HOME/.gemini/knowledge"
+            copy_knowledge_sources "$HOME/.gemini/knowledge/"
+            log_success "Knowledge -> ~/.gemini/knowledge"
+        else
+            log_info "Knowledge -> ~/.gemini/knowledge (ja existe, pulando)"
+        fi
     fi
 
     # AGENTS_CLI.md -> ~/.gemini/AGENTS.md (instrucoes genericas do harness)
-    if [ -f "AGENTS_CLI.md" ]; then
-        mkdir -p "$HOME/.gemini"
-        backup_file_if_exists "$HOME/.gemini/AGENTS.md"
-        cp AGENTS_CLI.md "$HOME/.gemini/AGENTS.md"
-        log_success "AGENTS_CLI.md -> ~/.gemini/AGENTS.md"
-    elif [ -f "AGENTS.md" ]; then
-        mkdir -p "$HOME/.gemini"
-        backup_file_if_exists "$HOME/.gemini/AGENTS.md"
-        cp AGENTS.md "$HOME/.gemini/AGENTS.md"
-        log_success "AGENTS.md -> ~/.gemini/AGENTS.md"
+    # Compartilhado com Gemini CLI
+    if [ ! -f "$HOME/.gemini/AGENTS.md" ]; then
+        if [ -f "AGENTS_CLI.md" ]; then
+            mkdir -p "$HOME/.gemini"
+            backup_file_if_exists "$HOME/.gemini/AGENTS.md"
+            cp AGENTS_CLI.md "$HOME/.gemini/AGENTS.md"
+            log_success "AGENTS_CLI.md -> ~/.gemini/AGENTS.md"
+        elif [ -f "AGENTS.md" ]; then
+            mkdir -p "$HOME/.gemini"
+            backup_file_if_exists "$HOME/.gemini/AGENTS.md"
+            cp AGENTS.md "$HOME/.gemini/AGENTS.md"
+            log_success "AGENTS.md -> ~/.gemini/AGENTS.md"
+        fi
+    else
+        log_info "AGENTS.md -> ~/.gemini/AGENTS.md (ja existe, pulando)"
     fi
 
-    # .geminiignore -> ~/.gemini/.geminiignore
-    if [ -f ".geminiignore" ]; then
+    # .geminiignore -> ~/.gemini/.geminiignore (compartilhado)
+    if [ -f ".geminiignore" ] && [ ! -f "$HOME/.gemini/.geminiignore" ]; then
         cp ".geminiignore" "$HOME/.gemini/.geminiignore"
         log_success ".geminiignore -> ~/.gemini/.geminiignore"
+    elif [ -f ".geminiignore" ]; then
+        log_info ".geminiignore -> ~/.gemini/.geminiignore (ja existe, pulando)"
     fi
 
-    # Hooks -> ~/.gemini/hooks
-    install_hooks_for_ide "antigravity" "$HOME/.gemini/hooks"
+    # Hooks -> ~/.gemini/hooks (compartilhado com Gemini CLI)
+    # Nota: Antigravity e Gemini CLI compartilham o mesmo diretorio de hooks
+    # Se ja existir hooks do Gemini, mantemos eles (sao compativeis)
+    if [ ! -d "$HOME/.gemini/hooks" ] || [ -z "$(ls -A $HOME/.gemini/hooks 2>/dev/null)" ]; then
+        install_hooks_for_ide "antigravity" "$HOME/.gemini/hooks"
+        log_success "Hooks -> ~/.gemini/hooks"
+    else
+        log_info "Hooks -> ~/.gemini/hooks (ja existe, pulando - hooks do Gemini CLI sao compatíveis)"
+    fi
 
     log_success "Google Antigravity IDE instalado!"
 }

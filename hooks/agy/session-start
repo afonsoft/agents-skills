@@ -3,7 +3,7 @@
 # Injects skills catalog context at session start.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "${SCRIPT_DIR}/../session-start-base.sh"
+source "${SCRIPT_DIR}/session-start-base.sh"
 
 # Antigravity CLI: additionalContext (SDK standard)
 printf '{\n  "additionalContext": "%s"\n}\n' "$SESSION_CONTEXT"

@@ -251,6 +251,7 @@ See the [Contributing Guidelines](CONTRIBUTING.md).
 
 - [AGENTS.md](AGENTS.md) — Repository index and conventions
 - [AI Tools Installer Guide](AI-TOOLS-INSTALLER.md) — Comprehensive guide for RTK, Caveman, Superpowers installation
+- [RTK & Caveman Support Matrix](RTK_CAVEMAN_SUPPORT.md) — Platform support status and configuration guidance
 - [Contributing Guidelines](CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security Policy](SECURITY.md)
