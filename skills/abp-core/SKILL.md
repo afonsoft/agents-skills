@@ -1,7 +1,7 @@
 ---
 name: abp-core
 license: UNLICENSED
-description: Use when working on any ABP project, asking about ABP fundamentals, or unsure which skill applies. Covers module system, DI registration, base classes (ApplicationService, DomainService), IClock, BusinessException, localization, and async patterns.
+description: Use when working with ABP module system, dependency injection, base classes, time handling, business exceptions, or localization patterns
 ---
 
 # ABP Core Conventions

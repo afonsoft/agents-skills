@@ -1,7 +1,7 @@
 ---
 name: sonarqube-fix
 license: UNLICENSED
-description: "Use when fixing SonarQube issues automatically with tests and documentation — supports any stack including Angular, C# .NET, Java, Python, JavaScript, TypeScript, Go, Ruby, PHP, Scala. Acione when user mentions SonarQube, 'fix sonar issues', 'corrigir issues do SonarQube', 'sonarqube autofix', or asks to fix code quality issues reported by SonarQube. Do NOT use for general code refactoring without SonarQube issues, adding new features, or non-SonarQube code quality improvements."
+description: Use when fixing SonarQube code quality issues automatically across any language or framework
 subagent: false
 user-invokable: true
 argument-hint: "<project-name> [--new-code-only] [--issues=<issue-id1,issue-id2,...>]"

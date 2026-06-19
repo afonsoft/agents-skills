@@ -1,7 +1,7 @@
 ---
 name: security-jwt
 license: UNLICENSED
-description: Use when implementing JWT-based authentication in .NET applications, configuring secure authorization policies and roles, handling token generation, validation, and refresh, implementing proper security middleware and filters, applying security best practices and preventing common vulnerabilities, or setting up secure API endpoints with proper authorization.
+description: Use when implementing JWT authentication in .NET applications, configuring authorization policies, or securing API endpoints
 ---
 
 # JWT Security Skill

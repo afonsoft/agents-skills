@@ -7,7 +7,8 @@
 #   ./install.sh --all, -a        Instala para todas as IDEs/CLIs
 #   ./install.sh --devin, -d      Instala para Devin / Devin Review / Devin CLI
 #   ./install.sh --claude, -c     Instala para Claude Code
-#   ./install.sh --windsurf, -w   Instala para Windsurf (Cascade)
+#   ./install.sh --devin-desktop, -dd   Instala para Devin Desktop (formerly Windsurf)
+#   ./install.sh --windsurf, -w   Instala para Windsurf (Cascade) - legado, use --devin-desktop
 #   ./install.sh --vscode, -v     Instala para VS Code (GitHub Copilot)
 #   ./install.sh --cursor         Instala para Cursor
 #   ./install.sh --gemini, -g     Instala para Gemini CLI (Google)
@@ -19,7 +20,7 @@
 #   GITHUB_TOKEN                   Token GitHub para download do RTK (alternativa ao --github-token)
 #
 # Multiplas IDEs/CLIs podem ser combinadas:
-#   ./install.sh --devin --claude --windsurf
+#   ./install.sh --devin --claude --devin-desktop
 #   ./install.sh --all --github-token ghp_xxx
 
 set -e
@@ -52,6 +53,7 @@ log_error() {
 # Flags de IDEs selecionadas
 INSTALL_VSCODE=false
 INSTALL_WINDSURF=false
+INSTALL_DEVIN_DESKTOP=false
 INSTALL_CURSOR=false
 INSTALL_DEVIN=false
 INSTALL_CLAUDE=false
@@ -75,7 +77,8 @@ show_help() {
     echo -e "${YELLOW}Opcoes de IDE:${NC}"
     echo "  --devin,    -d          Instala para Devin / Devin Review / Devin CLI"
     echo "  --claude,   -c          Instala para Claude Code"
-    echo "  --windsurf, -w          Instala para Windsurf (Cascade)"
+    echo "  --devin-desktop, -dd   Instala para Devin Desktop (formerly Windsurf)"
+    echo "  --windsurf, -w          Instala para Windsurf (Cascade) - legado"
     echo "  --vscode,   -v          Instala para VS Code (GitHub Copilot)"
     echo "  --cursor                Instala para Cursor"
     echo "  --gemini,   -g          Instala para Gemini CLI (Google)"
@@ -93,52 +96,56 @@ show_help() {
     echo "  ./install.sh --all                    # Todas as IDEs"
     echo "  ./install.sh --vscode                 # Apenas VS Code"
     echo "  ./install.sh --devin --claude         # Devin + Claude"
-    echo "  ./install.sh --windsurf --vscode      # Windsurf + VS Code"
+    echo "  ./install.sh --devin-desktop --vscode # Devin Desktop + VS Code"
     echo "  ./install.sh --gemini                 # Apenas Gemini CLI"
     echo "  ./install.sh -a                       # Todas as IDEs/CLIs (atalho)"
-    echo "  ./install.sh -d -c -w                 # Devin + Claude + Windsurf (atalho)"
+    echo "  ./install.sh -d -c -dd                # Devin + Claude + Devin Desktop (atalho)"
     echo "  ./install.sh -c                       # Apenas Claude Code (atalho)"
     echo "  ./install.sh --all --github-token ghp_xxx  # Com token GitHub para RTK"
     echo "  GITHUB_TOKEN=ghp_xxx ./install.sh --all    # Mesmo via env var"
     echo
     echo -e "${YELLOW}O que sera instalado:${NC}"
     echo
-    echo "  IDE/CLI      Skills              Rules                    Knowledge"
-    echo "  ------------ ------------------- ------------------------ -------------------"
-    echo "  VS Code      ~/.github/skills    ~/.copilot/instructions  ~/.copilot/knowledge"
-    echo "                                   ~/.github/copilot-instructions.md (consolidado)"
-    echo "  Windsurf     ~/.windsurf/skills  ~/.windsurf/rules        ~/.windsurf/knowledge"
-    echo "                                   ~/.windsurfrules (consolidado)"
-    echo "                                   ~/.codeium/windsurf/memories/global_rules.md (global, sempre ativo)"
-    echo "  Cursor       ~/.cursor/skills    ~/.cursor/rules          ~/.cursor/knowledge"
-    echo "                                   ~/.cursorrules (consolidado)"
-    echo "  Devin        ~/.agents/skills     (via Cursor/Windsurf)    ~/.devin/knowledge"
-    echo "               + ~/.cognition/skills  (Devin-specific)"
-    echo "               + ~/.devin/skills  (compatibilidade)"
-    echo "               + ~/.config/cognition/skills  (Devin CLI)"
-    echo "               + ~/.config/cognition/knowledge  (Devin CLI)"
-    echo "               + AGENTS.md -> ~/.devin/AGENTS.md"
-    echo "  Claude       ~/.claude/skills    ~/.claude/rules          ~/.claude/knowledge"
-    echo "                                   ~/.claude/CLAUDE.md (instrucoes globais)"
-    echo "                                   ~/.claude/settings.json (permissoes)"
-    echo "                                   ~/.claude/commands/ (slash commands)"
-    echo "  Gemini CLI   ~/.gemini/skills    ~/.gemini/GEMINI.md      ~/.gemini/knowledge"
-    echo "  OpenClaw     ~/.openclaw/skills   ~/.openclaw/rules        ~/.openclaw/knowledge"
+    echo "  IDE/CLI          Skills              Rules                    Knowledge"
+    echo "  --------------- ------------------- ------------------------ -------------------"
+    echo "  VS Code          ~/.github/skills    ~/.copilot/instructions  ~/.copilot/knowledge"
+    echo "                                       ~/.github/copilot-instructions.md (consolidado)"
+    echo "  Devin Desktop    ~/.devin/skills     ~/.devin/rules           ~/.devin/knowledge"
+    echo "  (formerly       ~/.codeium/windsurf/skills (legacy read)    ~/.codeium/windsurf/knowledge (legacy)"
+    echo "   Windsurf)       ~/.agents/skills (universal)                ~/.devin/AGENTS.md"
+    echo "  Windsurf         ~/.windsurf/skills  ~/.windsurf/rules        ~/.windsurf/knowledge"
+    echo "  (legacy)         ~/.windsurfrules (consolidado)"
+    echo "                   ~/.codeium/windsurf/memories/global_rules.md (global, sempre ativo)"
+    echo "  Cursor           ~/.cursor/skills    ~/.cursor/rules          ~/.cursor/knowledge"
+    echo "                                       ~/.cursorrules (consolidado)"
+    echo "  Devin            ~/.agents/skills     (via Cursor/Devin Desktop) ~/.devin/knowledge"
+    echo "                   + ~/.cognition/skills  (Devin-specific)"
+    echo "                   + ~/.devin/skills  (compatibilidade)"
+    echo "                   + ~/.config/devin/skills  (Devin CLI)"
+    echo "                   + ~/.config/devin/knowledge  (Devin CLI)"
+    echo "                   + AGENTS.md -> ~/.devin/AGENTS.md"
+    echo "  Claude           ~/.claude/skills    ~/.claude/rules          ~/.claude/knowledge"
+    echo "                                       ~/.claude/CLAUDE.md (instrucoes globais)"
+    echo "                                       ~/.claude/settings.json (permissoes)"
+    echo "                                       ~/.claude/commands/ (slash commands)"
+    echo "  Gemini CLI       ~/.gemini/skills    ~/.gemini/GEMINI.md      ~/.gemini/knowledge"
+    echo "  OpenClaw         ~/.openclaw/skills   ~/.openclaw/rules        ~/.openclaw/knowledge"
     echo
     echo "  Base: ~/.agents/skills (sempre instalado)"
     echo "  Base: ~/.agents/harness/ (templates do Agent Harness)"
     echo "  Base: ~/.agents/AGENTS_CLI.md (instrucoes genericas)"
     echo
     echo -e "${YELLOW}Documentacao:${NC}"
-    echo "  VS Code:   https://code.visualstudio.com/docs/copilot/customization/custom-instructions"
-    echo "  Windsurf:  https://docs.windsurf.com/windsurf/cascade/agents-md"
-    echo "  Cursor:    https://docs.cursor.com/context/rules"
-    echo "  Devin:     https://docs.devin.ai/work-with-devin/devin-review"
-    echo "  Devin CLI: https://cli.devin.ai/docs/extensibility/skills/overview"
-    echo "  Claude:    https://docs.anthropic.com/en/docs/claude-code"
-    echo "             https://docs.anthropic.com/en/docs/claude-code/slash-commands"
-    echo "  Gemini:    https://geminicli.com/docs/"
-    echo "  OpenClaw:  https://openclaw.dev/docs/"
+    echo "  VS Code:      https://code.visualstudio.com/docs/copilot/customization/custom-instructions"
+    echo "  Devin Desktop: https://docs.devin.ai/desktop/devin-desktop-faq"
+    echo "  Windsurf:     https://docs.windsurf.com/windsurf/cascade/agents-md (legacy)"
+    echo "  Cursor:       https://docs.cursor.com/context/rules"
+    echo "  Devin:        https://docs.devin.ai/work-with-devin/devin-review"
+    echo "  Devin CLI:    https://cli.devin.ai/docs/extensibility/skills/overview"
+    echo "  Claude:       https://docs.anthropic.com/en/docs/claude-code"
+    echo "                https://docs.anthropic.com/en/docs/claude-code/slash-commands"
+    echo "  Gemini:       https://geminicli.com/docs/"
+    echo "  OpenClaw:     https://openclaw.dev/docs/"
     echo
 }
 
@@ -161,6 +168,7 @@ parse_args() {
             --all|-a)
                 INSTALL_VSCODE=true
                 INSTALL_WINDSURF=true
+                INSTALL_DEVIN_DESKTOP=true
                 INSTALL_CURSOR=true
                 INSTALL_DEVIN=true
                 INSTALL_CLAUDE=true
@@ -169,6 +177,9 @@ parse_args() {
                 ;;
             --vscode|-v)
                 INSTALL_VSCODE=true
+                ;;
+            --devin-desktop|-dd)
+                INSTALL_DEVIN_DESKTOP=true
                 ;;
             --windsurf|-w)
                 INSTALL_WINDSURF=true
@@ -245,12 +256,13 @@ generate_consolidated_rules() {
     # Inject IDE-specific paths row after Base table
     local ide_row=""
     case "$platform" in
-        vscode)   ide_row="| VS Code / Copilot | \`~/.github/skills/\` | \`~/.copilot/instructions/\` | \`~/.copilot/knowledge/\` |" ;;
-        windsurf) ide_row="| Windsurf | \`~/.windsurf/skills/\` | \`~/.windsurf/rules/\` | \`~/.windsurf/knowledge/\` |" ;;
-        cursor)   ide_row="| Cursor | \`~/.cursor/skills/\` | \`~/.cursor/rules/\` | \`~/.cursor/knowledge/\` |" ;;
-        claude)   ide_row="| Claude Code | \`~/.claude/skills/\` | \`~/.claude/rules/\` | \`~/.claude/knowledge/\` |" ;;
-        devin)    ide_row="| Devin | \`~/.devin/skills/\` | — | \`~/.devin/knowledge/\` |" ;;
-        gemini)   ide_row="| Gemini CLI | \`~/.gemini/skills/\` | \`~/.gemini/GEMINI.md\` | \`~/.gemini/knowledge/\` |" ;;
+        vscode)        ide_row="| VS Code / Copilot | \`~/.github/skills/\` | \`~/.copilot/instructions/\` | \`~/.copilot/knowledge/\` |" ;;
+        devin-desktop) ide_row="| Devin Desktop | \`~/.devin/skills/\` | \`~/.devin/rules/\` | \`~/.devin/knowledge/\` |" ;;
+        windsurf)      ide_row="| Windsurf | \`~/.windsurf/skills/\` | \`~/.windsurf/rules/\` | \`~/.windsurf/knowledge/\` |" ;;
+        cursor)        ide_row="| Cursor | \`~/.cursor/skills/\` | \`~/.cursor/rules/\` | \`~/.cursor/knowledge/\` |" ;;
+        claude)        ide_row="| Claude Code | \`~/.claude/skills/\` | \`~/.claude/rules/\` | \`~/.claude/knowledge/\` |" ;;
+        devin)         ide_row="| Devin | \`~/.devin/skills/\` | — | \`~/.devin/knowledge/\` |" ;;
+        gemini)        ide_row="| Gemini CLI | \`~/.gemini/skills/\` | \`~/.gemini/GEMINI.md\` | \`~/.gemini/knowledge/\` |" ;;
     esac
     if [ -n "$ide_row" ]; then
         sed -i "/| Base (todas)/a\\$ide_row" "$output_file"
@@ -732,6 +744,70 @@ install_windsurf() {
     log_success "Windsurf (Cascade) instalado!"
 }
 
+install_devin_desktop() {
+    log_info "=== Instalando para Devin Desktop (formerly Windsurf) ==="
+
+    # Devin Desktop uses new paths but also reads legacy Windsurf paths
+    # Ref: https://docs.devin.ai/desktop/devin-desktop-faq
+
+    # Skills -> ~/.devin/skills (new primary path)
+    backup_dir_if_exists "$HOME/.devin/skills"
+    cp -a skills/* "$HOME/.devin/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.devin/skills"
+
+    # Rules -> ~/.devin/rules + consolidados
+    if [ -d "rules" ]; then
+        backup_dir_if_exists "$HOME/.devin/rules"
+        cp -a rules/*.instructions.md "$HOME/.devin/rules/" 2>/dev/null || true
+        log_success "Rules -> ~/.devin/rules"
+
+        generate_consolidated_rules "$HOME/.devin/rules.md" "devin-desktop"
+        log_success "Rules consolidadas -> ~/.devin/rules.md"
+    fi
+
+    # Knowledge -> ~/.devin/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.devin/knowledge"
+        copy_knowledge_sources "$HOME/.devin/knowledge/"
+        log_success "Knowledge -> ~/.devin/knowledge"
+    fi
+
+    # AGENTS.md -> ~/.devin/AGENTS.md (instrucoes genericas do harness)
+    if [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.devin"
+        backup_file_if_exists "$HOME/.devin/AGENTS.md"
+        cp AGENTS.md "$HOME/.devin/AGENTS.md"
+        log_success "AGENTS.md -> ~/.devin/AGENTS.md"
+    fi
+
+    # .devinignore -> ~/.devin/.devinignore
+    if [ -f ".devinignore" ]; then
+        cp ".devinignore" "$HOME/.devin/.devinignore"
+        log_success ".devinignore -> ~/.devin/.devinignore"
+    fi
+
+    # Also install to legacy Windsurf paths for backward compatibility
+    # Devin Desktop reads from legacy paths during transition
+    log_info "Instalando tambem em paths legados do Windsurf para compatibilidade..."
+
+    # Skills -> ~/.codeium/windsurf/skills (legacy read)
+    backup_dir_if_exists "$HOME/.codeium/windsurf/skills"
+    cp -a skills/* "$HOME/.codeium/windsurf/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.codeium/windsurf/skills (legacy)"
+
+    # Knowledge -> ~/.codeium/windsurf/knowledge (legacy read)
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.codeium/windsurf/knowledge"
+        copy_knowledge_sources "$HOME/.codeium/windsurf/knowledge/"
+        log_success "Knowledge -> ~/.codeium/windsurf/knowledge (legacy)"
+    fi
+
+    # Hooks -> ~/.devin/hooks
+    install_hooks_for_ide "devin-desktop" "$HOME/.devin/hooks"
+
+    log_success "Devin Desktop instalado!"
+}
+
 install_cursor() {
     log_info "=== Instalando para Cursor ==="
 
@@ -819,17 +895,17 @@ install_devin() {
         log_success "Knowledge -> ~/.devin/knowledge"
     fi
 
-    # Devin CLI (Terminal) - Skills -> ~/.config/cognition/skills/
+    # Devin CLI (Terminal) - Skills -> ~/.config/devin/skills/
     # Ref: https://cli.devin.ai/docs/extensibility/skills/overview#where-skills-live
-    backup_dir_if_exists "$HOME/.config/cognition/skills"
-    cp -a skills/* "$HOME/.config/cognition/skills/" 2>/dev/null || true
-    log_success "Skills -> ~/.config/cognition/skills (Devin CLI)"
+    backup_dir_if_exists "$HOME/.config/devin/skills"
+    cp -a skills/* "$HOME/.config/devin/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.config/devin/skills (Devin CLI)"
 
-    # Devin CLI - Knowledge -> ~/.config/cognition/knowledge/
+    # Devin CLI - Knowledge -> ~/.config/devin/knowledge/
     if [ -d "devin/knowledge_sources" ]; then
-        backup_dir_if_exists "$HOME/.config/cognition/knowledge"
-        copy_knowledge_sources "$HOME/.config/cognition/knowledge/"
-        log_success "Knowledge -> ~/.config/cognition/knowledge (Devin CLI)"
+        backup_dir_if_exists "$HOME/.config/devin/knowledge"
+        copy_knowledge_sources "$HOME/.config/devin/knowledge/"
+        log_success "Knowledge -> ~/.config/devin/knowledge (Devin CLI)"
     fi
 
     # Rules -> ~/.cursor/rules e ~/.windsurfrules (para Devin Review)
@@ -1380,6 +1456,18 @@ verify_installation() {
         [ -f "$HOME/.windsurf/AGENTS.md" ] && log_success "  AGENTS.md: ~/.windsurf/AGENTS.md"
     fi
 
+    if [ "$INSTALL_DEVIN_DESKTOP" = true ]; then
+        echo
+        log_info "Devin Desktop (formerly Windsurf):"
+        [ -d "$HOME/.devin/skills" ] && log_success "  Skills: ~/.devin/skills"
+        [ -d "$HOME/.devin/rules" ] && log_success "  Rules: ~/.devin/rules"
+        [ -f "$HOME/.devin/rules.md" ] && log_success "  Rules consolidadas: ~/.devin/rules.md"
+        [ -d "$HOME/.devin/knowledge" ] && log_success "  Knowledge: ~/.devin/knowledge"
+        [ -f "$HOME/.devin/AGENTS.md" ] && log_success "  AGENTS.md: ~/.devin/AGENTS.md"
+        [ -d "$HOME/.codeium/windsurf/skills" ] && log_success "  Skills (legacy): ~/.codeium/windsurf/skills"
+        [ -d "$HOME/.codeium/windsurf/knowledge" ] && log_success "  Knowledge (legacy): ~/.codeium/windsurf/knowledge"
+    fi
+
     if [ "$INSTALL_CURSOR" = true ]; then
         echo
         log_info "Cursor:"
@@ -1401,8 +1489,8 @@ verify_installation() {
         [ -d "$HOME/.devin/mcps" ] && log_success "  MCPs: ~/.devin/mcps"
         [ -d "$HOME/.devin/playbooks" ] && log_success "  Playbooks: ~/.devin/playbooks"
         [ -d "$HOME/.devin/knowledge_sources" ] && log_success "  Knowledge Sources: ~/.devin/knowledge_sources"
-        [ -d "$HOME/.config/cognition/skills" ] && log_success "  Skills (Devin CLI): ~/.config/cognition/skills"
-        [ -d "$HOME/.config/cognition/knowledge" ] && log_success "  Knowledge (Devin CLI): ~/.config/cognition/knowledge"
+        [ -d "$HOME/.config/devin/skills" ] && log_success "  Skills (Devin CLI): ~/.config/devin/skills"
+        [ -d "$HOME/.config/devin/knowledge" ] && log_success "  Knowledge (Devin CLI): ~/.config/devin/knowledge"
         [ -d "$HOME/.cursor/rules" ] && log_success "  Rules (Devin Review/CLI): ~/.cursor/rules"
         [ -f "$HOME/.windsurfrules" ] && log_success "  Rules (Devin Review/CLI): ~/.windsurfrules"
         [ -f "$HOME/.devin/AGENTS.md" ] && log_success "  AGENTS.md: ~/.devin/AGENTS.md"
@@ -1466,6 +1554,11 @@ show_post_install() {
         echo "  rm -f ~/.windsurfrules ~/.windsurf/AGENTS.md"
         echo "  rm -f ~/.codeium/windsurf/memories/global_rules.md"
     fi
+    if [ "$INSTALL_DEVIN_DESKTOP" = true ]; then
+        echo "  rm -rf ~/.devin/skills ~/.devin/rules ~/.devin/knowledge"
+        echo "  rm -f ~/.devin/rules.md ~/.devin/AGENTS.md"
+        echo "  rm -rf ~/.codeium/windsurf/skills ~/.codeium/windsurf/knowledge"
+    fi
     if [ "$INSTALL_CURSOR" = true ]; then
         echo "  rm -rf ~/.cursor/skills ~/.cursor/rules ~/.cursor/knowledge"
         echo "  rm -f ~/.cursorrules ~/.cursor/AGENTS.md"
@@ -1475,7 +1568,7 @@ show_post_install() {
         echo "  rm -rf ~/.devin/skills ~/.devin/knowledge"
         echo "  rm -f ~/.devin/AGENTS.md"
         echo "  rm -rf ~/.devin/mcps ~/.devin/playbooks ~/.devin/knowledge_sources"
-        echo "  rm -rf ~/.config/cognition/skills ~/.config/cognition/knowledge"
+        echo "  rm -rf ~/.config/devin/skills ~/.config/devin/knowledge"
     fi
     if [ "$INSTALL_CLAUDE" = true ]; then
         echo "  rm -rf ~/.claude/skills ~/.claude/rules ~/.claude/knowledge ~/.claude/commands"
@@ -1508,6 +1601,7 @@ main() {
     local ides_selecionadas=""
     [ "$INSTALL_VSCODE" = true ] && ides_selecionadas="${ides_selecionadas} VS-Code"
     [ "$INSTALL_WINDSURF" = true ] && ides_selecionadas="${ides_selecionadas} Windsurf"
+    [ "$INSTALL_DEVIN_DESKTOP" = true ] && ides_selecionadas="${ides_selecionadas} Devin-Desktop"
     [ "$INSTALL_CURSOR" = true ] && ides_selecionadas="${ides_selecionadas} Cursor"
     [ "$INSTALL_DEVIN" = true ] && ides_selecionadas="${ides_selecionadas} Devin"
     [ "$INSTALL_CLAUDE" = true ] && ides_selecionadas="${ides_selecionadas} Claude"
@@ -1522,6 +1616,7 @@ main() {
 
     [ "$INSTALL_VSCODE" = true ] && install_vscode
     [ "$INSTALL_WINDSURF" = true ] && install_windsurf
+    [ "$INSTALL_DEVIN_DESKTOP" = true ] && install_devin_desktop
     [ "$INSTALL_CURSOR" = true ] && install_cursor
     [ "$INSTALL_DEVIN" = true ] && install_devin
     [ "$INSTALL_CLAUDE" = true ] && install_claude
