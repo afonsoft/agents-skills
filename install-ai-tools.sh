@@ -47,17 +47,35 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Detecção de sistema operacional
+# Detect operating system and available shells
 detect_os() {
     case "$(uname -s)" in
         Linux*)     OS="Linux";;
         Darwin*)    OS="Mac";;
-        CYGWIN*)    OS="Windows";;
-        MINGW*)     OS="Windows";;
-        MSYS*)      OS="Windows";;
+        CYGWIN*)    OS="Windows"; SHELL="Cygwin";;
+        MINGW*)     OS="Windows"; SHELL="GitBash";;
+        MSYS*)      OS="Windows"; SHELL="GitBash";;
         *)          OS="Unknown";;
     esac
+    
+    # Detecta PowerShell no Windows
+    if [ "$OS" = "Windows" ]; then
+        if command_exists powershell.exe || command_exists pwsh; then
+            if command_exists pwsh; then
+                SHELL="PowerShell-Core"
+            else
+                SHELL="PowerShell"
+            fi
+        elif [ -n "$SHELL" ]; then
+            # Já detectado como Cygwin ou GitBash
+            :
+        else
+            SHELL="Unknown"
+        fi
+    fi
+    
     export OS
+    export SHELL
 }
 
 detect_os
@@ -98,7 +116,12 @@ show_help() {
     echo "       Suporta: Claude Code, Cursor, OpenCode, Codex, Gemini CLI, etc."
     echo
     echo -e "${YELLOW}Sistemas suportados:${NC}"
-    echo "  Linux, macOS, Windows (via WSL ou Git Bash)"
+    echo "  Linux, macOS, Windows (PowerShell, Git Bash, WSL)"
+    echo
+    echo -e "${YELLOW}Windows:${NC}"
+    echo "  PowerShell: Instalação limitada (sem hooks)"
+    echo "  Git Bash: Suporte completo (hooks funcionam)"
+    echo "  WSL: Suporte completo (recomendado para hooks)"
     echo
 }
 
@@ -159,6 +182,37 @@ command_exists() {
     command -v "$1" &> /dev/null
 }
 
+# Função para executar comando no shell apropriado (Windows)
+execute_in_shell() {
+    local cmd="$1"
+    
+    if [ "$OS" = "Windows" ]; then
+        case "$SHELL" in
+            PowerShell)
+                powershell.exe -Command "$cmd"
+                ;;
+            PowerShell-Core)
+                pwsh -Command "$cmd"
+                ;;
+            GitBash)
+                bash -c "$cmd"
+                ;;
+            *)
+                # Fallback para bash se disponível
+                if command_exists bash; then
+                    bash -c "$cmd"
+                else
+                    log_error "Nenhum shell compatível encontrado"
+                    return 1
+                fi
+                ;;
+        esac
+    else
+        # No Linux/Mac, executa diretamente
+        eval "$cmd"
+    fi
+}
+
 # Instala RTK
 install_rtk() {
     log_info "=== Instalando RTK (Rust Token Killer) ==="
@@ -217,23 +271,48 @@ install_rtk() {
             fi
             ;;
         Windows)
-            log_warning "No Windows, recomenda-se usar WSL para suporte completo de hooks"
-            log_info "Para suporte completo, execute este script dentro do WSL"
-            log_info "Instalando RTK no Windows (suporte limitado)..."
+            log_info "Instalando RTK no Windows..."
             
-            # Tenta instalar via cargo se disponível
-            if command_exists cargo; then
-                if cargo install --git https://github.com/rtk-ai/rtk rtk; then
-                    log_success "RTK instalado via cargo (suporte limitado no Windows)"
+            # Tenta usar Git Bash primeiro (suporte completo de hooks)
+            if [ "$SHELL" = "GitBash" ]; then
+                log_info "Usando Git Bash para instalacao (suporte completo de hooks)..."
+                if execute_in_shell "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | bash"; then
+                    log_success "RTK instalado via Git Bash (suporte completo)"
                     RTK_SUCCESS=true
                 else
-                    log_error "Falha na instalacao via cargo no Windows"
-                    log_warning "No Windows, use WSL para suporte completo."
+                    log_error "Falha na instalacao via Git Bash"
+                    HAS_ERRORS=true
+                    return 0
+                fi
+            # Tenta usar PowerShell se disponível
+            elif [ "$SHELL" = "PowerShell" ] || [ "$SHELL" = "PowerShell-Core" ]; then
+                log_info "Usando PowerShell para instalacao (suporte limitado)..."
+                
+                # Tenta via PowerShell com cargo
+                if command_exists cargo; then
+                    log_info "Instalando RTK via cargo no PowerShell..."
+                    if execute_in_shell "cargo install --git https://github.com/rtk-ai/rtk rtk"; then
+                        log_success "RTK instalado via cargo (PowerShell - suporte limitado)"
+                        RTK_SUCCESS=true
+                    else
+                        log_error "Falha na instalacao via cargo no PowerShell"
+                        HAS_ERRORS=true
+                        return 0
+                    fi
+                else
+                    log_error "Cargo não encontrado. Instale Rust primeiro."
+                    log_info "Alternativas:"
+                    log_info "  1. Use Git Bash para suporte completo"
+                    log_info "  2. Use WSL: wsl bash -c 'curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh'"
                     HAS_ERRORS=true
                     return 0
                 fi
             else
-                log_error "Cargo não encontrado. No Windows, use WSL para suporte completo."
+                log_warning "Nenhum shell compatível detectado (PowerShell ou Git Bash)"
+                log_info "Recomendações:"
+                log_info "  1. Use Git Bash para suporte completo de hooks"
+                log_info "  2. Use WSL: wsl bash -c 'curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh'"
+                log_info "  3. Instale Rust e use PowerShell para suporte limitado"
                 HAS_ERRORS=true
                 return 0
             fi
@@ -302,15 +381,34 @@ install_caveman() {
             fi
             ;;
         Windows)
-            log_info "No Windows, usando PowerShell para instalacao..."
-            if command_exists powershell.exe || command_exists pwsh; then
-                log_info "Execute manualmente no PowerShell:"
+            log_info "Instalando Caveman no Windows..."
+            
+            # Tenta usar Git Bash primeiro (suporte completo)
+            if [ "$SHELL" = "GitBash" ]; then
+                log_info "Usando Git Bash para instalacao automatica..."
+                if execute_in_shell "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"; then
+                    log_success "Caveman instalado via Git Bash"
+                    CAVEMAN_SUCCESS=true
+                else
+                    log_error "Falha na instalacao via Git Bash"
+                    HAS_ERRORS=true
+                    return 0
+                fi
+            # Tenta usar PowerShell se disponível
+            elif [ "$SHELL" = "PowerShell" ] || [ "$SHELL" = "PowerShell-Core" ]; then
+                log_info "Usando PowerShell para instalacao..."
+                log_info "Execute no PowerShell:"
                 echo "irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex"
-                log_warning "Instalacao manual requerida no Windows"
+                log_warning "Instalacao manual requerida no PowerShell"
+                log_info "Ou use Git Bash para instalacao automatica"
                 HAS_ERRORS=true
                 return 0
             else
-                log_error "PowerShell não encontrado"
+                log_warning "Nenhum shell compatível detectado (PowerShell ou Git Bash)"
+                log_info "Opções:"
+                log_info "  1. PowerShell: irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex"
+                log_info "  2. Git Bash: curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
+                log_info "  3. WSL: wsl bash -c 'curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash'"
                 HAS_ERRORS=true
                 return 0
             fi
@@ -395,6 +493,9 @@ main() {
     
     detect_os
     log_info "Sistema operacional detectado: $OS"
+    if [ "$OS" = "Windows" ]; then
+        log_info "Shell detectado: $SHELL"
+    fi
     echo
     
     if [ "$DRY_RUN" = true ]; then
