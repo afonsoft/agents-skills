@@ -1,6 +1,6 @@
 ---
 name: harness-repo-structure
-description: 'Create and maintain OpenAI-style harness engineering repository structure with knowledge base organization'
+description: 'Use when establishing repository structure following OpenAI harness engineering principles with AGENTS.md as index and knowledge in docs/'
 ---
 
 # Harness Repository Structure

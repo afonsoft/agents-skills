@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# Detect operating system
+detect_os() {
+    case "$(uname -s)" in
+        Linux*)     OS="Linux";;
+        Darwin*)    OS="Mac";;
+        CYGWIN*)    OS="Windows";;
+        MINGW*)     OS="Windows";;
+        MSYS*)      OS="Windows";;
+        *)          OS="Unknown";;
+    esac
+    export OS
+}
+
+detect_os
+
 # Cores para output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -40,6 +55,8 @@ show_help() {
     echo "  - Git fetch, pull, reflog cleanup"
     echo "  - Garbage collection (git gc)"
     echo "  - Build artifacts (bin, obj, .vs, node_modules)"
+    echo "  - Package manager caches (npm, yarn, nuget)"
+    echo "  - Windows-specific cache directories (no Windows)"
     echo "  - Logs detalhados com cores e timestamps"
 }
 
@@ -245,6 +262,71 @@ cleanup_repo() {
     local recursive_dirs_removed=$(find . -type d \( -name bin -o -name obj -o -name .vs -o -name node_modules -o -name dist -o -name build -o -name target -o -name out \) -exec rm -rf {} + 2>/dev/null | wc -l)
     if [ "$recursive_dirs_removed" -gt 0 ]; then
         log_success "Diretorios de build removidos recursivamente: $recursive_dirs_removed"
+    fi
+    
+    # Clean package manager caches
+    log_info "Limpando caches de gerenciadores de pacotes..."
+    
+    # NPM cache cleanup
+    if command -v npm &> /dev/null; then
+        log_info "Limpando cache do NPM..."
+        npm cache clean --force 2>&1 | while IFS= read -r line; do
+            log_info "NPM: $line"
+        done
+        log_success "Cache do NPM limpo"
+    else
+        log_warning "NPM nao encontrado, pulando limpeza de cache"
+    fi
+    
+    # Yarn cache cleanup
+    if command -v yarn &> /dev/null; then
+        log_info "Limpando cache do Yarn..."
+        yarn cache clean 2>&1 | while IFS= read -r line; do
+            log_info "Yarn: $line"
+        done
+        log_success "Cache do Yarn limpo"
+    else
+        log_warning "Yarn nao encontrado, pulando limpeza de cache"
+    fi
+    
+    # NuGet cache cleanup (works on both Linux and Windows)
+    if command -v dotnet &> /dev/null; then
+        log_info "Limpando cache do NuGet..."
+        dotnet nuget locals all --clear 2>&1 | while IFS= read -r line; do
+            log_info "NuGet: $line"
+        done
+        log_success "Cache do NuGet limpo"
+    else
+        log_warning "dotnet/NuGet nao encontrado, pulando limpeza de cache"
+    fi
+    
+    # Windows-specific additional cleanups
+    if [ "$OS" = "Windows" ]; then
+        log_info "Executando limpezas especificas para Windows..."
+        
+        # Clean Windows package cache directories if they exist
+        local windows_cache_dirs=(
+            "$LOCALAPPDATA/npm-cache"
+            "$LOCALAPPDATA/yarn/cache"
+            "$LOCALAPPDATA/NuGet/v3-cache"
+            "$APPDATA/npm-cache"
+            "$APPDATA/yarn/cache"
+        )
+        
+        for cache_dir in "${windows_cache_dirs[@]}"; do
+            if [ -d "$cache_dir" ]; then
+                local dir_size=$(du -sb "$cache_dir" 2>/dev/null | cut -f1 || echo "0")
+                if [ "$VERBOSE" = true ]; then
+                    echo -e "  ${YELLOW}Removendo cache Windows:${NC} $cache_dir (${dir_size} bytes)"
+                fi
+                rm -rf "$cache_dir"/* 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "Cache Windows removido: $cache_dir"
+                else
+                    log_warning "Nao foi possivel remover: $cache_dir"
+                fi
+            fi
+        done
     fi
     
     # Estatísticas depois
