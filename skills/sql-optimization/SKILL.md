@@ -1,7 +1,7 @@
 ---
 name: sql-optimization
 license: UNLICENSED
-description: Use when optimizing SQL query performance across MySQL, PostgreSQL, SQL Server, Oracle, or other SQL databases. Covers execution plan analysis, pagination optimization, batch operations, indexing strategies, and performance monitoring guidance.
+description: Use when SQL queries are slow, need optimization, or when analyzing database performance bottlenecks
 ---
 
 # SQL Performance Optimization Assistant

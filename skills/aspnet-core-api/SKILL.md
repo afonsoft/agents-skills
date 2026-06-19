@@ -1,7 +1,7 @@
 ---
 name: aspnet-core-api
 license: UNLICENSED
-description: Use when designing and implementing RESTful APIs with ASP.NET Core, applying security best practices with JWT authentication, implementing proper error handling and validation, creating comprehensive API documentation with OpenAPI/Swagger, setting up testing strategies for API endpoints, or optimizing API performance and caching.
+description: Use when designing and implementing RESTful APIs with ASP.NET Core, or when applying security, error handling, documentation, testing, or performance optimization to API endpoints
 ---
 
 # ASP.NET Core API Skill

@@ -1,7 +1,7 @@
 ---
 name: performance-optimization
 license: UNLICENSED
-description: Use when identifying and resolving performance bottlenecks in .NET applications, implementing caching strategies and optimization techniques, profiling and analyzing application performance, optimizing database queries and data access, improving memory management and resource utilization, or scaling applications for high-performance scenarios.
+description: Use when identifying performance bottlenecks, optimizing queries, implementing caching, or profiling .NET applications
 ---
 
 # Performance Optimization Skill

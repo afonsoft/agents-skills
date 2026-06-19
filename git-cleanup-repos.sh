@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# Detect operating system
+detect_os() {
+    case "$(uname -s)" in
+        Linux*)     OS="Linux";;
+        Darwin*)    OS="Mac";;
+        CYGWIN*)    OS="Windows";;
+        MINGW*)     OS="Windows";;
+        MSYS*)      OS="Windows";;
+        *)          OS="Unknown";;
+    esac
+    export OS
+}
+
+detect_os
+
 # Cores para output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -17,6 +32,8 @@ LOG="${ROOT}/git_cleanup_${TIMESTAMP}.log"
 VERBOSE=false
 DRY_RUN=false
 SHOW_HELP=false
+DISK_SPACE_BEFORE=0
+DISK_SPACE_AFTER=0
 
 # Função de help
 show_help() {
@@ -40,6 +57,8 @@ show_help() {
     echo "  - Git fetch, pull, reflog cleanup"
     echo "  - Garbage collection (git gc)"
     echo "  - Build artifacts (bin, obj, .vs, node_modules)"
+    echo "  - Package manager caches (npm, yarn, nuget)"
+    echo "  - Windows-specific cache directories (no Windows)"
     echo "  - Logs detalhados com cores e timestamps"
 }
 
@@ -87,6 +106,55 @@ log_header() {
         echo -e "${CYAN}Data/Hora: $(date '+%Y-%m-%d %H:%M:%S')${NC}"
         echo -e "${CYAN}==================================================================${NC}"
     fi
+}
+
+# Função para obter espaço em disco disponível (em KB)
+get_disk_space() {
+    local path="${1:-$ROOT}"
+    local space_kb=0
+    
+    case "$OS" in
+        Linux)
+            space_kb=$(df -k "$path" 2>/dev/null | tail -1 | awk '{print $4}' || echo "0")
+            ;;
+        Mac)
+            space_kb=$(df -k "$path" 2>/dev/null | tail -1 | awk '{print $4}' || echo "0")
+            ;;
+        Windows)
+            # No Windows/Git Bash, usa df -k que funciona
+            space_kb=$(df -k "$path" 2>/dev/null | tail -1 | awk '{print $4}' || echo "0")
+            ;;
+        *)
+            space_kb=$(df -k "$path" 2>/dev/null | tail -1 | awk '{print $4}' || echo "0")
+            ;;
+    esac
+    
+    echo "$space_kb"
+}
+
+# Função para formatar espaço em disco para exibição
+format_disk_space() {
+    local space_kb="$1"
+    local space_mb=$((space_kb / 1024))
+    local space_gb=$((space_mb / 1024))
+    
+    if [ "$space_gb" -gt 0 ]; then
+        echo "${space_gb}GB"
+    elif [ "$space_mb" -gt 0 ]; then
+        echo "${space_mb}MB"
+    else
+        echo "${space_kb}KB"
+    fi
+}
+
+# Função para obter e registrar espaço em disco
+log_disk_space() {
+    local label="$1"
+    local space_kb=$(get_disk_space)
+    local space_formatted=$(format_disk_space "$space_kb")
+    
+    log_info "Espaço em disco $label: $space_formatted ($space_kb KB)"
+    echo "$space_kb"
 }
 
 # Parse de argumentos
@@ -247,6 +315,71 @@ cleanup_repo() {
         log_success "Diretorios de build removidos recursivamente: $recursive_dirs_removed"
     fi
     
+    # Clean package manager caches
+    log_info "Limpando caches de gerenciadores de pacotes..."
+    
+    # NPM cache cleanup
+    if command -v npm &> /dev/null; then
+        log_info "Limpando cache do NPM..."
+        npm cache clean --force 2>&1 | while IFS= read -r line; do
+            log_info "NPM: $line"
+        done
+        log_success "Cache do NPM limpo"
+    else
+        log_warning "NPM nao encontrado, pulando limpeza de cache"
+    fi
+    
+    # Yarn cache cleanup
+    if command -v yarn &> /dev/null; then
+        log_info "Limpando cache do Yarn..."
+        yarn cache clean 2>&1 | while IFS= read -r line; do
+            log_info "Yarn: $line"
+        done
+        log_success "Cache do Yarn limpo"
+    else
+        log_warning "Yarn nao encontrado, pulando limpeza de cache"
+    fi
+    
+    # NuGet cache cleanup (works on both Linux and Windows)
+    if command -v dotnet &> /dev/null; then
+        log_info "Limpando cache do NuGet..."
+        dotnet nuget locals all --clear 2>&1 | while IFS= read -r line; do
+            log_info "NuGet: $line"
+        done
+        log_success "Cache do NuGet limpo"
+    else
+        log_warning "dotnet/NuGet nao encontrado, pulando limpeza de cache"
+    fi
+    
+    # Windows-specific additional cleanups
+    if [ "$OS" = "Windows" ]; then
+        log_info "Executando limpezas especificas para Windows..."
+        
+        # Clean Windows package cache directories if they exist
+        local windows_cache_dirs=(
+            "$LOCALAPPDATA/npm-cache"
+            "$LOCALAPPDATA/yarn/cache"
+            "$LOCALAPPDATA/NuGet/v3-cache"
+            "$APPDATA/npm-cache"
+            "$APPDATA/yarn/cache"
+        )
+        
+        for cache_dir in "${windows_cache_dirs[@]}"; do
+            if [ -d "$cache_dir" ]; then
+                local dir_size=$(du -sb "$cache_dir" 2>/dev/null | cut -f1 || echo "0")
+                if [ "$VERBOSE" = true ]; then
+                    echo -e "  ${YELLOW}Removendo cache Windows:${NC} $cache_dir (${dir_size} bytes)"
+                fi
+                rm -rf "$cache_dir"/* 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "Cache Windows removido: $cache_dir"
+                else
+                    log_warning "Nao foi possivel remover: $cache_dir"
+                fi
+            fi
+        done
+    fi
+    
     # Estatísticas depois
     log_info "Coletando estatisticas depois da limpeza..."
     show_repo_stats "$REPO" "DEPOIS"
@@ -316,9 +449,51 @@ main() {
     fi
     echo
     
+    # Registra espaço em disco antes da limpeza
+    log_header "ESPAÇO EM DISCO - ANTES DA LIMPEZA"
+    DISK_SPACE_BEFORE=$(log_disk_space "ANTES")
+    echo
+    
     # Inicia o scan
     log_info "Iniciando scan de repositorios Git em: $ROOT"
     scan_folder "$ROOT"
+    
+    # Registra espaço em disco depois da limpeza
+    echo
+    log_header "ESPAÇO EM DISCO - DEPOIS DA LIMPEZA"
+    DISK_SPACE_AFTER=$(log_disk_space "DEPOIS")
+    
+    # Calcula e exibe a diferença (espaço recuperado = depois - antes)
+    local space_recovered_kb=$((DISK_SPACE_AFTER - DISK_SPACE_BEFORE))
+    local space_recovered_formatted=$(format_disk_space "$space_recovered_kb")
+    
+    if [ "$space_recovered_kb" -gt 0 ]; then
+        local space_recovered_mb=$((space_recovered_kb / 1024))
+        local space_recovered_gb=$((space_recovered_mb / 1024))
+        
+        log_success "Espaço recuperado: $space_recovered_formatted ($space_recovered_kb KB)"
+        
+        if [ "$VERBOSE" = true ]; then
+            echo -e "${GREEN}Espaço recuperado: $space_recovered_formatted ($space_recovered_kb KB)${NC}"
+            if [ "$space_recovered_gb" -gt 0 ]; then
+                echo -e "${GREEN}≈ $space_recovered_gb GB recuperados${NC}"
+            elif [ "$space_recovered_mb" -gt 0 ]; then
+                echo -e "${GREEN}≈ $space_recovered_mb MB recuperados${NC}"
+            fi
+        fi
+    elif [ "$space_recovered_kb" -lt 0 ]; then
+        local space_used_kb=$((-space_recovered_kb))
+        local space_used_formatted=$(format_disk_space "$space_used_kb")
+        log_warning "Espaço em disco aumentou em: $space_used_formatted (pode haver atividade simultânea)"
+        if [ "$VERBOSE" = true ]; then
+            echo -e "${YELLOW}Espaço em disco aumentou em: $space_used_formatted (pode haver atividade simultânea)${NC}"
+        fi
+    else
+        log_info "Nenhuma mudança significativa no espaço em disco"
+        if [ "$VERBOSE" = true ]; then
+            echo -e "${BLUE}Nenhuma mudança significativa no espaço em disco${NC}"
+        fi
+    fi
     
     # Resumo final
     echo
@@ -326,9 +501,11 @@ main() {
         echo -e "${GREEN}==================================================================${NC}"
         echo -e "${GREEN}Scan concluido!${NC}"
         echo -e "${GREEN}Log detalhado salvo em: ${LOG}${NC}"
+        echo -e "${GREEN}Espaço recuperado: $space_recovered_formatted${NC}"
         echo -e "${GREEN}==================================================================${NC}"
     else
         echo "Scan concluido. Log salvo em: ${LOG}"
+        echo "Espaço recuperado: $space_recovered_formatted"
     fi
 }
 
