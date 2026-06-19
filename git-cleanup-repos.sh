@@ -32,6 +32,8 @@ LOG="${ROOT}/git_cleanup_${TIMESTAMP}.log"
 VERBOSE=false
 DRY_RUN=false
 SHOW_HELP=false
+DISK_SPACE_BEFORE=0
+DISK_SPACE_AFTER=0
 
 # Função de help
 show_help() {
@@ -104,6 +106,55 @@ log_header() {
         echo -e "${CYAN}Data/Hora: $(date '+%Y-%m-%d %H:%M:%S')${NC}"
         echo -e "${CYAN}==================================================================${NC}"
     fi
+}
+
+# Função para obter espaço em disco disponível (em KB)
+get_disk_space() {
+    local path="${1:-$ROOT}"
+    local space_kb=0
+    
+    case "$OS" in
+        Linux)
+            space_kb=$(df -k "$path" 2>/dev/null | tail -1 | awk '{print $4}' || echo "0")
+            ;;
+        Mac)
+            space_kb=$(df -k "$path" 2>/dev/null | tail -1 | awk '{print $4}' || echo "0")
+            ;;
+        Windows)
+            # No Windows/Git Bash, usa df -k que funciona
+            space_kb=$(df -k "$path" 2>/dev/null | tail -1 | awk '{print $4}' || echo "0")
+            ;;
+        *)
+            space_kb=$(df -k "$path" 2>/dev/null | tail -1 | awk '{print $4}' || echo "0")
+            ;;
+    esac
+    
+    echo "$space_kb"
+}
+
+# Função para formatar espaço em disco para exibição
+format_disk_space() {
+    local space_kb="$1"
+    local space_mb=$((space_kb / 1024))
+    local space_gb=$((space_mb / 1024))
+    
+    if [ "$space_gb" -gt 0 ]; then
+        echo "${space_gb}GB"
+    elif [ "$space_mb" -gt 0 ]; then
+        echo "${space_mb}MB"
+    else
+        echo "${space_kb}KB"
+    fi
+}
+
+# Função para obter e registrar espaço em disco
+log_disk_space() {
+    local label="$1"
+    local space_kb=$(get_disk_space)
+    local space_formatted=$(format_disk_space "$space_kb")
+    
+    log_info "Espaço em disco $label: $space_formatted ($space_kb KB)"
+    echo "$space_kb"
 }
 
 # Parse de argumentos
@@ -398,9 +449,51 @@ main() {
     fi
     echo
     
+    # Registra espaço em disco antes da limpeza
+    log_header "ESPAÇO EM DISCO - ANTES DA LIMPEZA"
+    DISK_SPACE_BEFORE=$(log_disk_space "ANTES")
+    echo
+    
     # Inicia o scan
     log_info "Iniciando scan de repositorios Git em: $ROOT"
     scan_folder "$ROOT"
+    
+    # Registra espaço em disco depois da limpeza
+    echo
+    log_header "ESPAÇO EM DISCO - DEPOIS DA LIMPEZA"
+    DISK_SPACE_AFTER=$(log_disk_space "DEPOIS")
+    
+    # Calcula e exibe a diferença (espaço recuperado = depois - antes)
+    local space_recovered_kb=$((DISK_SPACE_AFTER - DISK_SPACE_BEFORE))
+    local space_recovered_formatted=$(format_disk_space "$space_recovered_kb")
+    
+    if [ "$space_recovered_kb" -gt 0 ]; then
+        local space_recovered_mb=$((space_recovered_kb / 1024))
+        local space_recovered_gb=$((space_recovered_mb / 1024))
+        
+        log_success "Espaço recuperado: $space_recovered_formatted ($space_recovered_kb KB)"
+        
+        if [ "$VERBOSE" = true ]; then
+            echo -e "${GREEN}Espaço recuperado: $space_recovered_formatted ($space_recovered_kb KB)${NC}"
+            if [ "$space_recovered_gb" -gt 0 ]; then
+                echo -e "${GREEN}≈ $space_recovered_gb GB recuperados${NC}"
+            elif [ "$space_recovered_mb" -gt 0 ]; then
+                echo -e "${GREEN}≈ $space_recovered_mb MB recuperados${NC}"
+            fi
+        fi
+    elif [ "$space_recovered_kb" -lt 0 ]; then
+        local space_used_kb=$((-space_recovered_kb))
+        local space_used_formatted=$(format_disk_space "$space_used_kb")
+        log_warning "Espaço em disco aumentou em: $space_used_formatted (pode haver atividade simultânea)"
+        if [ "$VERBOSE" = true ]; then
+            echo -e "${YELLOW}Espaço em disco aumentou em: $space_used_formatted (pode haver atividade simultânea)${NC}"
+        fi
+    else
+        log_info "Nenhuma mudança significativa no espaço em disco"
+        if [ "$VERBOSE" = true ]; then
+            echo -e "${BLUE}Nenhuma mudança significativa no espaço em disco${NC}"
+        fi
+    fi
     
     # Resumo final
     echo
@@ -408,9 +501,11 @@ main() {
         echo -e "${GREEN}==================================================================${NC}"
         echo -e "${GREEN}Scan concluido!${NC}"
         echo -e "${GREEN}Log detalhado salvo em: ${LOG}${NC}"
+        echo -e "${GREEN}Espaço recuperado: $space_recovered_formatted${NC}"
         echo -e "${GREEN}==================================================================${NC}"
     else
         echo "Scan concluido. Log salvo em: ${LOG}"
+        echo "Espaço recuperado: $space_recovered_formatted"
     fi
 }
 
