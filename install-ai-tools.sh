@@ -54,32 +54,21 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Verifica se comando existe
+command_exists() {
+    command -v "$1" &> /dev/null
+}
+
 # Detect operating system and available shells
 detect_os() {
     case "$(uname -s)" in
-        Linux*)     OS="Linux";;
-        Darwin*)    OS="Mac";;
+        Linux*)     OS="Linux"; SHELL="Bash";;
+        Darwin*)    OS="Mac"; SHELL="Bash";;
         CYGWIN*)    OS="Windows"; SHELL="Cygwin";;
         MINGW*)     OS="Windows"; SHELL="GitBash";;
         MSYS*)      OS="Windows"; SHELL="GitBash";;
-        *)          OS="Unknown";;
+        *)          OS="Unknown"; SHELL="Unknown";;
     esac
-    
-    # Detecta PowerShell no Windows
-    if [ "$OS" = "Windows" ]; then
-        if command_exists powershell.exe || command_exists pwsh; then
-            if command_exists pwsh; then
-                SHELL="PowerShell-Core"
-            else
-                SHELL="PowerShell"
-            fi
-        elif [ -n "$SHELL" ]; then
-            # Já detectado como Cygwin ou GitBash
-            :
-        else
-            SHELL="Unknown"
-        fi
-    fi
     
     export OS
     export SHELL
@@ -323,13 +312,69 @@ install_rtk() {
             # Tenta usar Git Bash primeiro (suporte completo de hooks)
             if [ "$SHELL" = "GitBash" ]; then
                 log_info "Usando Git Bash para instalacao (suporte completo de hooks)..."
-                if execute_in_shell "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | bash"; then
-                    log_success "RTK instalado via Git Bash (suporte completo)"
-                    RTK_SUCCESS=true
+                
+                # Tenta instalar via binário pré-compilado (mais confiável no Windows)
+                log_info "Tentando instalar RTK via binário pré-compilado..."
+                
+                local rtk_url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-x86_64-pc-windows-msvc.zip"
+                local temp_dir=$(mktemp -d)
+                
+                if command_exists curl; then
+                    log_info "Baixando RTK binário..."
+                    if curl -L "$rtk_url" -o "$temp_dir/rtk.zip" 2>/dev/null; then
+                        if command_exists unzip; then
+                            unzip -o "$temp_dir/rtk.zip" -d "$temp_dir" 2>/dev/null
+                            if [ -f "$temp_dir/rtk.exe" ]; then
+                                # Move para diretório no PATH
+                                local target_dir="$HOME/.local/bin"
+                                mkdir -p "$target_dir"
+                                cp "$temp_dir/rtk.exe" "$target_dir/"
+                                chmod +x "$target_dir/rtk.exe"
+                                
+                                # Adiciona ao PATH se necessário
+                                if ! echo "$PATH" | grep -q "$target_dir"; then
+                                    log_info "Adicionando $target_dir ao PATH..."
+                                    echo "export PATH=\"$target_dir:\$PATH\"" >> ~/.bashrc
+                                    log_info "Execute: source ~/.bashrc"
+                                fi
+                                
+                                log_success "RTK instalado via binário pré-compilado"
+                                RTK_SUCCESS=true
+                            else
+                                log_error "Binário RTK não encontrado no arquivo zip"
+                                log_info "Tentando via cargo..."
+                            fi
+                        else
+                            log_error "unzip não encontrado. Instale unzip"
+                            log_info "Tentando via cargo..."
+                        fi
+                    else
+                        log_error "Falha ao baixar RTK binário"
+                        log_info "Tentando via cargo..."
+                    fi
                 else
-                    log_error "Falha na instalacao via Git Bash"
-                    HAS_ERRORS=true
-                    return 0
+                    log_error "curl não encontrado"
+                    log_info "Tentando via cargo..."
+                fi
+                
+                rm -rf "$temp_dir"
+                
+                # Se binário falhou, tenta cargo
+                if [ "$RTK_SUCCESS" = false ]; then
+                    if command_exists cargo; then
+                        log_info "Instalando RTK via cargo..."
+                        if cargo install --git https://github.com/rtk-ai/rtk rtk; then
+                            log_success "RTK instalado via cargo"
+                            RTK_SUCCESS=true
+                        else
+                            log_error "Falha na instalacao via cargo"
+                        fi
+                    else
+                        log_error "Cargo não encontrado e binário falhou"
+                        log_info "Para instalar Rust: https://rustup.rs/"
+                        log_info "Ou instale unzip para usar binário pré-compilado"
+                        HAS_ERRORS=true
+                    fi
                 fi
             # Tenta usar PowerShell se disponível
             elif [ "$SHELL" = "PowerShell" ] || [ "$SHELL" = "PowerShell-Core" ]; then
@@ -433,19 +478,56 @@ install_caveman() {
             # Tenta usar Git Bash primeiro (suporte completo)
             if [ "$SHELL" = "GitBash" ]; then
                 log_info "Usando Git Bash para instalacao automatica..."
-                if execute_in_shell "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"; then
-                    log_success "Caveman instalado via Git Bash"
-                    CAVEMAN_SUCCESS=true
+                
+                if command_exists npx; then
+                    log_info "Instalando Caveman via npx..."
+                    
+                    local caveman_installed=false
+                    
+                    # Instala para Gemini CLI (usa echo Y para responder prompt)
+                    log_info "Instalando Caveman para Gemini CLI..."
+                    if echo "Y" | npx -y github:JuliusBrussee/caveman; then
+                        log_success "Caveman instalado para Gemini CLI"
+                        caveman_installed=true
+                    else
+                        log_warning "Falha na instalacao para Gemini CLI"
+                    fi
+                    
+                    # Instala para Devin CLI (suporta --yes)
+                    log_info "Instalando Caveman para Devin CLI..."
+                    if npx -y skills add JuliusBrussee/caveman --skill * -a devin --yes; then
+                        log_success "Caveman instalado para Devin CLI"
+                        caveman_installed=true
+                    else
+                        log_warning "Falha na instalacao para Devin CLI"
+                    fi
+                    
+                    # Instala para OpenHands (suporta --yes)
+                    log_info "Instalando Caveman para OpenHands..."
+                    if npx -y skills add JuliusBrussee/caveman --skill * -a openhands --yes; then
+                        log_success "Caveman instalado para OpenHands"
+                        caveman_installed=true
+                    else
+                        log_warning "Falha na instalacao para OpenHands"
+                    fi
+                    
+                    if [ "$caveman_installed" = true ]; then
+                        CAVEMAN_SUCCESS=true
+                        log_success "Caveman instalado com sucesso para agentes compatíveis"
+                    else
+                        log_error "Falha na instalacao para todos os agentes"
+                        HAS_ERRORS=true
+                    fi
                 else
-                    log_error "Falha na instalacao via Git Bash"
+                    log_error "npx não encontrado. Instale Node.js primeiro"
+                    log_info "Para instalar Node.js: https://nodejs.org/"
                     HAS_ERRORS=true
-                    return 0
                 fi
             # Tenta usar PowerShell se disponível
             elif [ "$SHELL" = "PowerShell" ] || [ "$SHELL" = "PowerShell-Core" ]; then
                 log_info "Usando PowerShell para instalacao..."
                 log_info "Execute no PowerShell:"
-                echo "irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex"
+                echo "echo \"Y\" | npx -y github:JuliusBrussee/caveman"
                 log_warning "Instalacao manual requerida no PowerShell"
                 log_info "Ou use Git Bash para instalacao automatica"
                 HAS_ERRORS=true
@@ -453,9 +535,9 @@ install_caveman() {
             else
                 log_warning "Nenhum shell compatível detectado (PowerShell ou Git Bash)"
                 log_info "Opções:"
-                log_info "  1. PowerShell: irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex"
-                log_info "  2. Git Bash: curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
-                log_info "  3. WSL: wsl bash -c 'curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash'"
+                log_info "  1. Git Bash: echo \"Y\" | npx -y github:JuliusBrussee/caveman"
+                log_info "  2. PowerShell: echo \"Y\" | npx -y github:JuliusBrussee/caveman"
+                log_info "  3. WSL: wsl bash -c 'echo \"Y\" | npx -y github:JuliusBrussee/caveman'"
                 HAS_ERRORS=true
                 return 0
             fi
@@ -724,6 +806,7 @@ main() {
     log_info "Sistema operacional detectado: $OS"
     if [ "$OS" = "Windows" ]; then
         log_info "Shell detectado: $SHELL"
+        log_info "Usando Git Bash para suporte completo de hooks"
     fi
     echo
     
