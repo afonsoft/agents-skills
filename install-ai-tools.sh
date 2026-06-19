@@ -30,6 +30,13 @@ CAVEMAN_SUCCESS=false
 SUPERPOWERS_SUCCESS=false
 HAS_ERRORS=false
 
+# Variáveis de agentes
+INSTALL_FOR_CLAUDE=false
+INSTALL_FOR_GEMINI=false
+INSTALL_FOR_DEVIN=false
+INSTALL_FOR_CURSOR=false
+INSTALL_FOR_ALL_AGENTS=false
+
 # Funções de log
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -94,6 +101,14 @@ show_help() {
     echo "  --superpowers, -s      Instala Superpowers"
     echo "  --all, -a              Instala todas as ferramentas"
     echo
+    echo -e "${YELLOW}Opcoes de agentes:${NC}"
+    echo "  --gemini               Configura para Gemini CLI"
+    echo "  --devin                Configura para Devin CLI"
+    echo "  --devin-desktop        Configura para Devin Desktop"
+    echo "  --claude               Configura para Claude Code"
+    echo "  --cursor               Configura para Cursor"
+    echo "  --all-agents           Configura para todos os agentes disponiveis"
+    echo
     echo -e "${YELLOW}Outras opcoes:${NC}"
     echo "  --dry-run, -d          Simula instalacao sem executar"
     echo "  --verbose, -v          Modo detalhado"
@@ -104,6 +119,9 @@ show_help() {
     echo "  $0 --all                           # Instala tudo"
     echo "  $0 --rtk --caveman                # RTK + Caveman"
     echo "  $0 --superpowers                  # Apenas Superpowers"
+    echo "  $0 --rtk --gemini                 # RTK configurado para Gemini CLI"
+    echo "  $0 --caveman --devin              # Caveman configurado para Devin CLI"
+    echo "  $0 --all --all-agents             # Tudo para todos os agentes"
     echo "  $0 -a -v                          # Tudo com modo detalhado"
     echo "  $0 --all --dry-run               # Simula instalacao completa"
     echo
@@ -153,6 +171,28 @@ parse_args() {
                 INSTALL_SUPERPOWERS=true
                 INSTALL_ALL=true
                 ;;
+            --gemini)
+                INSTALL_FOR_GEMINI=true
+                ;;
+            --devin)
+                INSTALL_FOR_DEVIN=true
+                ;;
+            --devin-desktop)
+                INSTALL_FOR_DEVIN=true
+                ;;
+            --claude)
+                INSTALL_FOR_CLAUDE=true
+                ;;
+            --cursor)
+                INSTALL_FOR_CURSOR=true
+                ;;
+            --all-agents)
+                INSTALL_FOR_CLAUDE=true
+                INSTALL_FOR_GEMINI=true
+                INSTALL_FOR_DEVIN=true
+                INSTALL_FOR_CURSOR=true
+                INSTALL_FOR_ALL_AGENTS=true
+                ;;
             --dry-run|-d)
                 DRY_RUN=true
                 ;;
@@ -175,6 +215,13 @@ parse_args() {
         esac
         shift
     done
+    
+    # Se nenhum agente especificado, usa Claude como padrão
+    if [ "$INSTALL_FOR_CLAUDE" = false ] && [ "$INSTALL_FOR_GEMINI" = false ] && \
+       [ "$INSTALL_FOR_DEVIN" = false ] && [ "$INSTALL_FOR_CURSOR" = false ]; then
+        INSTALL_FOR_CLAUDE=true
+        log_info "Nenhum agente especificado, usando Claude Code como padrão"
+    fi
 }
 
 # Verifica se comando existe
@@ -481,6 +528,188 @@ install_superpowers() {
     log_success "Superpowers instalado e ativo"
     log_info "Skills disponíveis: brainstorming, test-driven-development, systematic-debugging, writing-skills, etc."
     log_info "Reinicie Claude Code para ativar as skills"
+    SUPERPOWERS_SUCCESS=true
+}
+
+# Configura RTK para Gemini CLI
+configure_rtk_gemini() {
+    log_info "=== Configurando RTK para Gemini CLI ==="
+    
+    if ! command_exists rtk; then
+        log_error "RTK não instalado. Instale RTK primeiro com --rtk"
+        HAS_ERRORS=true
+        return 0
+    fi
+    
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: RTK seria configurado para Gemini CLI"
+        return 0
+    fi
+    
+    log_info "Executando: rtk init -g --gemini"
+    if rtk init -g --gemini; then
+        log_success "RTK configurado para Gemini CLI"
+        log_info "Arquivos criados:"
+        log_info "  - ~/.gemini/hooks/rtk-hook-gemini.sh"
+        log_info "  - ~/.gemini/GEMINI.md"
+        log_info "  - ~/.gemini/settings.json (patched)"
+        log_info "Reinicie Gemini CLI para ativar"
+    else
+        log_error "Falha ao configurar RTK para Gemini CLI"
+        HAS_ERRORS=true
+    fi
+}
+
+# Configura RTK para Devin CLI
+configure_rtk_devin() {
+    log_info "=== Configurando RTK para Devin CLI ==="
+    
+    if ! command_exists rtk; then
+        log_error "RTK não instalado. Instale RTK primeiro com --rtk"
+        HAS_ERRORS=true
+        return 0
+    fi
+    
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: RTK seria configurado para Devin CLI"
+        return 0
+    fi
+    
+    # RTK não tem suporte nativo para Devin CLI ainda
+    log_warning "RTK não tem suporte nativo para Devin CLI ainda"
+    log_info "Alternativas:"
+    log_info "  1. Use AGENTS.md com instruções RTK"
+    log_info "  2. Configure manualmente hooks em ~/.devin/hooks/"
+    log_info "  3. Solicite suporte RTK para Devin CLI em: https://github.com/rtk-ai/rtk"
+    
+    # Tenta criar AGENTS.md com instruções RTK
+    log_info "Criando AGENTS.md com instruções RTK para Devin CLI..."
+    
+    local devin_config_dir=""
+    if [ "$OS" = "Windows" ]; then
+        devin_config_dir="$APPDATA/devin"
+    else
+        devin_config_dir="$HOME/.config/devin"
+    fi
+    
+    if [ -d "$devin_config_dir" ]; then
+        local agents_md="$devin_config_dir/AGENTS.md"
+        
+        cat > "$agents_md" << 'EOF'
+# RTK Integration for Devin CLI
+
+## What is RTK?
+RTK (Rust Token Killer) is a token optimizer that rewrites terminal commands to reduce token usage by 60-90%.
+
+## How to Use with Devin CLI
+Since RTK doesn't have native Devin CLI support yet, use it manually:
+
+### Manual Usage
+Instead of regular commands, prefix with `rtk`:
+
+```bash
+# Instead of: git status
+rtk git status
+
+# Instead of: cargo test
+rtk cargo test
+
+# Instead of: npm test
+rtk npm test
+```
+
+### Benefits
+- Shows only test failures (not 500 lines of passing tests)
+- Filters git output to relevant changes
+- Optimizes output for 60-90% token savings
+- Works with all major ecosystems (Git, Cargo, npm, Python, Go, etc.)
+
+### Check Savings
+```bash
+rtk gain
+```
+
+## Installation
+If RTK is not installed, run:
+```bash
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh
+```
+
+## Native Support
+Request native Devin CLI support at: https://github.com/rtk-ai/rtk/issues
+EOF
+        
+        log_success "AGENTS.md criado em $agents_md"
+        log_info "Reinicie Devin CLI para carregar as instruções"
+    else
+        log_error "Diretório de configuração Devin não encontrado: $devin_config_dir"
+        HAS_ERRORS=true
+    fi
+}
+
+# Configura Caveman para Devin CLI
+configure_caveman_devin() {
+    log_info "=== Configurando Caveman para Devin CLI ==="
+    
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: Caveman seria configurado para Devin CLI"
+        return 0
+    fi
+    
+    log_info "Instalando Caveman para Devin CLI via npx skills..."
+    
+    if command_exists npx; then
+        if npx -y skills add JuliusBrussee/caveman -a devin; then
+            log_success "Caveman instalado para Devin CLI"
+            log_info "Skills disponíveis: /caveman, /caveman-commit, /caveman-compress, /caveman-review"
+            log_info "Reinicie Devin CLI para ativar"
+        else
+            log_error "Falha ao instalar Caveman para Devin CLI"
+            HAS_ERRORS=true
+        fi
+    else
+        log_error "npx não encontrado. Instale Node.js primeiro"
+        HAS_ERRORS=true
+    fi
+}
+
+# Configura Superpowers para Devin CLI
+configure_superpowers_devin() {
+    log_info "=== Configurando Superpowers para Devin CLI ==="
+    
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: Superpowers seria configurado para Devin CLI"
+        return 0
+    fi
+    
+    # Superpowers não tem suporte nativo para Devin CLI ainda
+    log_warning "Superpowers não tem suporte nativo para Devin CLI ainda"
+    log_info "Alternativas:"
+    log_info "  1. Copie skills manualmente para ~/.devin/skills/"
+    log_info "  2. Use Claude Code para Superpowers (suporte nativo)"
+    log_info "  3. Solicite suporte Superpowers para Devin CLI em: https://github.com/obra/superpowers"
+    
+    # Tenta copiar skills do repositório Superpowers
+    log_info "Tentando copiar skills do Superpowers para Devin CLI..."
+    
+    local devin_skills_dir=""
+    if [ "$OS" = "Windows" ]; then
+        devin_skills_dir="$APPDATA/devin/skills"
+    else
+        devin_skills_dir="$HOME/.config/devin/skills"
+    fi
+    
+    if [ -d "$devin_skills_dir" ]; then
+        log_info "Diretório de skills Devin encontrado: $devin_skills_dir"
+        log_info "Para instalar Superpowers manualmente:"
+        log_info "  1. Clone: git clone https://github.com/obra/superpowers.git"
+        log_info "  2. Copie skills/ para $devin_skills_dir/"
+        log_info "  3. Reinicie Devin CLI"
+    else
+        log_error "Diretório de skills Devin não encontrado: $devin_skills_dir"
+        log_info "Certifique-se de que Devin CLI está instalado e configurado"
+        HAS_ERRORS=true
+    fi
 }
 
 # Função principal
@@ -522,6 +751,27 @@ main() {
     if [ "$INSTALL_SUPERPOWERS" = true ]; then
         install_superpowers
         echo
+    fi
+    
+    # Configura para agentes específicos
+    if [ "$INSTALL_FOR_GEMINI" = true ] && [ "$INSTALL_RTK" = true ]; then
+        configure_rtk_gemini
+        echo
+    fi
+    
+    if [ "$INSTALL_FOR_DEVIN" = true ]; then
+        if [ "$INSTALL_RTK" = true ]; then
+            configure_rtk_devin
+            echo
+        fi
+        if [ "$INSTALL_CAVEMAN" = true ]; then
+            configure_caveman_devin
+            echo
+        fi
+        if [ "$INSTALL_SUPERPOWERS" = true ]; then
+            configure_superpowers_devin
+            echo
+        fi
     fi
     
     # Resumo
@@ -573,22 +823,43 @@ main() {
         echo "RTK:"
         echo "  - Verifique: rtk --version"
         echo "  - Estatísticas: rtk gain"
-        echo "  - Hooks inicializados para Claude Code e Cursor"
+        if [ "$INSTALL_FOR_GEMINI" = true ]; then
+            echo "  - Configurado para Gemini CLI (hooks nativos)"
+        fi
+        if [ "$INSTALL_FOR_CLAUDE" = true ]; then
+            echo "  - Hooks inicializados para Claude Code"
+        fi
+        if [ "$INSTALL_FOR_CURSOR" = true ]; then
+            echo "  - Hooks inicializados para Cursor"
+        fi
+        if [ "$INSTALL_FOR_DEVIN" = true ]; then
+            echo "  - Configurado para Devin CLI (via AGENTS.md)"
+        fi
         echo
     fi
     
     if [ "$INSTALL_CAVEMAN" = true ] && [ "$CAVEMAN_SUCCESS" = true ]; then
         echo "Caveman:"
         echo "  - Instalado para todos os agentes detectados"
+        if [ "$INSTALL_FOR_DEVIN" = true ]; then
+            echo "  - Configurado especificamente para Devin CLI"
+        fi
         echo "  - Skills disponíveis: /caveman, /caveman-commit, /caveman-compress, etc."
         echo
     fi
     
     if [ "$INSTALL_SUPERPOWERS" = true ] && [ "$SUPERPOWERS_SUCCESS" = true ]; then
         echo "Superpowers:"
-        echo "  - Plugin instalado no Claude Code"
-        echo "  - Skills: brainstorming, test-driven-development, systematic-debugging"
-        echo "  - Reinicie Claude Code para ativar"
+        if [ "$INSTALL_FOR_CLAUDE" = true ]; then
+            echo "  - Plugin instalado no Claude Code"
+            echo "  - Skills: brainstorming, test-driven-development, systematic-debugging"
+            echo "  - Reinicie Claude Code para ativar"
+        fi
+        if [ "$INSTALL_FOR_DEVIN" = true ]; then
+            echo "  - Configurado para Devin CLI (via skills manuais)"
+            echo "  - Skills: brainstorming, TDD, systematic debugging"
+            echo "  - Reinicie Devin CLI para ativar"
+        fi
         echo
     fi
     

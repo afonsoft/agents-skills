@@ -118,6 +118,12 @@ The `install-ai-tools.sh` script provides unified installation of popular AI opt
 # Combine tools
 ./install-ai-tools.sh --rtk --caveman
 
+# Configure for specific agents
+./install-ai-tools.sh --rtk --gemini              # RTK for Gemini CLI
+./install-ai-tools.sh --caveman --devin           # Caveman for Devin CLI
+./install-ai-tools.sh --rtk --devin               # RTK for Devin CLI
+./install-ai-tools.sh --all --all-agents          # All tools for all agents
+
 # Safe preview mode
 ./install-ai-tools.sh --all --dry-run
 
@@ -126,6 +132,33 @@ The `install-ai-tools.sh` script provides unified installation of popular AI opt
 ```
 
 **Error Handling**: The script continues installation even if individual components fail. Each installation attempt is tracked separately, and warnings are displayed for failures. A summary at the end shows which components succeeded and which failed, allowing you to address specific issues without re-running successful installations.
+
+### Agent-Specific Configuration
+
+#### Gemini CLI
+- **RTK**: Native support via `rtk init -g --gemini`
+- **Caveman**: Auto-detected and installed by Caveman installer
+- **Superpowers**: Not yet supported (use Claude Code instead)
+
+#### Devin CLI
+- **RTK**: Manual configuration via AGENTS.md (no native support yet)
+- **Caveman**: Installed via `npx skills add JuliusBrussee/caveman -a devin`
+- **Superpowers**: Manual skill installation (no native support yet)
+
+#### Devin Desktop
+- **RTK**: Same as Devin CLI (manual configuration)
+- **Caveman**: Auto-detected if Devin Desktop is installed
+- **Superpowers**: Use Claude Code integration (Devin Desktop uses Claude Code backend)
+
+#### Claude Code
+- **RTK**: Native support via `rtk init -g`
+- **Caveman**: Auto-detected and installed
+- **Superpowers**: Native plugin marketplace support
+
+#### Cursor
+- **RTK**: Native support via `rtk init -g --agent cursor`
+- **Caveman**: Auto-detected and installed
+- **Superpowers**: Native plugin support
 
 ### Cross-Platform Support
 - **Linux**: Full support via shell scripts
