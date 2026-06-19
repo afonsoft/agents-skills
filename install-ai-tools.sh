@@ -313,61 +313,68 @@ install_rtk() {
             if [ "$SHELL" = "GitBash" ]; then
                 log_info "Usando Git Bash para instalacao (suporte completo de hooks)..."
                 
-                # Tenta instalar via cargo (mais confiável no Git Bash)
-                if command_exists cargo; then
-                    log_info "Instalando RTK via cargo..."
-                    if cargo install --git https://github.com/rtk-ai/rtk rtk; then
-                        log_success "RTK instalado via cargo (suporte completo)"
-                        RTK_SUCCESS=true
-                    else
-                        log_error "Falha na instalacao via cargo"
-                        log_info "Tentando instalar binário pré-compilado..."
-                        
-                        # Tenta baixar binário pré-compilado
-                        local rtk_url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-x86_64-pc-windows-msvc.zip"
-                        local temp_dir=$(mktemp -d)
-                        
-                        if command_exists curl; then
-                            log_info "Baixando RTK binário..."
-                            if curl -L "$rtk_url" -o "$temp_dir/rtk.zip"; then
-                                if command_exists unzip; then
-                                    unzip -o "$temp_dir/rtk.zip" -d "$temp_dir"
-                                    if [ -f "$temp_dir/rtk.exe" ]; then
-                                        # Move para diretório no PATH
-                                        local target_dir="$HOME/.local/bin"
-                                        mkdir -p "$target_dir"
-                                        cp "$temp_dir/rtk.exe" "$target_dir/"
-                                        chmod +x "$target_dir/rtk.exe"
-                                        
-                                        # Adiciona ao PATH se necessário
-                                        if ! echo "$PATH" | grep -q "$target_dir"; then
-                                            log_info "Adicionando $target_dir ao PATH..."
-                                            echo "export PATH=\"$target_dir:\$PATH\"" >> ~/.bashrc
-                                            log_info "Execute: source ~/.bashrc"
-                                        fi
-                                        
-                                        log_success "RTK instalado via binário pré-compilado"
-                                        RTK_SUCCESS=true
-                                    else
-                                        log_error "Binário RTK não encontrado no arquivo zip"
-                                    fi
-                                else
-                                    log_error "unzip não encontrado. Instale unzip ou use cargo"
+                # Tenta instalar via binário pré-compilado (mais confiável no Windows)
+                log_info "Tentando instalar RTK via binário pré-compilado..."
+                
+                local rtk_url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-x86_64-pc-windows-msvc.zip"
+                local temp_dir=$(mktemp -d)
+                
+                if command_exists curl; then
+                    log_info "Baixando RTK binário..."
+                    if curl -L "$rtk_url" -o "$temp_dir/rtk.zip" 2>/dev/null; then
+                        if command_exists unzip; then
+                            unzip -o "$temp_dir/rtk.zip" -d "$temp_dir" 2>/dev/null
+                            if [ -f "$temp_dir/rtk.exe" ]; then
+                                # Move para diretório no PATH
+                                local target_dir="$HOME/.local/bin"
+                                mkdir -p "$target_dir"
+                                cp "$temp_dir/rtk.exe" "$target_dir/"
+                                chmod +x "$target_dir/rtk.exe"
+                                
+                                # Adiciona ao PATH se necessário
+                                if ! echo "$PATH" | grep -q "$target_dir"; then
+                                    log_info "Adicionando $target_dir ao PATH..."
+                                    echo "export PATH=\"$target_dir:\$PATH\"" >> ~/.bashrc
+                                    log_info "Execute: source ~/.bashrc"
                                 fi
+                                
+                                log_success "RTK instalado via binário pré-compilado"
+                                RTK_SUCCESS=true
                             else
-                                log_error "Falha ao baixar RTK binário"
+                                log_error "Binário RTK não encontrado no arquivo zip"
+                                log_info "Tentando via cargo..."
                             fi
                         else
-                            log_error "curl não encontrado"
+                            log_error "unzip não encontrado. Instale unzip"
+                            log_info "Tentando via cargo..."
                         fi
-                        
-                        rm -rf "$temp_dir"
+                    else
+                        log_error "Falha ao baixar RTK binário"
+                        log_info "Tentando via cargo..."
                     fi
                 else
-                    log_error "Cargo não encontrado. Instale Rust primeiro ou use binário pré-compilado"
-                    log_info "Para instalar Rust: https://rustup.rs/"
-                    HAS_ERRORS=true
-                    return 0
+                    log_error "curl não encontrado"
+                    log_info "Tentando via cargo..."
+                fi
+                
+                rm -rf "$temp_dir"
+                
+                # Se binário falhou, tenta cargo
+                if [ "$RTK_SUCCESS" = false ]; then
+                    if command_exists cargo; then
+                        log_info "Instalando RTK via cargo..."
+                        if cargo install --git https://github.com/rtk-ai/rtk rtk; then
+                            log_success "RTK instalado via cargo"
+                            RTK_SUCCESS=true
+                        else
+                            log_error "Falha na instalacao via cargo"
+                        fi
+                    else
+                        log_error "Cargo não encontrado e binário falhou"
+                        log_info "Para instalar Rust: https://rustup.rs/"
+                        log_info "Ou instale unzip para usar binário pré-compilado"
+                        HAS_ERRORS=true
+                    fi
                 fi
             # Tenta usar PowerShell se disponível
             elif [ "$SHELL" = "PowerShell" ] || [ "$SHELL" = "PowerShell-Core" ]; then
@@ -472,34 +479,27 @@ install_caveman() {
             if [ "$SHELL" = "GitBash" ]; then
                 log_info "Usando Git Bash para instalacao automatica..."
                 
-                # Adiciona --yes para evitar prompts interativos
-                if curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash -s -- --yes; then
-                    log_success "Caveman instalado via Git Bash"
-                    CAVEMAN_SUCCESS=true
-                else
-                    log_error "Falha na instalacao via Git Bash"
-                    log_info "Tentando instalacao manual via npx..."
-                    
-                    # Fallback para npx
-                    if command_exists npx; then
-                        log_info "Instalando Caveman via npx..."
-                        if npx -y github:JuliusBrussee/caveman; then
-                            log_success "Caveman instalado via npx"
-                            CAVEMAN_SUCCESS=true
-                        else
-                            log_error "Falha na instalacao via npx"
-                            HAS_ERRORS=true
-                        fi
+                # Usa npx diretamente com flags para evitar prompts
+                if command_exists npx; then
+                    log_info "Instalando Caveman via npx (sem prompts)..."
+                    # Usa --all para instalar para todos os agentes automaticamente
+                    if echo "all" | npx -y github:JuliusBrussee/caveman; then
+                        log_success "Caveman instalado via npx"
+                        CAVEMAN_SUCCESS=true
                     else
-                        log_error "npx não encontrado. Instale Node.js primeiro"
+                        log_error "Falha na instalacao via npx"
                         HAS_ERRORS=true
                     fi
+                else
+                    log_error "npx não encontrado. Instale Node.js primeiro"
+                    log_info "Para instalar Node.js: https://nodejs.org/"
+                    HAS_ERRORS=true
                 fi
             # Tenta usar PowerShell se disponível
             elif [ "$SHELL" = "PowerShell" ] || [ "$SHELL" = "PowerShell-Core" ]; then
                 log_info "Usando PowerShell para instalacao..."
                 log_info "Execute no PowerShell:"
-                echo "irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex"
+                echo "echo \"all\" | npx -y github:JuliusBrussee/caveman"
                 log_warning "Instalacao manual requerida no PowerShell"
                 log_info "Ou use Git Bash para instalacao automatica"
                 HAS_ERRORS=true
@@ -507,9 +507,9 @@ install_caveman() {
             else
                 log_warning "Nenhum shell compatível detectado (PowerShell ou Git Bash)"
                 log_info "Opções:"
-                log_info "  1. PowerShell: irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex"
-                log_info "  2. Git Bash: curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash -s -- --yes"
-                log_info "  3. WSL: wsl bash -c 'curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash -s -- --yes'"
+                log_info "  1. Git Bash: echo \"all\" | npx -y github:JuliusBrussee/caveman"
+                log_info "  2. PowerShell: echo \"all\" | npx -y github:JuliusBrussee/caveman"
+                log_info "  3. WSL: wsl bash -c 'echo \"all\" | npx -y github:JuliusBrussee/caveman'"
                 HAS_ERRORS=true
                 return 0
             fi
