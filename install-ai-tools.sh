@@ -312,11 +312,60 @@ install_rtk() {
             # Tenta usar Git Bash primeiro (suporte completo de hooks)
             if [ "$SHELL" = "GitBash" ]; then
                 log_info "Usando Git Bash para instalacao (suporte completo de hooks)..."
-                if execute_in_shell "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | bash"; then
-                    log_success "RTK instalado via Git Bash (suporte completo)"
-                    RTK_SUCCESS=true
+                
+                # Tenta instalar via cargo (mais confiável no Git Bash)
+                if command_exists cargo; then
+                    log_info "Instalando RTK via cargo..."
+                    if cargo install --git https://github.com/rtk-ai/rtk rtk; then
+                        log_success "RTK instalado via cargo (suporte completo)"
+                        RTK_SUCCESS=true
+                    else
+                        log_error "Falha na instalacao via cargo"
+                        log_info "Tentando instalar binário pré-compilado..."
+                        
+                        # Tenta baixar binário pré-compilado
+                        local rtk_url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-x86_64-pc-windows-msvc.zip"
+                        local temp_dir=$(mktemp -d)
+                        
+                        if command_exists curl; then
+                            log_info "Baixando RTK binário..."
+                            if curl -L "$rtk_url" -o "$temp_dir/rtk.zip"; then
+                                if command_exists unzip; then
+                                    unzip -o "$temp_dir/rtk.zip" -d "$temp_dir"
+                                    if [ -f "$temp_dir/rtk.exe" ]; then
+                                        # Move para diretório no PATH
+                                        local target_dir="$HOME/.local/bin"
+                                        mkdir -p "$target_dir"
+                                        cp "$temp_dir/rtk.exe" "$target_dir/"
+                                        chmod +x "$target_dir/rtk.exe"
+                                        
+                                        # Adiciona ao PATH se necessário
+                                        if ! echo "$PATH" | grep -q "$target_dir"; then
+                                            log_info "Adicionando $target_dir ao PATH..."
+                                            echo "export PATH=\"$target_dir:\$PATH\"" >> ~/.bashrc
+                                            log_info "Execute: source ~/.bashrc"
+                                        fi
+                                        
+                                        log_success "RTK instalado via binário pré-compilado"
+                                        RTK_SUCCESS=true
+                                    else
+                                        log_error "Binário RTK não encontrado no arquivo zip"
+                                    fi
+                                else
+                                    log_error "unzip não encontrado. Instale unzip ou use cargo"
+                                fi
+                            else
+                                log_error "Falha ao baixar RTK binário"
+                            fi
+                        else
+                            log_error "curl não encontrado"
+                        fi
+                        
+                        rm -rf "$temp_dir"
+                    fi
                 else
-                    log_error "Falha na instalacao via Git Bash"
+                    log_error "Cargo não encontrado. Instale Rust primeiro ou use binário pré-compilado"
+                    log_info "Para instalar Rust: https://rustup.rs/"
                     HAS_ERRORS=true
                     return 0
                 fi
@@ -422,13 +471,29 @@ install_caveman() {
             # Tenta usar Git Bash primeiro (suporte completo)
             if [ "$SHELL" = "GitBash" ]; then
                 log_info "Usando Git Bash para instalacao automatica..."
-                if execute_in_shell "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"; then
+                
+                # Adiciona --yes para evitar prompts interativos
+                if curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash -s -- --yes; then
                     log_success "Caveman instalado via Git Bash"
                     CAVEMAN_SUCCESS=true
                 else
                     log_error "Falha na instalacao via Git Bash"
-                    HAS_ERRORS=true
-                    return 0
+                    log_info "Tentando instalacao manual via npx..."
+                    
+                    # Fallback para npx
+                    if command_exists npx; then
+                        log_info "Instalando Caveman via npx..."
+                        if npx -y github:JuliusBrussee/caveman; then
+                            log_success "Caveman instalado via npx"
+                            CAVEMAN_SUCCESS=true
+                        else
+                            log_error "Falha na instalacao via npx"
+                            HAS_ERRORS=true
+                        fi
+                    else
+                        log_error "npx não encontrado. Instale Node.js primeiro"
+                        HAS_ERRORS=true
+                    fi
                 fi
             # Tenta usar PowerShell se disponível
             elif [ "$SHELL" = "PowerShell" ] || [ "$SHELL" = "PowerShell-Core" ]; then
@@ -443,8 +508,8 @@ install_caveman() {
                 log_warning "Nenhum shell compatível detectado (PowerShell ou Git Bash)"
                 log_info "Opções:"
                 log_info "  1. PowerShell: irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex"
-                log_info "  2. Git Bash: curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
-                log_info "  3. WSL: wsl bash -c 'curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash'"
+                log_info "  2. Git Bash: curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash -s -- --yes"
+                log_info "  3. WSL: wsl bash -c 'curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash -s -- --yes'"
                 HAS_ERRORS=true
                 return 0
             fi
