@@ -29,7 +29,7 @@ NC='\033[0m' # No Color
 ROOT="${1:-$(pwd)}"
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 LOG="${ROOT}/git_cleanup_${TIMESTAMP}.log"
-VERBOSE=false
+VERBOSE=true  # Ativado por padrão para melhor feedback
 DRY_RUN=false
 SHOW_HELP=false
 DISK_SPACE_BEFORE=0
@@ -62,33 +62,47 @@ show_help() {
     echo "  - Logs detalhados com cores e timestamps"
 }
 
-# Funções de log coloridas
+# Funções de log - Terminal (resumido) e Arquivo (detalhado)
 log_info() {
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${BLUE}[INFO]${NC} $1"
-    fi
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] $1" >> "$LOG"
+    local message="$1"
+    local detailed_msg="$2"
+    # Terminal: mensagem resumida
+    echo -e "${BLUE}[INFO]${NC} $message"
+    # Arquivo: mensagem detalhada se fornecida, senão a mesma
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] ${detailed_msg:-$message}" >> "$LOG"
 }
 
 log_success() {
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${GREEN}[SUCCESS]${NC} $1"
-    fi
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [SUCCESS] $1" >> "$LOG"
+    local message="$1"
+    local detailed_msg="$2"
+    # Terminal: mensagem resumida
+    echo -e "${GREEN}[SUCCESS]${NC} $message"
+    # Arquivo: mensagem detalhada se fornecida, senão a mesma
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [SUCCESS] ${detailed_msg:-$message}" >> "$LOG"
 }
 
 log_warning() {
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${YELLOW}[WARNING]${NC} $1"
-    fi
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $1" >> "$LOG"
+    local message="$1"
+    local detailed_msg="$2"
+    # Terminal: mensagem resumida
+    echo -e "${YELLOW}[WARNING]${NC} $message"
+    # Arquivo: mensagem detalhada se fornecida, senão a mesma
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] ${detailed_msg:-$message}" >> "$LOG"
 }
 
 log_error() {
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${RED}[ERROR]${NC} $1"
-    fi
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $1" >> "$LOG"
+    local message="$1"
+    local detailed_msg="$2"
+    # Terminal: mensagem resumida
+    echo -e "${RED}[ERROR]${NC} $message"
+    # Arquivo: mensagem detalhada se fornecida, senão a mesma
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] ${detailed_msg:-$message}" >> "$LOG"
+}
+
+# Função para log detalhado apenas no arquivo
+log_detail() {
+    local message="$1"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [DETAIL] $message" >> "$LOG"
 }
 
 log_header() {
@@ -100,12 +114,10 @@ log_header() {
         echo "=================================================================="
     } >> "$LOG"
     
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${CYAN}==================================================================${NC}"
-        echo -e "${CYAN}$title${NC}"
-        echo -e "${CYAN}Data/Hora: $(date '+%Y-%m-%d %H:%M:%S')${NC}"
-        echo -e "${CYAN}==================================================================${NC}"
-    fi
+    echo -e "${CYAN}==================================================================${NC}"
+    echo -e "${CYAN}$title${NC}"
+    echo -e "${CYAN}Data/Hora: $(date '+%Y-%m-%d %H:%M:%S')${NC}"
+    echo -e "${CYAN}==================================================================${NC}"
 }
 
 # Função para obter espaço em disco disponível (em KB)
@@ -153,8 +165,23 @@ log_disk_space() {
     local space_kb=$(get_disk_space)
     local space_formatted=$(format_disk_space "$space_kb")
     
-    log_info "Espaço em disco $label: $space_formatted ($space_kb KB)"
+    # Registra no log
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] Espaço em disco $label: $space_formatted ($space_kb KB)" >> "$LOG"
+    
+    # Retorna apenas o valor numérico para captura
     echo "$space_kb"
+}
+
+# Função para exibir espaço em disco (resumido no terminal)
+show_disk_space() {
+    local label="$1"
+    local space_kb=$(get_disk_space)
+    local space_formatted=$(format_disk_space "$space_kb")
+    
+    # Terminal: mensagem resumida
+    echo -e "${BLUE}[INFO]${NC} Espaço em disco $label: $space_formatted"
+    # Arquivo: mensagem detalhada
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] Espaço em disco $label: $space_formatted ($space_kb KB)" >> "$LOG"
 }
 
 # Parse de argumentos
@@ -231,10 +258,8 @@ cleanup_repo() {
     local repo_name=$(basename "$REPO")
     
     log_header " Limpando Repositório: $repo_name"
-    
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${BLUE}[REPO]${NC} $REPO"
-    fi
+    echo -e "${BLUE}[REPO]${NC} Processando: $REPO"
+    echo -e "${BLUE}[PATH]${NC} Diretório atual: $(pwd)"
     
     cd "$REPO" || {
         log_error "Nao foi possivel acessar: $REPO"
@@ -247,7 +272,7 @@ cleanup_repo() {
     fi
     
     # Estatísticas antes
-    log_info "Coletando estatisticas antes da limpeza..."
+    log_info "Coletando estatisticas..." "Coletando estatisticas antes da limpeza do repositorio: $repo_name"
     show_repo_stats "$REPO" "ANTES"
     
     if [ "$DRY_RUN" = true ]; then
@@ -256,38 +281,38 @@ cleanup_repo() {
     fi
     
     # Operações Git
-    log_info "Executando fetch para atualizar referencias remotas..."
+    log_info "Atualizando referencias remotas..." "Executando fetch para atualizar referencias remotas..."
     git fetch -p 2>&1 | while IFS= read -r line; do
-        log_info "Fetch: $line"
+        log_detail "Fetch: $line"
     done
     
-    log_info "Executando pull para sincronizar com remoto..."
+    log_info "Sincronizando com remoto..." "Executando pull para sincronizar com remoto..."
     git pull 2>&1 | while IFS= read -r line; do
-        log_info "Pull: $line"
+        log_detail "Pull: $line"
     done
     
-    log_info "Limpando reflog (removendo historico local)..."
+    log_info "Limpando historico local..." "Limpando reflog (removendo historico local)..."
     git reflog expire --expire=now --all 2>&1 | while IFS= read -r line; do
-        log_info "Reflog: $line"
+        log_detail "Reflog: $line"
     done
     
-    log_info "Executando garbage collection..."
+    log_info "Executando garbage collection..." "Executando garbage collection..."
     git gc --prune=now 2>&1 | while IFS= read -r line; do
-        log_info "GC: $line"
+        log_detail "GC: $line"
     done
     
-    log_info "Limpando arquivos nao rastreados..."
+    log_info "Limpando arquivos..." "Limpando arquivos nao rastreados..."
     git clean -df 2>&1 | while IFS= read -r line; do
-        log_info "Clean: $line"
+        log_detail "Clean: $line"
     done
     
-    log_info "Limpando arquivos ignorados..."
+    log_info "Limpando ignorados..." "Limpando arquivos ignorados..."
     git clean -dfX 2>&1 | while IFS= read -r line; do
-        log_info "CleanX: $line"
+        log_detail "CleanX: $line"
     done
     
     # Remove build output directories
-    log_info "Removendo diretorios de build (bin, obj, .vs, node_modules)..."
+    log_info "Removendo diretorios de build..." "Removendo diretorios de build (bin, obj, .vs, node_modules)..."
     local build_dirs_removed=0
     local build_size_freed=0
     
@@ -309,51 +334,73 @@ cleanup_repo() {
     done
     
     # Remove build directories recursively
-    log_info "Buscando diretorios de build recursivamente..."
+    log_info "Buscando build recursivamente..." "Buscando diretorios de build recursivamente..."
     local recursive_dirs_removed=$(find . -type d \( -name bin -o -name obj -o -name .vs -o -name node_modules -o -name dist -o -name build -o -name target -o -name out \) -exec rm -rf {} + 2>/dev/null | wc -l)
     if [ "$recursive_dirs_removed" -gt 0 ]; then
-        log_success "Diretorios de build removidos recursivamente: $recursive_dirs_removed"
+        log_success "Diretorios removidos: $recursive_dirs_removed" "Diretorios de build removidos recursivamente: $recursive_dirs_removed"
     fi
     
+    # Estatísticas depois
+    log_info "Coletando estatisticas finais..." "Coletando estatisticas depois da limpeza..."
+    show_repo_stats "$REPO" "DEPOIS"
+    
+    # Resumo da limpeza
+    log_success "Limpeza concluida: $repo_name" "Limpeza concluida para: $repo_name"
+    log_info "Resumo: $build_dirs_removed dirs, ${build_size_freed} bytes, $recursive_dirs_removed recursivos" "Resumo: Diretorios build removidos: $build_dirs_removed (${build_size_freed} bytes), Recursivos: $recursive_dirs_removed"
+    
+    cd - > /dev/null
+}
+
+# Função para limpar caches de gerenciadores de pacotes (executada uma vez após todos os repositórios)
+cleanup_package_caches() {
+    log_header "LIMPANDO CACHES DE PACOTES"
+    
     # Clean package manager caches
-    log_info "Limpando caches de gerenciadores de pacotes..."
+    log_info "Limpando caches..." "Limpando caches de gerenciadores de pacotes..."
     
     # NPM cache cleanup
     if command -v npm &> /dev/null; then
-        log_info "Limpando cache do NPM..."
+        log_info "Limpando cache NPM..." "Limpando cache do NPM..."
         npm cache clean --force 2>&1 | while IFS= read -r line; do
-            log_info "NPM: $line"
+            log_detail "NPM: $line"
         done
-        log_success "Cache do NPM limpo"
+        log_success "Cache NPM limpo" "Cache do NPM limpo"
     else
-        log_warning "NPM nao encontrado, pulando limpeza de cache"
+        log_warning "NPM nao encontrado" "NPM nao encontrado, pulando limpeza de cache"
     fi
     
     # Yarn cache cleanup
     if command -v yarn &> /dev/null; then
-        log_info "Limpando cache do Yarn..."
+        log_info "Limpando cache Yarn..." "Limpando cache do Yarn..."
         yarn cache clean 2>&1 | while IFS= read -r line; do
-            log_info "Yarn: $line"
+            log_detail "Yarn: $line"
         done
-        log_success "Cache do Yarn limpo"
+        log_success "Cache Yarn limpo" "Cache do Yarn limpo"
     else
-        log_warning "Yarn nao encontrado, pulando limpeza de cache"
+        log_warning "Yarn nao encontrado" "Yarn nao encontrado, pulando limpeza de cache"
     fi
     
     # NuGet cache cleanup (works on both Linux and Windows)
     if command -v dotnet &> /dev/null; then
-        log_info "Limpando cache do NuGet..."
-        dotnet nuget locals all --clear 2>&1 | while IFS= read -r line; do
-            log_info "NuGet: $line"
+        log_info "Limpando cache NuGet..." "Limpando cache do NuGet..."
+        # Usa timeout para evitar travamento e captura saida
+        timeout 30s dotnet nuget locals all --clear 2>&1 | while IFS= read -r line; do
+            log_detail "NuGet: $line"
         done
-        log_success "Cache do NuGet limpo"
+        if [ $? -eq 0 ]; then
+            log_success "Cache NuGet limpo" "Cache do NuGet limpo"
+        elif [ $? -eq 124 ]; then
+            log_warning "Timeout NuGet" "Timeout ao limpar cache do NuGet (30s) - pulando"
+        else
+            log_warning "Erro NuGet" "Erro ao limpar cache do NuGet - continuando"
+        fi
     else
-        log_warning "dotnet/NuGet nao encontrado, pulando limpeza de cache"
+        log_warning "dotnet/NuGet nao encontrado" "dotnet/NuGet nao encontrado, pulando limpeza de cache"
     fi
     
     # Windows-specific additional cleanups
     if [ "$OS" = "Windows" ]; then
-        log_info "Executando limpezas especificas para Windows..."
+        log_info "Executando limpezas Windows..." "Executando limpezas especificas para Windows..."
         
         # Clean Windows package cache directories if they exist
         local windows_cache_dirs=(
@@ -380,15 +427,70 @@ cleanup_repo() {
         done
     fi
     
-    # Estatísticas depois
-    log_info "Coletando estatisticas depois da limpeza..."
-    show_repo_stats "$REPO" "DEPOIS"
+    # Linux-specific additional cleanups
+    if [ "$OS" = "Linux" ]; then
+        log_info "Executando limpezas Linux..." "Executando limpezas especificas para Linux..."
+        
+        # Clean Linux package cache directories if they exist
+        local linux_cache_dirs=(
+            "$HOME/.npm"
+            "$HOME/.cache/yarn"
+            "$HOME/.cache/npm"
+            "$HOME/.nuget/packages"
+            "$HOME/.local/share/NuGet"
+            "/tmp/NuGetScratch"
+            "/var/cache/npm"
+            "/var/cache/yarn"
+        )
+        
+        for cache_dir in "${linux_cache_dirs[@]}"; do
+            if [ -d "$cache_dir" ]; then
+                local dir_size=$(du -sb "$cache_dir" 2>/dev/null | cut -f1 || echo "0")
+                if [ "$VERBOSE" = true ]; then
+                    echo -e "  ${YELLOW}Removendo cache Linux:${NC} $cache_dir (${dir_size} bytes)"
+                fi
+                rm -rf "$cache_dir"/* 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "Cache Linux removido: $cache_dir"
+                else
+                    log_warning "Nao foi possivel remover: $cache_dir"
+                fi
+            fi
+        done
+    fi
     
-    # Resumo da limpeza
-    log_success "Limpeza concluida para: $repo_name"
-    log_info "Resumo: Diretorios build removidos: $build_dirs_removed (${build_size_freed} bytes), Recursivos: $recursive_dirs_removed"
+    # Mac-specific additional cleanups
+    if [ "$OS" = "Mac" ]; then
+        log_info "Executando limpezas Mac..." "Executando limpezas especificas para Mac..."
+        
+        # Clean macOS package cache directories if they exist
+        local mac_cache_dirs=(
+            "$HOME/.npm"
+            "$HOME/Library/Caches/Yarn"
+            "$HOME/Library/Caches/npm"
+            "$HOME/.nuget/packages"
+            "$HOME/.local/share/NuGet"
+            "$HOME/Library/Caches/NuGet"
+            "/tmp/NuGetScratch"
+        )
+        
+        for cache_dir in "${mac_cache_dirs[@]}"; do
+            if [ -d "$cache_dir" ]; then
+                local dir_size=$(du -sb "$cache_dir" 2>/dev/null | cut -f1 || echo "0")
+                if [ "$VERBOSE" = true ]; then
+                    echo -e "  ${YELLOW}Removendo cache Mac:${NC} $cache_dir (${dir_size} bytes)"
+                fi
+                rm -rf "$cache_dir"/* 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "Cache Mac removido: $cache_dir"
+                else
+                    log_warning "Nao foi possivel remover: $cache_dir"
+                fi
+            fi
+        done
+    fi
     
-    cd - > /dev/null
+    log_success "Limpeza de caches concluida" "Limpeza de caches de pacotes concluida com sucesso"
 }
 
 # Função para varrer pastas recursivamente
@@ -399,23 +501,19 @@ scan_folder() {
     # Ignora pastas que não vale varrer
     case "$BASENAME" in
         .git|node_modules|bin|obj|.vs|.idea|dist|build|target|out)
-            if [ "$VERBOSE" = true ]; then
-                log_info "Ignorando pasta: $BASENAME"
-            fi
-            return
-            ;;
+        log_detail "Ignorando pasta: $BASENAME"
+        return
+        ;;
     esac
     
-    # Achou repo -> limpa UMA vez e não desce mais
+    # Achou repo -> limpa e continua varrendo outras pastas no mesmo nível
     if [[ -d "${DIR}/.git" ]]; then
         cleanup_repo "$DIR"
-        return
+        # Não faz return aqui para continuar varrendo outras pastas
     fi
     
-    # Não é repo -> percorre subpastas
-    if [ "$VERBOSE" = true ]; then
-        log_info "Explorando subpastas de: $BASENAME"
-    fi
+    # Percore subpastas (se não for repo ou mesmo sendo repo)
+    log_detail "Explorando subpastas de: $BASENAME"
     
     for subdir in "$DIR"/*/ ; do
         [[ -d "$subdir" ]] && scan_folder "$subdir"
@@ -451,6 +549,7 @@ main() {
     
     # Registra espaço em disco antes da limpeza
     log_header "ESPAÇO EM DISCO - ANTES DA LIMPEZA"
+    show_disk_space "ANTES"
     DISK_SPACE_BEFORE=$(log_disk_space "ANTES")
     echo
     
@@ -458,9 +557,17 @@ main() {
     log_info "Iniciando scan de repositorios Git em: $ROOT"
     scan_folder "$ROOT"
     
+    # Executa limpeza de caches após todos os repositórios
+    if [ "$DRY_RUN" = false ]; then
+        cleanup_package_caches
+    else
+        log_info "MODO DRY-RUN: Limpeza de caches seria executada após todos os repositórios"
+    fi
+    
     # Registra espaço em disco depois da limpeza
     echo
     log_header "ESPAÇO EM DISCO - DEPOIS DA LIMPEZA"
+    show_disk_space "DEPOIS"
     DISK_SPACE_AFTER=$(log_disk_space "DEPOIS")
     
     # Calcula e exibe a diferença (espaço recuperado = depois - antes)
