@@ -340,6 +340,21 @@ cleanup_repo() {
         log_success "Diretorios removidos: $recursive_dirs_removed" "Diretorios de build removidos recursivamente: $recursive_dirs_removed"
     fi
     
+    # Estatísticas depois
+    log_info "Coletando estatisticas finais..." "Coletando estatisticas depois da limpeza..."
+    show_repo_stats "$REPO" "DEPOIS"
+    
+    # Resumo da limpeza
+    log_success "Limpeza concluida: $repo_name" "Limpeza concluida para: $repo_name"
+    log_info "Resumo: $build_dirs_removed dirs, ${build_size_freed} bytes, $recursive_dirs_removed recursivos" "Resumo: Diretorios build removidos: $build_dirs_removed (${build_size_freed} bytes), Recursivos: $recursive_dirs_removed"
+    
+    cd - > /dev/null
+}
+
+# Função para limpar caches de gerenciadores de pacotes (executada uma vez após todos os repositórios)
+cleanup_package_caches() {
+    log_header "LIMPANDO CACHES DE PACOTES"
+    
     # Clean package manager caches
     log_info "Limpando caches..." "Limpando caches de gerenciadores de pacotes..."
     
@@ -412,15 +427,7 @@ cleanup_repo() {
         done
     fi
     
-    # Estatísticas depois
-    log_info "Coletando estatisticas finais..." "Coletando estatisticas depois da limpeza..."
-    show_repo_stats "$REPO" "DEPOIS"
-    
-    # Resumo da limpeza
-    log_success "Limpeza concluida: $repo_name" "Limpeza concluida para: $repo_name"
-    log_info "Resumo: $build_dirs_removed dirs, ${build_size_freed} bytes, $recursive_dirs_removed recursivos" "Resumo: Diretorios build removidos: $build_dirs_removed (${build_size_freed} bytes), Recursivos: $recursive_dirs_removed"
-    
-    cd - > /dev/null
+    log_success "Limpeza de caches concluida" "Limpeza de caches de pacotes concluida com sucesso"
 }
 
 # Função para varrer pastas recursivamente
@@ -436,13 +443,13 @@ scan_folder() {
         ;;
     esac
     
-    # Achou repo -> limpa UMA vez e não desce mais
+    # Achou repo -> limpa e continua varrendo outras pastas no mesmo nível
     if [[ -d "${DIR}/.git" ]]; then
         cleanup_repo "$DIR"
-        return
+        # Não faz return aqui para continuar varrendo outras pastas
     fi
     
-    # Não é repo -> percorre subpastas
+    # Percore subpastas (se não for repo ou mesmo sendo repo)
     log_detail "Explorando subpastas de: $BASENAME"
     
     for subdir in "$DIR"/*/ ; do
@@ -486,6 +493,13 @@ main() {
     # Inicia o scan
     log_info "Iniciando scan de repositorios Git em: $ROOT"
     scan_folder "$ROOT"
+    
+    # Executa limpeza de caches após todos os repositórios
+    if [ "$DRY_RUN" = false ]; then
+        cleanup_package_caches
+    else
+        log_info "MODO DRY-RUN: Limpeza de caches seria executada após todos os repositórios"
+    fi
     
     # Registra espaço em disco depois da limpeza
     echo
