@@ -62,29 +62,47 @@ show_help() {
     echo "  - Logs detalhados com cores e timestamps"
 }
 
-# Funções de log coloridas
+# Funções de log - Terminal (resumido) e Arquivo (detalhado)
 log_info() {
     local message="$1"
+    local detailed_msg="$2"
+    # Terminal: mensagem resumida
     echo -e "${BLUE}[INFO]${NC} $message"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] $message" >> "$LOG"
+    # Arquivo: mensagem detalhada se fornecida, senão a mesma
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] ${detailed_msg:-$message}" >> "$LOG"
 }
 
 log_success() {
     local message="$1"
+    local detailed_msg="$2"
+    # Terminal: mensagem resumida
     echo -e "${GREEN}[SUCCESS]${NC} $message"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [SUCCESS] $message" >> "$LOG"
+    # Arquivo: mensagem detalhada se fornecida, senão a mesma
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [SUCCESS] ${detailed_msg:-$message}" >> "$LOG"
 }
 
 log_warning() {
     local message="$1"
+    local detailed_msg="$2"
+    # Terminal: mensagem resumida
     echo -e "${YELLOW}[WARNING]${NC} $message"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $message" >> "$LOG"
+    # Arquivo: mensagem detalhada se fornecida, senão a mesma
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] ${detailed_msg:-$message}" >> "$LOG"
 }
 
 log_error() {
     local message="$1"
+    local detailed_msg="$2"
+    # Terminal: mensagem resumida
     echo -e "${RED}[ERROR]${NC} $message"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $message" >> "$LOG"
+    # Arquivo: mensagem detalhada se fornecida, senão a mesma
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] ${detailed_msg:-$message}" >> "$LOG"
+}
+
+# Função para log detalhado apenas no arquivo
+log_detail() {
+    local message="$1"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [DETAIL] $message" >> "$LOG"
 }
 
 log_header() {
@@ -154,13 +172,15 @@ log_disk_space() {
     echo "$space_kb"
 }
 
-# Função para exibir espaço em disco (sem captura)
+# Função para exibir espaço em disco (resumido no terminal)
 show_disk_space() {
     local label="$1"
     local space_kb=$(get_disk_space)
     local space_formatted=$(format_disk_space "$space_kb")
     
-    echo -e "${BLUE}[INFO]${NC} Espaço em disco $label: $space_formatted ($space_kb KB)"
+    # Terminal: mensagem resumida
+    echo -e "${BLUE}[INFO]${NC} Espaço em disco $label: $space_formatted"
+    # Arquivo: mensagem detalhada
     echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] Espaço em disco $label: $space_formatted ($space_kb KB)" >> "$LOG"
 }
 
@@ -252,7 +272,7 @@ cleanup_repo() {
     fi
     
     # Estatísticas antes
-    log_info "Coletando estatisticas antes da limpeza..."
+    log_info "Coletando estatisticas..." "Coletando estatisticas antes da limpeza do repositorio: $repo_name"
     show_repo_stats "$REPO" "ANTES"
     
     if [ "$DRY_RUN" = true ]; then
@@ -261,38 +281,38 @@ cleanup_repo() {
     fi
     
     # Operações Git
-    log_info "Executando fetch para atualizar referencias remotas..."
+    log_info "Atualizando referencias remotas..." "Executando fetch para atualizar referencias remotas..."
     git fetch -p 2>&1 | while IFS= read -r line; do
-        log_info "Fetch: $line"
+        log_detail "Fetch: $line"
     done
     
-    log_info "Executando pull para sincronizar com remoto..."
+    log_info "Sincronizando com remoto..." "Executando pull para sincronizar com remoto..."
     git pull 2>&1 | while IFS= read -r line; do
-        log_info "Pull: $line"
+        log_detail "Pull: $line"
     done
     
-    log_info "Limpando reflog (removendo historico local)..."
+    log_info "Limpando historico local..." "Limpando reflog (removendo historico local)..."
     git reflog expire --expire=now --all 2>&1 | while IFS= read -r line; do
-        log_info "Reflog: $line"
+        log_detail "Reflog: $line"
     done
     
-    log_info "Executando garbage collection..."
+    log_info "Executando garbage collection..." "Executando garbage collection..."
     git gc --prune=now 2>&1 | while IFS= read -r line; do
-        log_info "GC: $line"
+        log_detail "GC: $line"
     done
     
-    log_info "Limpando arquivos nao rastreados..."
+    log_info "Limpando arquivos..." "Limpando arquivos nao rastreados..."
     git clean -df 2>&1 | while IFS= read -r line; do
-        log_info "Clean: $line"
+        log_detail "Clean: $line"
     done
     
-    log_info "Limpando arquivos ignorados..."
+    log_info "Limpando ignorados..." "Limpando arquivos ignorados..."
     git clean -dfX 2>&1 | while IFS= read -r line; do
-        log_info "CleanX: $line"
+        log_detail "CleanX: $line"
     done
     
     # Remove build output directories
-    log_info "Removendo diretorios de build (bin, obj, .vs, node_modules)..."
+    log_info "Removendo diretorios de build..." "Removendo diretorios de build (bin, obj, .vs, node_modules)..."
     local build_dirs_removed=0
     local build_size_freed=0
     
@@ -314,58 +334,58 @@ cleanup_repo() {
     done
     
     # Remove build directories recursively
-    log_info "Buscando diretorios de build recursivamente..."
+    log_info "Buscando build recursivamente..." "Buscando diretorios de build recursivamente..."
     local recursive_dirs_removed=$(find . -type d \( -name bin -o -name obj -o -name .vs -o -name node_modules -o -name dist -o -name build -o -name target -o -name out \) -exec rm -rf {} + 2>/dev/null | wc -l)
     if [ "$recursive_dirs_removed" -gt 0 ]; then
-        log_success "Diretorios de build removidos recursivamente: $recursive_dirs_removed"
+        log_success "Diretorios removidos: $recursive_dirs_removed" "Diretorios de build removidos recursivamente: $recursive_dirs_removed"
     fi
     
     # Clean package manager caches
-    log_info "Limpando caches de gerenciadores de pacotes..."
+    log_info "Limpando caches..." "Limpando caches de gerenciadores de pacotes..."
     
     # NPM cache cleanup
     if command -v npm &> /dev/null; then
-        log_info "Limpando cache do NPM..."
+        log_info "Limpando cache NPM..." "Limpando cache do NPM..."
         npm cache clean --force 2>&1 | while IFS= read -r line; do
-            log_info "NPM: $line"
+            log_detail "NPM: $line"
         done
-        log_success "Cache do NPM limpo"
+        log_success "Cache NPM limpo" "Cache do NPM limpo"
     else
-        log_warning "NPM nao encontrado, pulando limpeza de cache"
+        log_warning "NPM nao encontrado" "NPM nao encontrado, pulando limpeza de cache"
     fi
     
     # Yarn cache cleanup
     if command -v yarn &> /dev/null; then
-        log_info "Limpando cache do Yarn..."
+        log_info "Limpando cache Yarn..." "Limpando cache do Yarn..."
         yarn cache clean 2>&1 | while IFS= read -r line; do
-            log_info "Yarn: $line"
+            log_detail "Yarn: $line"
         done
-        log_success "Cache do Yarn limpo"
+        log_success "Cache Yarn limpo" "Cache do Yarn limpo"
     else
-        log_warning "Yarn nao encontrado, pulando limpeza de cache"
+        log_warning "Yarn nao encontrado" "Yarn nao encontrado, pulando limpeza de cache"
     fi
     
     # NuGet cache cleanup (works on both Linux and Windows)
     if command -v dotnet &> /dev/null; then
-        log_info "Limpando cache do NuGet..."
+        log_info "Limpando cache NuGet..." "Limpando cache do NuGet..."
         # Usa timeout para evitar travamento e captura saida
         timeout 30s dotnet nuget locals all --clear 2>&1 | while IFS= read -r line; do
-            log_info "NuGet: $line"
+            log_detail "NuGet: $line"
         done
         if [ $? -eq 0 ]; then
-            log_success "Cache do NuGet limpo"
+            log_success "Cache NuGet limpo" "Cache do NuGet limpo"
         elif [ $? -eq 124 ]; then
-            log_warning "Timeout ao limpar cache do NuGet (30s) - pulando"
+            log_warning "Timeout NuGet" "Timeout ao limpar cache do NuGet (30s) - pulando"
         else
-            log_warning "Erro ao limpar cache do NuGet - continuando"
+            log_warning "Erro NuGet" "Erro ao limpar cache do NuGet - continuando"
         fi
     else
-        log_warning "dotnet/NuGet nao encontrado, pulando limpeza de cache"
+        log_warning "dotnet/NuGet nao encontrado" "dotnet/NuGet nao encontrado, pulando limpeza de cache"
     fi
     
     # Windows-specific additional cleanups
     if [ "$OS" = "Windows" ]; then
-        log_info "Executando limpezas especificas para Windows..."
+        log_info "Executando limpezas Windows..." "Executando limpezas especificas para Windows..."
         
         # Clean Windows package cache directories if they exist
         local windows_cache_dirs=(
@@ -393,12 +413,12 @@ cleanup_repo() {
     fi
     
     # Estatísticas depois
-    log_info "Coletando estatisticas depois da limpeza..."
+    log_info "Coletando estatisticas finais..." "Coletando estatisticas depois da limpeza..."
     show_repo_stats "$REPO" "DEPOIS"
     
     # Resumo da limpeza
-    log_success "Limpeza concluida para: $repo_name"
-    log_info "Resumo: Diretorios build removidos: $build_dirs_removed (${build_size_freed} bytes), Recursivos: $recursive_dirs_removed"
+    log_success "Limpeza concluida: $repo_name" "Limpeza concluida para: $repo_name"
+    log_info "Resumo: $build_dirs_removed dirs, ${build_size_freed} bytes, $recursive_dirs_removed recursivos" "Resumo: Diretorios build removidos: $build_dirs_removed (${build_size_freed} bytes), Recursivos: $recursive_dirs_removed"
     
     cd - > /dev/null
 }
@@ -411,11 +431,9 @@ scan_folder() {
     # Ignora pastas que não vale varrer
     case "$BASENAME" in
         .git|node_modules|bin|obj|.vs|.idea|dist|build|target|out)
-            if [ "$VERBOSE" = true ]; then
-                log_info "Ignorando pasta: $BASENAME"
-            fi
-            return
-            ;;
+        log_detail "Ignorando pasta: $BASENAME"
+        return
+        ;;
     esac
     
     # Achou repo -> limpa UMA vez e não desce mais
@@ -425,9 +443,7 @@ scan_folder() {
     fi
     
     # Não é repo -> percorre subpastas
-    if [ "$VERBOSE" = true ]; then
-        log_info "Explorando subpastas de: $BASENAME"
-    fi
+    log_detail "Explorando subpastas de: $BASENAME"
     
     for subdir in "$DIR"/*/ ; do
         [[ -d "$subdir" ]] && scan_folder "$subdir"
