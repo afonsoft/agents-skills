@@ -427,6 +427,69 @@ cleanup_package_caches() {
         done
     fi
     
+    # Linux-specific additional cleanups
+    if [ "$OS" = "Linux" ]; then
+        log_info "Executando limpezas Linux..." "Executando limpezas especificas para Linux..."
+        
+        # Clean Linux package cache directories if they exist
+        local linux_cache_dirs=(
+            "$HOME/.npm"
+            "$HOME/.cache/yarn"
+            "$HOME/.cache/npm"
+            "$HOME/.nuget/packages"
+            "$HOME/.local/share/NuGet"
+            "/tmp/NuGetScratch"
+            "/var/cache/npm"
+            "/var/cache/yarn"
+        )
+        
+        for cache_dir in "${linux_cache_dirs[@]}"; do
+            if [ -d "$cache_dir" ]; then
+                local dir_size=$(du -sb "$cache_dir" 2>/dev/null | cut -f1 || echo "0")
+                if [ "$VERBOSE" = true ]; then
+                    echo -e "  ${YELLOW}Removendo cache Linux:${NC} $cache_dir (${dir_size} bytes)"
+                fi
+                rm -rf "$cache_dir"/* 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "Cache Linux removido: $cache_dir"
+                else
+                    log_warning "Nao foi possivel remover: $cache_dir"
+                fi
+            fi
+        done
+    fi
+    
+    # Mac-specific additional cleanups
+    if [ "$OS" = "Mac" ]; then
+        log_info "Executando limpezas Mac..." "Executando limpezas especificas para Mac..."
+        
+        # Clean macOS package cache directories if they exist
+        local mac_cache_dirs=(
+            "$HOME/.npm"
+            "$HOME/Library/Caches/Yarn"
+            "$HOME/Library/Caches/npm"
+            "$HOME/.nuget/packages"
+            "$HOME/.local/share/NuGet"
+            "$HOME/Library/Caches/NuGet"
+            "/tmp/NuGetScratch"
+        )
+        
+        for cache_dir in "${mac_cache_dirs[@]}"; do
+            if [ -d "$cache_dir" ]; then
+                local dir_size=$(du -sb "$cache_dir" 2>/dev/null | cut -f1 || echo "0")
+                if [ "$VERBOSE" = true ]; then
+                    echo -e "  ${YELLOW}Removendo cache Mac:${NC} $cache_dir (${dir_size} bytes)"
+                fi
+                rm -rf "$cache_dir"/* 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    log_success "Cache Mac removido: $cache_dir"
+                else
+                    log_warning "Nao foi possivel remover: $cache_dir"
+                fi
+            fi
+        done
+    fi
+    
     log_success "Limpeza de caches concluida" "Limpeza de caches de pacotes concluida com sucesso"
 }
 
