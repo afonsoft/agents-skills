@@ -29,7 +29,7 @@ NC='\033[0m' # No Color
 ROOT="${1:-$(pwd)}"
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 LOG="${ROOT}/git_cleanup_${TIMESTAMP}.log"
-VERBOSE=false
+VERBOSE=true  # Ativado por padrão para melhor feedback
 DRY_RUN=false
 SHOW_HELP=false
 DISK_SPACE_BEFORE=0
@@ -64,31 +64,27 @@ show_help() {
 
 # Funções de log coloridas
 log_info() {
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${BLUE}[INFO]${NC} $1"
-    fi
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] $1" >> "$LOG"
+    local message="$1"
+    echo -e "${BLUE}[INFO]${NC} $message"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] $message" >> "$LOG"
 }
 
 log_success() {
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${GREEN}[SUCCESS]${NC} $1"
-    fi
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [SUCCESS] $1" >> "$LOG"
+    local message="$1"
+    echo -e "${GREEN}[SUCCESS]${NC} $message"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [SUCCESS] $message" >> "$LOG"
 }
 
 log_warning() {
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${YELLOW}[WARNING]${NC} $1"
-    fi
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $1" >> "$LOG"
+    local message="$1"
+    echo -e "${YELLOW}[WARNING]${NC} $message"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $message" >> "$LOG"
 }
 
 log_error() {
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${RED}[ERROR]${NC} $1"
-    fi
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $1" >> "$LOG"
+    local message="$1"
+    echo -e "${RED}[ERROR]${NC} $message"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $message" >> "$LOG"
 }
 
 log_header() {
@@ -100,12 +96,10 @@ log_header() {
         echo "=================================================================="
     } >> "$LOG"
     
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${CYAN}==================================================================${NC}"
-        echo -e "${CYAN}$title${NC}"
-        echo -e "${CYAN}Data/Hora: $(date '+%Y-%m-%d %H:%M:%S')${NC}"
-        echo -e "${CYAN}==================================================================${NC}"
-    fi
+    echo -e "${CYAN}==================================================================${NC}"
+    echo -e "${CYAN}$title${NC}"
+    echo -e "${CYAN}Data/Hora: $(date '+%Y-%m-%d %H:%M:%S')${NC}"
+    echo -e "${CYAN}==================================================================${NC}"
 }
 
 # Função para obter espaço em disco disponível (em KB)
@@ -153,8 +147,21 @@ log_disk_space() {
     local space_kb=$(get_disk_space)
     local space_formatted=$(format_disk_space "$space_kb")
     
-    log_info "Espaço em disco $label: $space_formatted ($space_kb KB)"
+    # Registra no log
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] Espaço em disco $label: $space_formatted ($space_kb KB)" >> "$LOG"
+    
+    # Retorna apenas o valor numérico para captura
     echo "$space_kb"
+}
+
+# Função para exibir espaço em disco (sem captura)
+show_disk_space() {
+    local label="$1"
+    local space_kb=$(get_disk_space)
+    local space_formatted=$(format_disk_space "$space_kb")
+    
+    echo -e "${BLUE}[INFO]${NC} Espaço em disco $label: $space_formatted ($space_kb KB)"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] Espaço em disco $label: $space_formatted ($space_kb KB)" >> "$LOG"
 }
 
 # Parse de argumentos
@@ -231,10 +238,8 @@ cleanup_repo() {
     local repo_name=$(basename "$REPO")
     
     log_header " Limpando Repositório: $repo_name"
-    
-    if [ "$VERBOSE" = true ]; then
-        echo -e "${BLUE}[REPO]${NC} $REPO"
-    fi
+    echo -e "${BLUE}[REPO]${NC} Processando: $REPO"
+    echo -e "${BLUE}[PATH]${NC} Diretório atual: $(pwd)"
     
     cd "$REPO" || {
         log_error "Nao foi possivel acessar: $REPO"
@@ -343,10 +348,17 @@ cleanup_repo() {
     # NuGet cache cleanup (works on both Linux and Windows)
     if command -v dotnet &> /dev/null; then
         log_info "Limpando cache do NuGet..."
-        dotnet nuget locals all --clear 2>&1 | while IFS= read -r line; do
+        # Usa timeout para evitar travamento e captura saida
+        timeout 30s dotnet nuget locals all --clear 2>&1 | while IFS= read -r line; do
             log_info "NuGet: $line"
         done
-        log_success "Cache do NuGet limpo"
+        if [ $? -eq 0 ]; then
+            log_success "Cache do NuGet limpo"
+        elif [ $? -eq 124 ]; then
+            log_warning "Timeout ao limpar cache do NuGet (30s) - pulando"
+        else
+            log_warning "Erro ao limpar cache do NuGet - continuando"
+        fi
     else
         log_warning "dotnet/NuGet nao encontrado, pulando limpeza de cache"
     fi
@@ -451,6 +463,7 @@ main() {
     
     # Registra espaço em disco antes da limpeza
     log_header "ESPAÇO EM DISCO - ANTES DA LIMPEZA"
+    show_disk_space "ANTES"
     DISK_SPACE_BEFORE=$(log_disk_space "ANTES")
     echo
     
@@ -461,6 +474,7 @@ main() {
     # Registra espaço em disco depois da limpeza
     echo
     log_header "ESPAÇO EM DISCO - DEPOIS DA LIMPEZA"
+    show_disk_space "DEPOIS"
     DISK_SPACE_AFTER=$(log_disk_space "DEPOIS")
     
     # Calcula e exibe a diferença (espaço recuperado = depois - antes)
