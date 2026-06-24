@@ -136,9 +136,10 @@ show_help() {
     echo "                                       ~/.claude/commands/ (slash commands)"
     echo "  Gemini CLI       ~/.gemini/skills    ~/.gemini/GEMINI.md      ~/.gemini/knowledge"
     echo "  Google Antigravity ~/.gemini/skills    ~/.gemini/ANTIGRAVITY.md ~/.gemini/knowledge"
-    echo "  IDE              ~/.gemini/antigravity-cli/skills  (CLI-specific)"
+    echo "  IDE              .agent/skills (workspace) .agent/CLAUDE.md .agent/knowledge"
     echo "  Google Antigravity ~/.gemini/antigravity-cli/skills  (CLI-specific)"
-    echo "  CLI (agy)        ~/.gemini/antigravity-cli/AGY.md  (CLI-specific)"
+    echo "  CLI (agy)        .agent/skills (workspace) .agent/CLAUDE.md .agent/knowledge"
+    echo "                  ~/.gemini/antigravity-cli/AGY.md  (CLI-specific)"
     echo "  OpenClaw         ~/.openclaw/skills   ~/.openclaw/rules        ~/.openclaw/knowledge"
     echo
     echo "  Base: ~/.agents/skills (sempre instalado)"
@@ -1199,20 +1200,45 @@ install_antigravity() {
     # Antigravity IDE descobre skills em ~/.gemini/skills/ (shared across all Antigravity tools)
     # Cada skill e um diretorio contendo SKILL.md
     # Ref: https://antigravity.google/docs/ide-overview
-    # Nota: Este diretorio e compartilhado com Gemini CLI
+    # Nota: Este diretorio e compartilhado com todos os produtos Antigravity (IDE, CLI, SDK)
     if [ ! -d "$HOME/.gemini/skills" ] || [ -z "$(ls -A $HOME/.gemini/skills 2>/dev/null)" ]; then
         backup_dir_if_exists "$HOME/.gemini/skills"
         cp -a skills/* "$HOME/.gemini/skills/" 2>/dev/null || true
-        log_success "Skills -> ~/.gemini/skills"
+        log_success "Skills -> ~/.gemini/skills (global - compartilhado IDE/CLI/SDK)"
     else
         log_info "Skills -> ~/.gemini/skills (ja existe, pulando)"
     fi
 
+    # Skills -> .agent/skills (workspace-specific)
+    # Antigravity tambem suporta skills no workspace em .agent/skills/
+    # Ref: https://codelabs.developers.google.com/getting-started-with-antigravity-skills
+    # Nota: Skills no workspace sao especificas do projeto atual
+    if [ ! -d ".agent/skills" ] || [ -z "$(ls -A .agent/skills 2>/dev/null)" ]; then
+        backup_dir_if_exists ".agent/skills"
+        mkdir -p .agent
+        cp -a skills/* ".agent/skills/" 2>/dev/null || true
+        log_success "Skills -> .agent/skills (workspace - especifico do projeto)"
+    else
+        log_info "Skills -> .agent/skills (ja existe, pulando)"
+    fi
+
     # Rules -> ~/.gemini/ANTIGRAVITY.md (contexto global consolidado)
     # Antigravity IDE usa ANTIGRAVITY.md como arquivo de contexto e instrucoes globais
+    # Nota: Antigravity tambem e compativel com CLAUDE.md (99% compatibilidade)
     if [ -d "rules" ]; then
         generate_consolidated_rules "$HOME/.gemini/ANTIGRAVITY.md" "antigravity"
         log_success "Rules consolidadas -> ~/.gemini/ANTIGRAVITY.md"
+    fi
+
+    # CLAUDE.md -> .agent/CLAUDE.md (workspace-specific, compativel com Antigravity)
+    # Antigravity e 99% compativel com Claude Code - pode usar CLAUDE.md nativamente
+    if [ -f "CLAUDE.md" ] && [ ! -f ".agent/CLAUDE.md" ]; then
+        mkdir -p .agent
+        backup_file_if_exists ".agent/CLAUDE.md"
+        cp CLAUDE.md ".agent/CLAUDE.md"
+        log_success "CLAUDE.md -> .agent/CLAUDE.md (compatibilidade Claude Code)"
+    elif [ -f "CLAUDE.md" ]; then
+        log_info "CLAUDE.md -> .agent/CLAUDE.md (ja existe, pulando)"
     fi
 
     # Knowledge -> ~/.gemini/knowledge (compartilhado com Gemini CLI)
@@ -1226,8 +1252,20 @@ install_antigravity() {
         fi
     fi
 
+    # Knowledge -> .agent/knowledge (workspace-specific)
+    if [ -d "devin/knowledge_sources" ]; then
+        if [ ! -d ".agent/knowledge" ] || [ -z "$(ls -A .agent/knowledge 2>/dev/null)" ]; then
+            backup_dir_if_exists ".agent/knowledge"
+            mkdir -p .agent
+            copy_knowledge_sources ".agent/knowledge/"
+            log_success "Knowledge -> .agent/knowledge (workspace)"
+        else
+            log_info "Knowledge -> .agent/knowledge (ja existe, pulando)"
+        fi
+    fi
+
     # AGENTS_CLI.md -> ~/.gemini/AGENTS.md (instrucoes genericas do harness)
-    # Compartilhado com Gemini CLI
+    # Compartilhado com todos os produtos Antigravity
     if [ ! -f "$HOME/.gemini/AGENTS.md" ]; then
         if [ -f "AGENTS_CLI.md" ]; then
             mkdir -p "$HOME/.gemini"
@@ -1242,6 +1280,18 @@ install_antigravity() {
         fi
     else
         log_info "AGENTS.md -> ~/.gemini/AGENTS.md (ja existe, pulando)"
+    fi
+
+    # AGENTS.md -> .agent/AGENTS.md (workspace-specific)
+    if [ ! -f ".agent/AGENTS.md" ]; then
+        if [ -f "AGENTS.md" ]; then
+            mkdir -p .agent
+            backup_file_if_exists ".agent/AGENTS.md"
+            cp AGENTS.md ".agent/AGENTS.md"
+            log_success "AGENTS.md -> .agent/AGENTS.md (workspace)"
+        fi
+    else
+        log_info "AGENTS.md -> .agent/AGENTS.md (ja existe, pulando)"
     fi
 
     # .geminiignore -> ~/.gemini/.geminiignore (compartilhado)
@@ -1263,6 +1313,7 @@ install_antigravity() {
     fi
 
     log_success "Google Antigravity IDE instalado!"
+    log_info "Nota: Antigravity e 99% compativel com Claude Code - skills podem ser compartilhadas"
 }
 
 install_agy() {
@@ -1277,13 +1328,37 @@ install_agy() {
     # Ref: https://antigravity.google/docs/cli-overview
     backup_dir_if_exists "$HOME/.gemini/antigravity-cli/skills"
     cp -a skills/* "$HOME/.gemini/antigravity-cli/skills/" 2>/dev/null || true
-    log_success "Skills -> ~/.gemini/antigravity-cli/skills"
+    log_success "Skills -> ~/.gemini/antigravity-cli/skills (CLI-specific)"
+
+    # Skills -> .agent/skills (workspace-specific, compartilhado com IDE)
+    # Antigravity CLI tambem suporta skills no workspace em .agent/skills/
+    # Ref: https://codelabs.developers.google.com/getting-started-with-antigravity-skills
+    if [ ! -d ".agent/skills" ] || [ -z "$(ls -A .agent/skills 2>/dev/null)" ]; then
+        backup_dir_if_exists ".agent/skills"
+        mkdir -p .agent
+        cp -a skills/* ".agent/skills/" 2>/dev/null || true
+        log_success "Skills -> .agent/skills (workspace - compartilhado com IDE)"
+    else
+        log_info "Skills -> .agent/skills (ja existe, pulando)"
+    fi
 
     # Rules -> ~/.gemini/antigravity-cli/AGY.md (contexto global consolidado)
     # Antigravity CLI usa AGY.md como arquivo de contexto e instrucoes globais
+    # Nota: Antigravity tambem e compativel com CLAUDE.md (99% compatibilidade)
     if [ -d "rules" ]; then
         generate_consolidated_rules "$HOME/.gemini/antigravity-cli/AGY.md" "agy"
         log_success "Rules consolidadas -> ~/.gemini/antigravity-cli/AGY.md"
+    fi
+
+    # CLAUDE.md -> .agent/CLAUDE.md (workspace-specific, compativel com Antigravity)
+    # Antigravity CLI e 99% compativel com Claude Code - pode usar CLAUDE.md nativamente
+    if [ -f "CLAUDE.md" ] && [ ! -f ".agent/CLAUDE.md" ]; then
+        mkdir -p .agent
+        backup_file_if_exists ".agent/CLAUDE.md"
+        cp CLAUDE.md ".agent/CLAUDE.md"
+        log_success "CLAUDE.md -> .agent/CLAUDE.md (compatibilidade Claude Code)"
+    elif [ -f "CLAUDE.md" ]; then
+        log_info "CLAUDE.md -> .agent/CLAUDE.md (ja existe, pulando)"
     fi
 
     # Knowledge -> ~/.gemini/antigravity-cli/knowledge
@@ -1291,6 +1366,18 @@ install_agy() {
         backup_dir_if_exists "$HOME/.gemini/antigravity-cli/knowledge"
         copy_knowledge_sources "$HOME/.gemini/antigravity-cli/knowledge/"
         log_success "Knowledge -> ~/.gemini/antigravity-cli/knowledge"
+    fi
+
+    # Knowledge -> .agent/knowledge (workspace-specific, compartilhado com IDE)
+    if [ -d "devin/knowledge_sources" ]; then
+        if [ ! -d ".agent/knowledge" ] || [ -z "$(ls -A .agent/knowledge 2>/dev/null)" ]; then
+            backup_dir_if_exists ".agent/knowledge"
+            mkdir -p .agent
+            copy_knowledge_sources ".agent/knowledge/"
+            log_success "Knowledge -> .agent/knowledge (workspace)"
+        else
+            log_info "Knowledge -> .agent/knowledge (ja existe, pulando)"
+        fi
     fi
 
     # AGENTS_CLI.md -> ~/.gemini/antigravity-cli/AGENTS.md (instrucoes genericas do harness)
@@ -1306,6 +1393,18 @@ install_agy() {
         log_success "AGENTS.md -> ~/.gemini/antigravity-cli/AGENTS.md"
     fi
 
+    # AGENTS.md -> .agent/AGENTS.md (workspace-specific, compartilhado com IDE)
+    if [ ! -f ".agent/AGENTS.md" ]; then
+        if [ -f "AGENTS.md" ]; then
+            mkdir -p .agent
+            backup_file_if_exists ".agent/AGENTS.md"
+            cp AGENTS.md ".agent/AGENTS.md"
+            log_success "AGENTS.md -> .agent/AGENTS.md (workspace)"
+        fi
+    else
+        log_info "AGENTS.md -> .agent/AGENTS.md (ja existe, pulando)"
+    fi
+
     # .geminiignore -> ~/.gemini/antigravity-cli/.geminiignore
     if [ -f ".geminiignore" ]; then
         cp ".geminiignore" "$HOME/.gemini/antigravity-cli/.geminiignore"
@@ -1316,6 +1415,7 @@ install_agy() {
     install_hooks_for_ide "agy" "$HOME/.gemini/antigravity-cli/hooks"
 
     log_success "Google Antigravity CLI (agy) instalado!"
+    log_info "Nota: Antigravity CLI e 99% compativel com Claude Code - skills podem ser compartilhadas"
 }
 
 install_openclaw() {
@@ -1671,19 +1771,27 @@ verify_installation() {
     if [ "$INSTALL_ANTIGRAVITY" = true ]; then
         echo
         log_info "Google Antigravity IDE:"
-        [ -d "$HOME/.gemini/skills" ] && log_success "  Skills: ~/.gemini/skills"
+        [ -d "$HOME/.gemini/skills" ] && log_success "  Skills (global): ~/.gemini/skills"
+        [ -d ".agent/skills" ] && log_success "  Skills (workspace): .agent/skills"
         [ -f "$HOME/.gemini/ANTIGRAVITY.md" ] && log_success "  Rules consolidadas: ~/.gemini/ANTIGRAVITY.md"
-        [ -d "$HOME/.gemini/knowledge" ] && log_success "  Knowledge: ~/.gemini/knowledge"
-        [ -f "$HOME/.gemini/AGENTS.md" ] && log_success "  AGENTS.md: ~/.gemini/AGENTS.md"
+        [ -f ".agent/CLAUDE.md" ] && log_success "  CLAUDE.md (workspace): .agent/CLAUDE.md"
+        [ -d "$HOME/.gemini/knowledge" ] && log_success "  Knowledge (global): ~/.gemini/knowledge"
+        [ -d ".agent/knowledge" ] && log_success "  Knowledge (workspace): .agent/knowledge"
+        [ -f "$HOME/.gemini/AGENTS.md" ] && log_success "  AGENTS.md (global): ~/.gemini/AGENTS.md"
+        [ -f ".agent/AGENTS.md" ] && log_success "  AGENTS.md (workspace): .agent/AGENTS.md"
     fi
 
     if [ "$INSTALL_AGY" = true ]; then
         echo
         log_info "Google Antigravity CLI (agy):"
-        [ -d "$HOME/.gemini/antigravity-cli/skills" ] && log_success "  Skills: ~/.gemini/antigravity-cli/skills"
+        [ -d "$HOME/.gemini/antigravity-cli/skills" ] && log_success "  Skills (CLI-specific): ~/.gemini/antigravity-cli/skills"
+        [ -d ".agent/skills" ] && log_success "  Skills (workspace): .agent/skills"
         [ -f "$HOME/.gemini/antigravity-cli/AGY.md" ] && log_success "  Rules consolidadas: ~/.gemini/antigravity-cli/AGY.md"
-        [ -d "$HOME/.gemini/antigravity-cli/knowledge" ] && log_success "  Knowledge: ~/.gemini/antigravity-cli/knowledge"
-        [ -f "$HOME/.gemini/antigravity-cli/AGENTS.md" ] && log_success "  AGENTS.md: ~/.gemini/antigravity-cli/AGENTS.md"
+        [ -f ".agent/CLAUDE.md" ] && log_success "  CLAUDE.md (workspace): .agent/CLAUDE.md"
+        [ -d "$HOME/.gemini/antigravity-cli/knowledge" ] && log_success "  Knowledge (CLI-specific): ~/.gemini/antigravity-cli/knowledge"
+        [ -d ".agent/knowledge" ] && log_success "  Knowledge (workspace): .agent/knowledge"
+        [ -f "$HOME/.gemini/antigravity-cli/AGENTS.md" ] && log_success "  AGENTS.md (CLI-specific): ~/.gemini/antigravity-cli/AGENTS.md"
+        [ -f ".agent/AGENTS.md" ] && log_success "  AGENTS.md (workspace): .agent/AGENTS.md"
     fi
 
     if [ "$INSTALL_OPENCLAW" = true ]; then
@@ -1750,10 +1858,14 @@ show_post_install() {
     if [ "$INSTALL_ANTIGRAVITY" = true ]; then
         echo "  rm -rf ~/.gemini/skills ~/.gemini/knowledge"
         echo "  rm -f ~/.gemini/ANTIGRAVITY.md ~/.gemini/AGENTS.md"
+        echo "  rm -rf .agent/skills .agent/knowledge"
+        echo "  rm -f .agent/CLAUDE.md .agent/AGENTS.md"
     fi
     if [ "$INSTALL_AGY" = true ]; then
         echo "  rm -rf ~/.gemini/antigravity-cli/skills ~/.gemini/antigravity-cli/knowledge"
         echo "  rm -f ~/.gemini/antigravity-cli/AGY.md ~/.gemini/antigravity-cli/AGENTS.md"
+        echo "  rm -rf .agent/skills .agent/knowledge"
+        echo "  rm -f .agent/CLAUDE.md .agent/AGENTS.md"
     fi
     if [ "$INSTALL_OPENCLAW" = true ]; then
         echo "  rm -rf ~/.openclaw/skills ~/.openclaw/rules ~/.openclaw/knowledge"
