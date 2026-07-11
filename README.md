@@ -41,6 +41,7 @@ agents-skills/
 ./install.sh --claude
 ./install.sh --antigravity
 ./install.sh --agy
+./install.sh --opencode
 
 # Combine targets
 ./install.sh --cursor --vscode
@@ -62,6 +63,7 @@ agents-skills/
 | Gemini CLI | `~/.gemini/skills` | `~/.gemini/hooks` |
 | Google Antigravity IDE | `~/.gemini/skills` | `~/.gemini/hooks` |
 | Google Antigravity CLI (agy) | `~/.gemini/antigravity-cli/skills` | `~/.gemini/antigravity-cli/hooks` |
+| OpenCode | `~/.config/opencode/skills` | — |
 | Base (all) | `~/.agents/skills` | — |
 
 ## 🧰 Skills Catalog
@@ -128,6 +130,7 @@ The `install-ai-tools.sh` script provides unified installation of popular AI opt
 ./install-ai-tools.sh --rtk --gemini              # RTK for Gemini CLI
 ./install-ai-tools.sh --caveman --devin           # Caveman for Devin CLI
 ./install-ai-tools.sh --rtk --devin               # RTK for Devin CLI
+./install-ai-tools.sh --rtk --opencode            # RTK for OpenCode
 ./install-ai-tools.sh --all --all-agents          # All tools for all agents
 
 # Safe preview mode
@@ -168,13 +171,18 @@ The installer supports agent-specific configuration for optimal integration:
 - **Caveman**: Auto-detected and installed
 - **Superpowers**: Native plugin support
 
+#### OpenCode
+- **RTK**: Plugin support via `rtk init -g --opencode` (or `rtk init -g --opencode`)
+- **Caveman**: Installed via `npx -y github:JuliusBrussee/caveman -- --only opencode`
+- **Superpowers**: Manual skill installation to `~/.config/opencode/skills/`
+
 ### Support Matrix
 
-| Tool | Gemini CLI | Devin CLI | Devin Desktop | Claude Code | Cursor |
-|------|------------|----------|---------------|-------------|--------|
-| **RTK** | ✅ Native | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native |
-| **Caveman** | ✅ Auto | ✅ npx | ✅ Auto | ✅ Auto | ✅ Auto |
-| **Superpowers** | ❌ No | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native |
+| Tool | Gemini CLI | Devin CLI | Devin Desktop | Claude Code | Cursor | OpenCode |
+|------|------------|----------|---------------|-------------|--------|----------|
+| **RTK** | ✅ Native | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native | ✅ Plugin |
+| **Caveman** | ✅ Auto | ✅ npx | ✅ Auto | ✅ Auto | ✅ Auto | ✅ Plugin |
+| **Superpowers** | ❌ No | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native | ⚠️ Manual |
 
 **Legend:**
 - ✅ Native/Full: Automatic installation with full support
@@ -259,13 +267,14 @@ See the [Contributing Guidelines](CONTRIBUTING.md).
 ## 📝 Recent Updates
 
 ### AI Tools Installer Enhancements
-- **Agent-Specific Configuration**: Added support for Gemini CLI, Devin CLI, and Devin Desktop
+- **Agent-Specific Configuration**: Added support for Gemini CLI, Devin CLI, Devin Desktop, and OpenCode
 - **Shell Detection**: Improved Windows support with PowerShell, Git Bash, and WSL detection
 - **Error Handling**: Enhanced error handling with continuation on individual failures
 - **Configuration Matrix**: Added support matrix showing tool support per agent
 - **Comprehensive Documentation**: Created detailed AI-TOOLS-INSTALLER.md guide
 
 ### Tool Path Updates
+- **OpenCode Support**: Added installer targets, `~/.config/opencode` paths, plugin support, and RTK/Caveman/Superpowers configuration
 - **Devin Desktop Support**: Added support for Devin Desktop (formerly Windsurf) with new path structure
 - **Devin CLI Paths**: Updated from `~/.config/cognition/` to `~/.config/devin/`
 - **Legacy Compatibility**: Maintains backward compatibility with Windsurf paths during transition

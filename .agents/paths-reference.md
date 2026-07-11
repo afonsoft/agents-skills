@@ -38,6 +38,12 @@ The installer copies **skills + session hooks + AGENTS.md** — there are no rul
 - **Hooks**: `~/.gemini/hooks/`
 - **Context**: `~/.gemini/AGENTS.md`
 
+### OpenCode
+- **Skills**: `~/.config/opencode/skills/` (primary), `~/.agents/skills/` (universal), `~/.claude/skills/` (fallback)
+- **Rules**: `~/.config/opencode/AGENTS.md` (global), `.opencode/AGENTS.md` (project)
+- **Plugins**: `~/.config/opencode/plugins/` (OpenCode plugin system)
+- **Hooks**: OpenCode does not use a `hooks/` directory; it uses plugins and `AGENTS.md`
+
 ## Universal Paths
 
 ### Base Skills Directory

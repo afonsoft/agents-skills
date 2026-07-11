@@ -2,7 +2,7 @@
 
 ## Missão
 
-**agents-skills** — Coleção de skills (e hooks de sessão) para agentes de IA, seguindo a especificação Agent Skills (agentskills.io) e princípios de harness engineering. Compatível com Devin, Claude Code, Cursor, Windsurf, VS Code/Copilot, Gemini CLI e Google Antigravity.
+**agents-skills** — Coleção de skills (e hooks de sessão) para agentes de IA, seguindo a especificação Agent Skills (agentskills.io) e princípios de harness engineering. Compatível com Devin, Claude Code, Cursor, Windsurf, VS Code/Copilot, Gemini CLI, Google Antigravity e OpenCode.
 
 ## Stack Tecnológica
 
@@ -19,7 +19,7 @@
 ```
 agents-skills/
 ├── skills/           # Agent Skills (SKILL.md format)
-├── hooks/            # Session-start hooks por IDE (devin/claude/cursor/windsurf/vscode/gemini)
+├── hooks/            # Session-start hooks por IDE (devin/claude/cursor/windsurf/vscode/gemini; OpenCode usa plugins)
 ├── workflows/        # Workflows agênticos para automação
 ├── .agents/          # Infraestrutura de agentes (harness)
 │   ├── CONTEXT.md    # Estratégias de carregamento de contexto
@@ -59,6 +59,7 @@ flowchart LR
 | Gemini CLI | `AGENTS.md` | `~/.gemini/skills/` | `~/.gemini/hooks/` |
 | Google Antigravity IDE | `AGENTS.md` | `~/.gemini/skills/` | `~/.gemini/hooks/` |
 | Google Antigravity CLI (agy) | `AGENTS.md` | `~/.gemini/antigravity-cli/skills/` | `~/.gemini/antigravity-cli/hooks/` |
+| OpenCode | `AGENTS.md` | `~/.config/opencode/skills/`, `~/.agents/skills/` | — |
 
 ## Comandos
 
@@ -71,12 +72,13 @@ flowchart LR
 ./install.sh --claude
 ./install.sh --antigravity
 ./install.sh --agy
+./install.sh --opencode
 
 # Pré-visualizar sem alterar nada
 ./install.sh --devin --dry-run
 
 # Lint dos scripts
-shellcheck install.sh rm-backup.sh git-cleanup-repos.sh clear-up-linux.sh
+shellcheck install.sh install-ai-tools.sh rm-backup.sh git-cleanup-repos.sh clear-up-linux.sh
 
 # Validar instalação
 test -d ~/.agents/skills && test -f ~/.devin/AGENTS.md && echo "PASS" || echo "FAIL"

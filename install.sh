@@ -15,6 +15,8 @@
 #   ./install.sh --antigravity    Instala para Google Antigravity IDE
 #   ./install.sh --agy            Instala para Google Antigravity CLI (agy)
 #   ./install.sh --openclaw, -o   Instala para OpenClaw
+#   ./install.sh --opencode, -p   Instala para OpenCode
+#   ./install.sh --dry-run        Visualiza o que seria instalado (nao altera)
 #   ./install.sh --github-token <TOKEN>  Token GitHub para download do RTK
 #   ./install.sh --help, -h       Exibe ajuda
 #
@@ -63,6 +65,10 @@ INSTALL_GEMINI=false
 INSTALL_ANTIGRAVITY=false
 INSTALL_AGY=false
 INSTALL_OPENCLAW=false
+INSTALL_OPENCODE=false
+
+# Modo dry-run (nao faz alteracoes, apenas preview)
+DRY_RUN=false
 
 # GitHub Token para download do RTK (parametro --github-token ou env GITHUB_TOKEN)
 GITHUB_TOKEN_PARAM=""
@@ -89,9 +95,11 @@ show_help() {
     echo "  --antigravity           Instala para Google Antigravity IDE"
     echo "  --agy                   Instala para Google Antigravity CLI (agy)"
     echo "  --openclaw, -o          Instala para OpenClaw"
+    echo "  --opencode, -p          Instala para OpenCode"
     echo "  --all,      -a          Instala para todas as IDEs/CLIs"
     echo
     echo -e "${YELLOW}Outras opcoes:${NC}"
+    echo "  --dry-run               Visualiza o que seria instalado (nao altera)"
     echo "  --github-token <TOKEN>  Token GitHub para download do RTK (evita rate-limit)"
     echo "  --help, -h              Exibe esta mensagem de ajuda"
     echo
@@ -141,6 +149,7 @@ show_help() {
     echo "  CLI (agy)        .agent/skills (workspace) .agent/CLAUDE.md .agent/knowledge"
     echo "                  ~/.gemini/antigravity-cli/AGY.md  (CLI-specific)"
     echo "  OpenClaw         ~/.openclaw/skills   ~/.openclaw/rules        ~/.openclaw/knowledge"
+    echo "  OpenCode         ~/.config/opencode/skills  ~/.config/opencode/AGENTS.md  —"
     echo
     echo "  Base: ~/.agents/skills (sempre instalado)"
     echo "  Base: ~/.agents/harness/ (templates do Agent Harness)"
@@ -159,6 +168,7 @@ show_help() {
     echo "  Antigravity:  https://antigravity.google/docs/cli-overview"
     echo "                https://antigravity.google/docs/ide-overview"
     echo "  OpenClaw:     https://openclaw.dev/docs/"
+    echo "  OpenCode:     https://opencode.ai/docs/"
     echo
 }
 
@@ -189,6 +199,7 @@ parse_args() {
                 INSTALL_ANTIGRAVITY=true
                 INSTALL_AGY=true
                 INSTALL_OPENCLAW=true
+                INSTALL_OPENCODE=true
                 ;;
             --vscode|-v)
                 INSTALL_VSCODE=true
@@ -219,6 +230,12 @@ parse_args() {
                 ;;
             --openclaw|-o)
                 INSTALL_OPENCLAW=true
+                ;;
+            --opencode|-p)
+                INSTALL_OPENCODE=true
+                ;;
+            --dry-run)
+                DRY_RUN=true
                 ;;
             --github-token)
                 shift
@@ -286,6 +303,7 @@ generate_consolidated_rules() {
         gemini)        ide_row="| Gemini CLI | \`~/.gemini/skills/\` | \`~/.gemini/GEMINI.md\` | \`~/.gemini/knowledge/\` |" ;;
         antigravity)   ide_row="| Google Antigravity IDE | \`~/.gemini/skills/\` | \`~/.gemini/ANTIGRAVITY.md\` | \`~/.gemini/knowledge/\` |" ;;
         agy)           ide_row="| Google Antigravity CLI (agy) | \`~/.gemini/antigravity-cli/skills/\` | \`~/.gemini/antigravity-cli/AGY.md\` | \`~/.gemini/antigravity-cli/knowledge/\` |" ;;
+        opencode)      ide_row="| OpenCode | \`~/.config/opencode/skills/\` | \`~/.config/opencode/AGENTS.md\` | — |" ;;
     esac
     if [ -n "$ide_row" ]; then
         sed -i "/| Base (todas)/a\\$ide_row" "$output_file"
@@ -1459,6 +1477,107 @@ install_openclaw() {
     log_success "OpenClaw instalado!"
 }
 
+install_opencode() {
+    log_info "=== Instalando para OpenCode ==="
+
+    # Garantir que o diretorio base existe
+    mkdir -p "$HOME/.config/opencode"
+
+    # Skills -> ~/.config/opencode/skills (primary path)
+    # OpenCode also reads ~/.agents/skills (universal) and ~/.claude/skills (compat)
+    backup_dir_if_exists "$HOME/.config/opencode/skills"
+    cp -a skills/* "$HOME/.config/opencode/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.config/opencode/skills"
+
+    # Create global opencode.json with $schema if not present
+    if [ ! -f "$HOME/.config/opencode/opencode.json" ]; then
+        cat > "$HOME/.config/opencode/opencode.json" << 'OPENCODE_CONFIG_EOF'
+{
+  "$schema": "https://opencode.ai/config.json"
+}
+OPENCODE_CONFIG_EOF
+        log_success "opencode.json -> ~/.config/opencode/opencode.json"
+    else
+        log_info "~/.config/opencode/opencode.json ja existe, mantendo configuracao do usuario"
+    fi
+
+    # AGENTS.md -> ~/.config/opencode/AGENTS.md (global rules for OpenCode)
+    # Also append stripped rules/*.instructions.md so OpenCode loads the rules without relying on the instructions field.
+    if [ -f "AGENTS_CLI.md" ]; then
+        backup_file_if_exists "$HOME/.config/opencode/AGENTS.md"
+        cp AGENTS_CLI.md "$HOME/.config/opencode/AGENTS.md"
+        log_success "AGENTS_CLI.md -> ~/.config/opencode/AGENTS.md"
+    elif [ -f "AGENTS.md" ]; then
+        backup_file_if_exists "$HOME/.config/opencode/AGENTS.md"
+        cp AGENTS.md "$HOME/.config/opencode/AGENTS.md"
+        log_success "AGENTS.md -> ~/.config/opencode/AGENTS.md"
+    fi
+    if [ -f "$HOME/.config/opencode/AGENTS.md" ] && [ -d "rules" ]; then
+        for rule_file in rules/*.instructions.md; do
+            [ -f "$rule_file" ] || continue
+            {
+                echo
+                echo "---"
+                awk 'BEGIN{fm=0} /^---$/{fm++; if(fm<=2) next} fm>=2||fm==0{print}' "$rule_file" \
+                    | sed '/^---$/d' \
+                    | cat -s
+            } >> "$HOME/.config/opencode/AGENTS.md"
+        done
+        log_success "Regras consolidadas -> ~/.config/opencode/AGENTS.md"
+    fi
+
+    # .opencodeignore -> ~/.config/opencode/.opencodeignore
+    if [ -f ".opencodeignore" ]; then
+        cp ".opencodeignore" "$HOME/.config/opencode/.opencodeignore"
+        log_success ".opencodeignore -> ~/.config/opencode/.opencodeignore"
+    fi
+
+    # Workspace-specific config (per-project) -> .opencode/
+    if [ ! -d ".opencode/skills" ] || [ -z "$(ls -A .opencode/skills 2>/dev/null)" ]; then
+        backup_dir_if_exists ".opencode/skills"
+        mkdir -p .opencode
+        cp -a skills/* ".opencode/skills/" 2>/dev/null || true
+        log_success "Skills -> .opencode/skills (workspace)"
+    else
+        log_info "Skills -> .opencode/skills (ja existe, pulando)"
+    fi
+
+    if [ ! -f ".opencode/AGENTS.md" ]; then
+        if [ -f "AGENTS.md" ]; then
+            mkdir -p .opencode
+            backup_file_if_exists ".opencode/AGENTS.md"
+            cp AGENTS.md ".opencode/AGENTS.md"
+            log_success "AGENTS.md -> .opencode/AGENTS.md (workspace)"
+        fi
+    else
+        log_info "AGENTS.md -> .opencode/AGENTS.md (ja existe, pulando)"
+    fi
+    if [ -f ".opencode/AGENTS.md" ] && [ -d "rules" ]; then
+        for rule_file in rules/*.instructions.md; do
+            [ -f "$rule_file" ] || continue
+            {
+                echo
+                echo "---"
+                awk 'BEGIN{fm=0} /^---$/{fm++; if(fm<=2) next} fm>=2||fm==0{print}' "$rule_file" \
+                    | sed '/^---$/d' \
+                    | cat -s
+            } >> ".opencode/AGENTS.md"
+        done
+        log_success "Regras consolidadas -> .opencode/AGENTS.md (workspace)"
+    fi
+
+    # Optional: install OpenCode plugins if present
+    if [ -d "hooks/opencode/plugins" ]; then
+        mkdir -p "$HOME/.config/opencode/plugins"
+        cp -a hooks/opencode/plugins/* "$HOME/.config/opencode/plugins/" 2>/dev/null || true
+        log_success "Plugins -> ~/.config/opencode/plugins"
+    fi
+
+    log_success "OpenCode instalado!"
+    log_info "Nota: OpenCode carrega skills automaticamente via ~/.config/opencode/skills/ e ~/.agents/skills/"
+    log_info "Nota: OpenCode nao usa hooks shell; use plugins em ~/.config/opencode/plugins/ se necessario"
+}
+
 # ============================================================================
 # RTK (Rust Token Killer) — CLI proxy para reducao de tokens
 # ============================================================================
@@ -1803,6 +1922,16 @@ verify_installation() {
         [ -f "$HOME/.openclaw/AGENTS.md" ] && log_success "  AGENTS.md: ~/.openclaw/AGENTS.md"
     fi
 
+    if [ "$INSTALL_OPENCODE" = true ]; then
+        echo
+        log_info "OpenCode:"
+        [ -d "$HOME/.config/opencode/skills" ] && log_success "  Skills: ~/.config/opencode/skills"
+        [ -f "$HOME/.config/opencode/AGENTS.md" ] && log_success "  AGENTS.md: ~/.config/opencode/AGENTS.md"
+        [ -f "$HOME/.config/opencode/opencode.json" ] && log_success "  opencode.json: ~/.config/opencode/opencode.json"
+        [ -d ".opencode/skills" ] && log_success "  Skills (workspace): .opencode/skills"
+        [ -f ".opencode/AGENTS.md" ] && log_success "  AGENTS.md (workspace): .opencode/AGENTS.md"
+    fi
+
     echo
     log_info "Skills disponiveis:"
     find "$HOME/.agents/skills" -maxdepth 1 -type d -not -path "$HOME/.agents/skills" | \
@@ -1871,10 +2000,61 @@ show_post_install() {
         echo "  rm -rf ~/.openclaw/skills ~/.openclaw/rules ~/.openclaw/knowledge"
         echo "  rm -f ~/.openclaw/AGENTS.md"
     fi
+    if [ "$INSTALL_OPENCODE" = true ]; then
+        echo "  rm -rf ~/.config/opencode/skills"
+        echo "  rm -f ~/.config/opencode/AGENTS.md ~/.config/opencode/opencode.json"
+        echo "  rm -rf .opencode/skills"
+        echo "  rm -f .opencode/AGENTS.md"
+    fi
 
     echo
     echo "  Para limpar backups: ./rm-backup.sh"
     echo
+}
+
+# ============================================================================
+# PREVIEW (dry-run)
+# ============================================================================
+
+show_preview() {
+    echo "========================================"
+    echo "  Agent Skills - Preview (dry-run)"
+    echo "========================================"
+    echo
+
+    local ides_selecionadas=""
+    [ "$INSTALL_VSCODE" = true ] && ides_selecionadas="${ides_selecionadas} VS-Code"
+    [ "$INSTALL_WINDSURF" = true ] && ides_selecionadas="${ides_selecionadas} Windsurf"
+    [ "$INSTALL_DEVIN_DESKTOP" = true ] && ides_selecionadas="${ides_selecionadas} Devin-Desktop"
+    [ "$INSTALL_CURSOR" = true ] && ides_selecionadas="${ides_selecionadas} Cursor"
+    [ "$INSTALL_DEVIN" = true ] && ides_selecionadas="${ides_selecionadas} Devin"
+    [ "$INSTALL_CLAUDE" = true ] && ides_selecionadas="${ides_selecionadas} Claude"
+    [ "$INSTALL_GEMINI" = true ] && ides_selecionadas="${ides_selecionadas} Gemini"
+    [ "$INSTALL_ANTIGRAVITY" = true ] && ides_selecionadas="${ides_selecionadas} Antigravity"
+    [ "$INSTALL_AGY" = true ] && ides_selecionadas="${ides_selecionadas} AGY"
+    [ "$INSTALL_OPENCLAW" = true ] && ides_selecionadas="${ides_selecionadas} OpenClaw"
+    [ "$INSTALL_OPENCODE" = true ] && ides_selecionadas="${ides_selecionadas} OpenCode"
+    log_info "IDEs/CLIs selecionadas:${ides_selecionadas}"
+
+    echo
+    log_info "Acoes que seriam executadas:"
+    echo "  - Copiar skills para ~/.agents/skills/"
+    [ "$INSTALL_VSCODE" = true ] && echo "  - Copiar skills para ~/.github/skills/ e ~/.copilot/instructions/"
+    [ "$INSTALL_WINDSURF" = true ] && echo "  - Copiar skills para ~/.windsurf/skills/ e ~/.windsurf/rules/"
+    [ "$INSTALL_DEVIN_DESKTOP" = true ] && echo "  - Copiar skills para ~/.devin/skills/ e ~/.devin/rules/"
+    [ "$INSTALL_CURSOR" = true ] && echo "  - Copiar skills para ~/.cursor/skills/ e ~/.cursor/rules/"
+    [ "$INSTALL_DEVIN" = true ] && echo "  - Copiar skills para ~/.devin/skills/ e ~/.config/devin/skills/"
+    [ "$INSTALL_CLAUDE" = true ] && echo "  - Copiar skills para ~/.claude/skills/ e ~/.claude/rules/"
+    [ "$INSTALL_GEMINI" = true ] && echo "  - Copiar skills para ~/.gemini/skills/ e regras para ~/.gemini/GEMINI.md"
+    [ "$INSTALL_ANTIGRAVITY" = true ] && echo "  - Copiar skills para ~/.gemini/skills/ e .agent/skills/"
+    [ "$INSTALL_AGY" = true ] && echo "  - Copiar skills para ~/.gemini/antigravity-cli/skills/"
+    [ "$INSTALL_OPENCLAW" = true ] && echo "  - Copiar skills para ~/.openclaw/skills/ e ~/.openclaw/rules/"
+    [ "$INSTALL_OPENCODE" = true ] && echo "  - Copiar skills para ~/.config/opencode/skills/ (e ~/.agents/skills/ como universal)"
+    [ "$INSTALL_OPENCODE" = true ] && echo "  - Criar/atualizar ~/.config/opencode/opencode.json e ~/.config/opencode/AGENTS.md"
+    [ "$INSTALL_OPENCODE" = true ] && echo "  - Criar .opencode/skills/ e .opencode/AGENTS.md (workspace)"
+    echo "  - Instalar/atualizar RTK (binario global)"
+    echo
+    log_info "Nenhuma alteracao foi feita."
 }
 
 # ============================================================================
@@ -1898,10 +2078,17 @@ main() {
     [ "$INSTALL_ANTIGRAVITY" = true ] && ides_selecionadas="${ides_selecionadas} Antigravity"
     [ "$INSTALL_AGY" = true ] && ides_selecionadas="${ides_selecionadas} AGY"
     [ "$INSTALL_OPENCLAW" = true ] && ides_selecionadas="${ides_selecionadas} OpenClaw"
+    [ "$INSTALL_OPENCODE" = true ] && ides_selecionadas="${ides_selecionadas} OpenCode"
     log_info "IDEs/CLIs selecionadas:${ides_selecionadas}"
     echo
 
     check_directory
+
+    if [ "$DRY_RUN" = true ]; then
+        show_preview
+        exit 0
+    fi
+
     install_base
     install_rtk
 
@@ -1915,6 +2102,7 @@ main() {
     [ "$INSTALL_ANTIGRAVITY" = true ] && install_antigravity
     [ "$INSTALL_AGY" = true ] && install_agy
     [ "$INSTALL_OPENCLAW" = true ] && install_openclaw
+    [ "$INSTALL_OPENCODE" = true ] && install_opencode
 
     verify_installation
     show_post_install

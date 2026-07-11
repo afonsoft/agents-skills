@@ -2,7 +2,7 @@
 
 # Script para remover todos os backups criados pelo install.sh
 # Remove diretórios e arquivos terminados em .backup.* nos diretórios HOME dos agentes
-# Suporta: VS Code, Devin Desktop, Windsurf, Cursor, Devin, Claude, Gemini CLI, Google Antigravity, OpenClaw
+# Suporta: VS Code, Devin Desktop, Windsurf, Cursor, Devin, Claude, Gemini CLI, Google Antigravity, OpenClaw, OpenCode
 # Opção --uninstall remove backups e instalações completas
 
 set -e
@@ -43,7 +43,7 @@ show_help() {
     echo "  --uninstall, -u  Remove backups E instalações completas (cuidado!)"
     echo
     echo -e "${YELLOW}O que sera limpo (modo padrao - apenas backups):${NC}"
-    echo "  - Backups de skills em ~/.agents/, ~/.devin/, ~/.windsurf/, ~/.cursor/, etc."
+    echo "  - Backups de skills em ~/.agents/, ~/.devin/, ~/.windsurf/, ~/.cursor/, ~/.config/opencode/, etc."
     echo "  - Backups de rules consolidadas (.cursorrules, .windsurfrules, etc.)"
     echo "  - Backups de arquivos de conhecimento (knowledge/)"
     echo "  - Backups de arquivos de memoria (OpenClaw, Gemini)"
@@ -51,6 +51,7 @@ show_help() {
     echo "  - Backups de Windsurf global rules (~/.windsurf/rules/global_rules.md)"
     echo "  - Backups de Claude CLAUDE.md, settings.json, commands/"
     echo "  - Backups de Google Antigravity ANTIGRAVITY.md, AGY.md"
+    echo "  - Backups de OpenCode AGENTS.md, opencode.json"
     echo "  - Backups de Devin Desktop skills e rules"
     echo
     echo -e "${YELLOW}O que sera removido (modo --uninstall):${NC}"
@@ -87,6 +88,7 @@ remove_backups() {
         "$HOME/.config/devin"
         "$HOME/.config/Devin"
         "$HOME/.openclaw"
+        "$HOME/.config/opencode"
         "$HOME/.codeium"
     )
 
@@ -134,6 +136,7 @@ remove_backups() {
         "GEMINI.md.backup.*"
         "ANTIGRAVITY.md.backup.*"
         "AGY.md.backup.*"
+        "opencode.json.backup.*"
         "settings.json.backup.*"
         "config.json.backup.*"
         "rules.md.backup.*"
@@ -404,6 +407,7 @@ complete_uninstall() {
         "$HOME/.config/devin"
         "$HOME/.config/Devin"
         "$HOME/.openclaw"
+        "$HOME/.config/opencode"
         "$HOME/.codeium"
     )
     

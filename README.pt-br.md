@@ -58,6 +58,7 @@ agents-skills/
 | Windsurf (legado) | `~/.windsurf/skills` | `~/.windsurf/hooks` |
 | VS Code (Copilot) | `~/.github/skills` | `~/.github/hooks` |
 | Gemini CLI | `~/.gemini/skills` | `~/.gemini/hooks` |
+| OpenCode | `~/.config/opencode/skills` | — |
 | Base (todos) | `~/.agents/skills` | — |
 
 ## 🧰 Catálogo de Skills

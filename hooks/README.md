@@ -14,6 +14,7 @@ Cada subdiretorio contem os artefatos especificos de uma IDE/agente:
 - **[`gemini/`](gemini/)** — Shell hook de session-start
 - **[`antigravity/`](antigravity/)** — Shell hook de session-start (Google Antigravity IDE)
 - **[`agy/`](agy/)** — Shell hook de session-start (Google Antigravity CLI)
+- **[`opencode/`](opencode/)** — Plugin directory only for OpenCode (uses plugin system natively; no shell session hooks)
 
 ## Como funciona
 
@@ -46,3 +47,4 @@ O `install.sh` copia os hooks do subdiretorio correspondente para o diretorio de
 | Gemini CLI | Shell hook | Sim | Nao |
 | Google Antigravity IDE | Shell hook | Sim | Nao |
 | Google Antigravity CLI (agy) | Shell hook | Sim | Nao |
+| OpenCode | Plugin / `skill` tool nativo | Nao (skill discovery automatica) | Nao |

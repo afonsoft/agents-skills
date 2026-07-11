@@ -37,6 +37,7 @@ Each IDE/CLI has its own skill discovery path:
 - **Windsurf**: `~/.windsurf/skills/`
 - **VS Code (Copilot)**: `~/.github/skills/`
 - **Gemini CLI**: `~/.gemini/skills/`
+- **OpenCode**: `~/.config/opencode/skills/`
 
 ### Universal Alias
 
