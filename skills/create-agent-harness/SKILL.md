@@ -1,7 +1,7 @@
 ---
 name: create-agent-harness
 license: UNLICENSED
-description: Bootstrap a complete production-ready agent harness in a repository — CLAUDE.md, .claude/, .devin/, skills/, rules/, ignore files, and sub-agents. Use when initializing AI agent support in a new repo, restructuring existing agent files into modern File-based Context conventions, or generating harness artifacts following Agent = Model + Harness principles. Targets Claude Code and Devin CLI only — does NOT create artifacts for Windsurf, Cursor, Gemini, Copilot or JetBrains AI. Do NOT use for building MCP servers (use building-mcp-servers).
+description: Bootstrap a complete production-ready agent harness in a repository — CLAUDE.md, .claude/, .devin/, skills/, rules/, ignore files, and sub-agents. Use when initializing AI agent support in a new repo, restructuring existing agent files into modern File-based Context conventions, or generating harness artifacts following Agent = Model + Harness principles. Targets Claude Code and Devin CLI only — does NOT create artifacts for OpenCode, Cursor, Gemini, Copilot or JetBrains AI. Do NOT use for building MCP servers (use building-mcp-servers).
 user-invokable: true
 argument-hint: "[repo-path]"
 metadata:
@@ -16,7 +16,7 @@ metadata:
 
 Generate a production-ready harness for AI agents (**Claude Code** and **Devin CLI** only) in a target repository. The harness is everything the model can't do alone.
 
-> Escopo desta skill: **somente** Claude Code e Devin CLI. Não gere artefatos para Windsurf, Cursor, Gemini CLI, GitHub Copilot ou JetBrains AI — esses agentes estão fora do escopo.
+> Escopo desta skill: **somente** Claude Code e Devin CLI. Não gere artefatos para OpenCode, Cursor, Gemini CLI, GitHub Copilot ou JetBrains AI — esses agentes estão fora do escopo.
 
 ## Core Principle
 
@@ -125,7 +125,7 @@ Generate only what is missing or needs restructuring. Adapt structure to discove
 **Rule:** `CLAUDE.md` is the main file — both Claude Code and Devin CLI read it natively.
 
 > ⚠️ **DO NOT create `AGENTS.md` separately** — Devin CLI reads `CLAUDE.md` natively. Creating a separate file is unnecessary duplication.
-> ⚠️ **DO NOT create platform files for Windsurf, Cursor (`.cursorrules`), Gemini (`GEMINI.md`), Copilot (`copilot-instructions.md`) or JetBrains** — these platforms are outside the scope of this skill.
+> ⚠️ **DO NOT create platform files for OpenCode, Cursor (`.cursorrules`), Gemini (`GEMINI.md`), Copilot (`copilot-instructions.md`) or JetBrains** — these platforms are outside the scope of this skill.
 
 ### C. `.claude/CONTEXT.md` — Context Engineering
 
@@ -458,7 +458,7 @@ Define in CLAUDE.md. Choose pattern adapted to the repo:
 | Verbose feedback | Filter to summary lines |
 | Duplicated info across files | Reference, don't copy |
 | `AGENTS.md` created | Remove — Devin reads CLAUDE.md natively |
-| `GEMINI.md` / `.cursorrules` / `.geminiignore` / `.cursorignore` / `.aiignore` / `.windsurfignore` criados | Remover — fora do escopo (Windsurf, Cursor, Gemini, JetBrains não são suportados aqui) |
+| `GEMINI.md` / `.cursorrules` / `.geminiignore` / `.cursorignore` / `.aiignore` / `.opencodeignore` criados | Remover — fora do escopo (OpenCode, Cursor, Gemini, JetBrains não são suportados aqui) |
 
 ### Quality Checklist
 

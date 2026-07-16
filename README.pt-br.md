@@ -38,7 +38,10 @@ agents-skills/
 
 # Instala para uma ferramenta específica
 ./install.sh --devin
+./install.sh --devin-desktop
+./install.sh --devin-cli
 ./install.sh --claude
+./install.sh --opencode
 
 # Combine alvos
 ./install.sh --cursor --vscode
@@ -51,11 +54,14 @@ agents-skills/
 
 | Ferramenta | Skills | Hooks |
 |------------|--------|-------|
-| Devin / Devin CLI | `~/.devin/skills`, `~/.config/devin/skills` | `~/.devin/hooks` |
-| Devin Desktop | `~/.devin/skills`, `~/.codeium/windsurf/skills` (legado) | `~/.devin/hooks` |
+| Devin | `~/.devin/skills`, `~/.cognition/skills` | `~/.devin/hooks` |
+| Devin CLI | `~/.config/devin/skills` | `~/.config/devin/hooks` |
+| Devin Desktop | `~/.devin/skills` | `~/.devin/hooks` |
+| OpenCode | `~/.opencode/skills`, `~/.config/opencode/skills` | `~/.opencode/hooks`, `~/.config/opencode/hooks` |
+| OpenCode Desktop | `~/.opencode/skills` | `~/.opencode/hooks` |
+| OpenCode CLI | `~/.config/opencode/skills` | `~/.config/opencode/hooks` |
 | Claude Code | `~/.claude/skills` | `~/.claude/hooks` |
 | Cursor | `~/.cursor/skills` | `~/.cursor/hooks` |
-| Windsurf (legado) | `~/.windsurf/skills` | `~/.windsurf/hooks` |
 | VS Code (Copilot) | `~/.github/skills` | `~/.github/hooks` |
 | Gemini CLI | `~/.gemini/skills` | `~/.gemini/hooks` |
 | Base (todos) | `~/.agents/skills` | — |
@@ -148,11 +154,25 @@ O instalador suporta configuração específica por agente para integração oti
 - **RTK**: Configuração manual via AGENTS.md (ainda sem suporte nativo)
 - **Caveman**: Instalado via `npx skills add JuliusBrussee/caveman -a devin`
 - **Superpowers**: Instalação manual de skills (ainda sem suporte nativo)
+- **Docs**: [Devin CLI Setup](docs/devin-cli-setup.md)
 
 #### Devin Desktop
-- **RTK**: Mesmo que Devin CLI (configuração manual)
+- **RTK**: Configuração manual via AGENTS.md
 - **Caveman**: Detectado automaticamente se Devin Desktop estiver instalado
-- **Superpowers**: Use integração Claude Code (Devin Desktop usa backend Claude Code)
+- **Superpowers**: Instalação manual de skills (ainda sem suporte nativo)
+- **Docs**: [Devin Desktop Setup](docs/devin-desktop-setup.md)
+
+#### OpenCode CLI
+- **RTK**: Configuração manual via AGENTS.md (ainda sem suporte nativo)
+- **Caveman**: Instalação manual de skills (ainda sem suporte nativo)
+- **Superpowers**: Instalação manual de skills (ainda sem suporte nativo)
+- **Docs**: [OpenCode CLI Setup](docs/opencode-cli-setup.md)
+
+#### OpenCode Desktop
+- **RTK**: Configuração manual via AGENTS.md
+- **Caveman**: Instalação manual de skills (ainda sem suporte nativo)
+- **Superpowers**: Instalação manual de skills (ainda sem suporte nativo)
+- **Docs**: [OpenCode Desktop Setup](docs/opencode-desktop-setup.md)
 
 #### Claude Code
 - **RTK**: Suporte nativo via `rtk init -g`
@@ -166,11 +186,11 @@ O instalador suporta configuração específica por agente para integração oti
 
 ### Matriz de Suporte
 
-| Ferramenta | Gemini CLI | Devin CLI | Devin Desktop | Claude Code | Cursor |
-|------------|------------|----------|---------------|-------------|--------|
-| **RTK** | ✅ Nativo | ⚠️ Manual | ⚠️ Manual | ✅ Nativo | ✅ Nativo |
-| **Caveman** | ✅ Auto | ✅ npx | ✅ Auto | ✅ Auto | ✅ Auto |
-| **Superpowers** | ❌ Não | ⚠️ Manual | ⚠️ Manual | ✅ Nativo | ✅ Nativo |
+| Ferramenta | Gemini CLI | Devin CLI | Devin Desktop | OpenCode CLI | OpenCode Desktop | Claude Code | Cursor |
+|------------|------------|-----------|---------------|--------------|------------------|-------------|--------|
+| **RTK** | ✅ Nativo | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual | ✅ Nativo | ✅ Nativo |
+| **Caveman** | ✅ Auto | ✅ npx | ✅ Auto | ⚠️ Manual | ⚠️ Manual | ✅ Auto | ✅ Auto |
+| **Superpowers** | ❌ Não | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual | ✅ Nativo | ✅ Nativo |
 
 **Legenda:**
 - ✅ Nativo/Completo: Instalação automática com suporte completo
@@ -254,16 +274,17 @@ Veja as [Diretrizes de Contribuição](CONTRIBUTING.md).
 ## 📝 Atualizações Recentes
 
 ### Melhorias do Instalador de AI Tools
-- **Configuração Específica por Agente**: Adicionado suporte para Gemini CLI, Devin CLI e Devin Desktop
+- **Configuração Específica por Agente**: Adicionado suporte para Gemini CLI, Devin CLI, Devin Desktop, OpenCode CLI e OpenCode Desktop
 - **Detecção de Shell**: Suporte aprimorado para Windows com detecção de PowerShell, Git Bash e WSL
 - **Tratamento de Erros**: Tratamento de erros aprimorado com continuação em falhas individuais
 - **Matriz de Configuração**: Adicionada matriz de suporte mostrando suporte de ferramenta por agente
 - **Documentação Abrangente**: Criado guia detalhado AI-TOOLS-INSTALLER.md
 
 ### Atualizações de Caminhos de Ferramentas
-- **Suporte Devin Desktop**: Adicionado suporte para Devin Desktop (anteriormente Windsurf) com nova estrutura de caminhos
-- **Caminhos Devin CLI**: Atualizados de `~/.config/cognition/` para `~/.config/devin/`
-- **Compatibilidade Legada**: Mantém compatibilidade com caminhos Windsurf durante transição
+- **Suporte Devin Desktop**: Adicionado suporte para Devin Desktop (sucessor local do Windsurf)
+- **Caminhos Devin CLI**: Atualizados para `~/.config/devin/`
+- **Suporte OpenCode**: Adicionados caminhos `~/.opencode/` e `~/.config/opencode/` para Desktop e CLI
+- **Limpeza Legada**: Removidos caminhos Windsurf; OpenClaw mantido como opção legada
 
 ### Scripts Aprimorados
 - **git-cleanup-repos.sh**: Adicionada limpeza de cache de gerenciadores de pacotes multiplataforma (npm, yarn, nuget) e rastreamento de espaço em disco

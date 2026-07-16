@@ -224,10 +224,10 @@ rtk gain
 ### Devin Desktop
 
 **Caminhos de configuração**:
-- Config: `~/.config/devin/config.json` (Linux/Mac)
+- Config: `~/.devin/config.json` (Linux/Mac)
 - Config: `%APPDATA%\devin\config.json` (Windows)
-- Skills: `~/.devin/skills/` ou `~/.codeium/windsurf/skills/` (legado)
-- Caminhos legados: `~/.windsurf/skills/` (compatibilidade Windsurf)
+- Skills: `~/.devin/skills/`
+- AGENTS.md: `~/.devin/AGENTS.md`
 
 **Configuração RTK**:
 ```bash
@@ -235,8 +235,8 @@ rtk gain
 ```
 
 **O que é instalado**:
-- Mesmo que Devin CLI (instruções AGENTS.md)
-- Localizado em `~/.config/devin/AGENTS.md`
+- `~/.devin/AGENTS.md` - Instruções manuais do RTK
+- Sem suporte nativo a hooks ainda (uso manual necessário)
 
 **Configuração Caveman**:
 ```bash
@@ -245,7 +245,6 @@ rtk gain
 
 **O que é instalado**:
 - Detecta automaticamente instalação Devin Desktop
-- Também detecta caminhos Windsurf legados para compatibilidade
 - Skills: `/caveman`, `/caveman-commit`, `/caveman-compress`, `/caveman-review`
 
 **Configuração Superpowers**:
