@@ -7,7 +7,7 @@ This file stores technical decisions, technical debt, and lessons learned to avo
 ### 2026-04-26 - Architecture Alignment
 - **Decision**: Adopt awesome-ai-conventions and Agentic AI Foundation standards
 - **Rationale**: File-based protocols (AGENTS.md, SKILL.md, llms.txt) provide cross-tool compatibility
-- **Impact**: Repository now supports VS Code, Windsurf, Cursor, Devin, Claude, Gemini
+- **Impact**: Repository now supports VS Code, Devin, Devin Desktop, Devin CLI, OpenCode, Claude, Cursor, Gemini
 - **Status**: Implemented
 
 ### 2026-04-26 - Skill Format Standardization

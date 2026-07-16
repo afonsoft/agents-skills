@@ -70,10 +70,12 @@ skill-name/
 - `~/.agents/skills/` - User skills (medium priority)
 
 ### Tool-Specific Paths
-- `~/.devin/skills/`, `~/.config/devin/skills/` - Devin / Devin CLI
+- `~/.devin/skills/` - Devin / Devin Desktop
+- `~/.config/devin/skills/` - Devin CLI
 - `~/.claude/skills/` - Claude Code
 - `~/.cursor/skills/` - Cursor
-- `~/.windsurf/skills/` - Windsurf Cascade
+- `~/.opencode/skills/` - OpenCode Desktop
+- `~/.config/opencode/skills/` - OpenCode CLI
 - `~/.github/skills/` - VS Code / GitHub Copilot
 - `~/.gemini/skills/` - Gemini CLI
 

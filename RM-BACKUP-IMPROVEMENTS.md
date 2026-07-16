@@ -44,17 +44,19 @@
 - ✅ `~/.agents/` (base)
 - ✅ `~/.devin/`
 - ✅ `~/.claude/`
-- ✅ `~/.windsurf/`
 - ✅ `~/.github/`
 - ✅ `~/.copilot/`
 - ✅ `~/.cursor/`
 - ✅ `~/.gemini/`
 - ✅ `~/.cognition/`
-- ✅ `~/.config/cognition/`
+- ✅ `~/.config/devin/`
+- ✅ `~/.config/opencode/`
+- ✅ `~/.opencode/`
 - ✅ `~/.openclaw/` (novo)
 
 #### Arquivos Consolidados
-- ✅ `.windsurfrules.backup.*`
+- ✅ `.devinrules.backup.*`
+- ✅ `.opencodeignore.backup.*`
 - ✅ `.cursorrules.backup.*`
 - ✅ `AGENTS.md.backup.*`
 - ✅ `GEMINI.md.backup.*` (novo)
@@ -126,7 +128,7 @@
 
 ### Por Categoria
 1. **Skills**: Backups de diretórios de skills
-2. **Rules Consolidadas**: Arquivos `.windsurfrules`, `.cursorrules`, etc.
+2. **Rules Consolidadas**: Arquivos `.devinrules`, `.opencodeignore`, `.cursorrules`, etc.
 3. **Memory Files**: Arquivos de memória persistente
 4. **Knowledge**: Backups de bases de conhecimento
 5. **IDE Specific**: Arquivos específicos de cada IDE/CLI
@@ -174,11 +176,11 @@
 
 [INFO] Verificando backups em /home/user/.agents...
 [SUCCESS] Removidos 3 backups em /home/user/.agents
-[INFO] Verificando backups em /home/user/.windsurf...
-[INFO] Nenhum backup encontrado em /home/user/.windsurf
+[INFO] Verificando backups em /home/user/.opencode...
+[INFO] Nenhum backup encontrado em /home/user/.opencode
 
 [INFO] Verificando backups de arquivos consolidados...
-[SUCCESS] Removidos 1 backups de .windsurfrules.backup.*
+[SUCCESS] Removidos 1 backups de .devinrules.backup.*
 
 [INFO] Verificando backups de OpenClaw...
 [SUCCESS] Removidos 2 backups de OpenClaw (workspace/memory/*.backup.*)

@@ -7,10 +7,14 @@ O `install.sh` instala **skills + hooks de sessão + AGENTS.md**. Não instala `
 | Target | Skills | Hooks | Config |
 |--------|--------|-------|--------|
 | `--base` / base (sempre) | `~/.agents/skills/` | — | — |
-| `--devin` | `~/.devin/skills/`, `~/.cognition/skills/`, `~/.config/devin/skills/` | `~/.devin/hooks/` | `~/.devin/AGENTS.md` |
+| `--devin` | `~/.devin/skills/`, `~/.cognition/skills/` | `~/.devin/hooks/` | `~/.devin/AGENTS.md` |
+| `--devin-desktop` | `~/.devin/skills/` | `~/.devin/hooks/` | `~/.devin/AGENTS.md` |
+| `--devin-cli` | `~/.config/devin/skills/` | `~/.config/devin/hooks/` | `~/.config/devin/AGENTS.md` |
 | `--claude` | `~/.claude/skills/` | `~/.claude/hooks/` | `~/.claude/CLAUDE.md`, `~/.claude/AGENTS.md` |
 | `--cursor` | `~/.cursor/skills/` | `~/.cursor/hooks/` | `~/.cursor/AGENTS.md` |
-| `--windsurf` | `~/.windsurf/skills/` | `~/.windsurf/hooks/` | `~/.windsurf/AGENTS.md` |
+| `--opencode` | `~/.opencode/skills/`, `~/.config/opencode/skills/` | `~/.opencode/hooks/`, `~/.config/opencode/hooks/` | `~/.opencode/AGENTS.md` or `~/.config/opencode/AGENTS.md` |
+| `--opencode-desktop` | `~/.opencode/skills/` | `~/.opencode/hooks/` | `~/.opencode/AGENTS.md` |
+| `--opencode-cli` | `~/.config/opencode/skills/` | `~/.config/opencode/hooks/` | `~/.config/opencode/AGENTS.md` |
 | `--vscode` | `~/.github/skills/` | `~/.github/hooks/` | `~/.github/AGENTS.md` |
 | `--gemini` | `~/.gemini/skills/` | `~/.gemini/hooks/` | `~/.gemini/AGENTS.md` |
 

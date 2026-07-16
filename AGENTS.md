@@ -2,7 +2,7 @@
 
 ## Missão
 
-**agents-skills** — Coleção de skills (e hooks de sessão) para agentes de IA, seguindo a especificação Agent Skills (agentskills.io) e princípios de harness engineering. Compatível com Devin, Claude Code, Cursor, Windsurf, VS Code/Copilot, Gemini CLI e Google Antigravity.
+**agents-skills** — Coleção de skills (e hooks de sessão) para agentes de IA, seguindo a especificação Agent Skills (agentskills.io) e princípios de harness engineering. Compatível com Devin, Devin Desktop, Devin CLI, OpenCode, OpenCode Desktop, OpenCode CLI, Claude Code, Cursor, VS Code/Copilot, Gemini CLI, Google Antigravity e OpenClaw.
 
 ## Stack Tecnológica
 
@@ -19,7 +19,7 @@
 ```
 agents-skills/
 ├── skills/           # Agent Skills (SKILL.md format)
-├── hooks/            # Session-start hooks por IDE (devin/claude/cursor/windsurf/vscode/gemini)
+├── hooks/            # Session-start hooks por IDE (devin/claude/cursor/opencode/vscode/gemini)
 ├── workflows/        # Workflows agênticos para automação
 ├── .agents/          # Infraestrutura de agentes (harness)
 │   ├── CONTEXT.md    # Estratégias de carregamento de contexto
@@ -51,10 +51,14 @@ flowchart LR
 | Plataforma | Config Principal | Skills | Hooks |
 |-----------|-----------------|--------|-------|
 | Base (todas) | `AGENTS.md` | `~/.agents/skills/` | — |
-| Devin | `AGENTS.md` | `~/.devin/skills/`, `~/.config/devin/skills/` | `~/.devin/hooks/` |
+| Devin | `AGENTS.md` | `~/.devin/skills/`, `~/.cognition/skills/` | `~/.devin/hooks/` |
+| Devin CLI | `AGENTS.md` | `~/.config/devin/skills/` | `~/.config/devin/hooks/` |
+| Devin Desktop | `AGENTS.md` | `~/.devin/skills/` | `~/.devin/hooks/` |
+| OpenCode | `AGENTS.md` | `~/.opencode/skills/`, `~/.config/opencode/skills/` | `~/.opencode/hooks/`, `~/.config/opencode/hooks/` |
+| OpenCode Desktop | `AGENTS.md` | `~/.opencode/skills/` | `~/.opencode/hooks/` |
+| OpenCode CLI | `AGENTS.md` | `~/.config/opencode/skills/` | `~/.config/opencode/hooks/` |
 | Claude Code | `CLAUDE.md` | `~/.claude/skills/` | `~/.claude/hooks/` |
 | Cursor | `AGENTS.md` | `~/.cursor/skills/` | `~/.cursor/hooks/` |
-| Windsurf | `AGENTS.md` | `~/.windsurf/skills/` | `~/.windsurf/hooks/` |
 | VS Code / Copilot | `AGENTS.md` | `~/.github/skills/` | `~/.github/hooks/` |
 | Gemini CLI | `AGENTS.md` | `~/.gemini/skills/` | `~/.gemini/hooks/` |
 | Google Antigravity IDE | `AGENTS.md` | `~/.gemini/skills/` | `~/.gemini/hooks/` |

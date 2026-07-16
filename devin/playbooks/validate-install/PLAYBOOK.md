@@ -1,9 +1,9 @@
 ---
 description: >
   Validate the installation and distribution of the afonsoft/agents-skills
-  repository for one or more target IDEs (Devin, Claude, Cursor, Windsurf,
-  VS Code, Gemini, OpenClaw). Use after running install.sh or when a user
-  reports that skills, hooks, or AGENTS.md are not loading.
+  repository for one or more target IDEs (Devin, Devin Desktop, Devin CLI,
+  OpenCode, Claude, Cursor, VS Code, Gemini, OpenClaw). Use after running
+  install.sh or when a user reports that skills, hooks, or AGENTS.md are not loading.
 mode: agent
 tools:
   - read
@@ -25,7 +25,8 @@ Verify that `install.sh` correctly deploys skills, hooks, rules, and the
 artifacts are syntactically valid.
 
 ## Input
-- `TARGET`: one or more of `devin`, `claude`, `cursor`, `windsurf`, `vscode`,
+- `TARGET`: one or more of `devin`, `devin-desktop`, `devin-cli`, `opencode`,
+  `opencode-desktop`, `opencode-cli`, `claude`, `cursor`, `vscode`,
   `gemini`, `openclaw`, `all`.
 - `REPO_ROOT`: path to the cloned `afonsoft/agents-skills` repository.
 
@@ -41,9 +42,11 @@ echo $SHELL
 uname -s
 ls -la ~/.agents/ 2>/dev/null || true
 ls -la ~/.devin/ 2>/dev/null || true
+ls -la ~/.config/devin/ 2>/dev/null || true
 ls -la ~/.claude/ 2>/dev/null || true
 ls -la ~/.cursor/ 2>/dev/null || true
-ls -la ~/.windsurf/ 2>/dev/null || true
+ls -la ~/.opencode/ 2>/dev/null || true
+ls -la ~/.config/opencode/ 2>/dev/null || true
 ls -la ~/.github/ 2>/dev/null || true
 ls -la ~/.gemini/ 2>/dev/null || true
 ```
@@ -76,10 +79,12 @@ Capture the full output to a log file.
 | Platform | Skills path | Hooks path | Index file |
 |---|---|---|---|
 | Base | `~/.agents/skills/` | — | `~/.agents/AGENTS.md` |
-| Devin | `~/.devin/skills/` | `~/.devin/hooks/` | `~/.devin/AGENTS.md` |
+| Devin / Devin Desktop | `~/.devin/skills/` | `~/.devin/hooks/` | `~/.devin/AGENTS.md` |
+| Devin CLI | `~/.config/devin/skills/` | `~/.config/devin/hooks/` | `~/.config/devin/AGENTS.md` |
+| OpenCode / OpenCode Desktop | `~/.opencode/skills/` | `~/.opencode/hooks/` | `~/.opencode/AGENTS.md` |
+| OpenCode CLI | `~/.config/opencode/skills/` | `~/.config/opencode/hooks/` | `~/.config/opencode/AGENTS.md` |
 | Claude | `~/.claude/skills/` | `~/.claude/hooks/` | `~/.claude/AGENTS.md` |
 | Cursor | `~/.cursor/skills/` | `~/.cursor/hooks/` | `~/.cursor/AGENTS.md` |
-| Windsurf | `~/.windsurf/skills/` | `~/.windsurf/hooks/` | `~/.windsurf/AGENTS.md` |
 | VS Code / Copilot | `~/.github/skills/` | `~/.github/hooks/` | `~/.github/AGENTS.md` |
 | Gemini | `~/.gemini/skills/` | `~/.gemini/hooks/` | `~/.gemini/AGENTS.md` |
 | OpenClaw | `~/.gemini/antigravity-cli/skills/` | `~/.gemini/antigravity-cli/hooks/` | `~/.gemini/antigravity-cli/AGENTS.md` |

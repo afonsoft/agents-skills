@@ -4,7 +4,7 @@ description: >
   Execute em qualquer repositório para gerar o conjunto completo de arquivos
   que compõem o harness de um agente LLM, seguindo convenções modernas de
   File-based Context (CLAUDE.md, SKILL.md). Escopo: estrutura Claude Code
-  (também usada pelo Devin CLI) — não gera artefatos para Windsurf, Cursor,
+  (também usada pelo Devin CLI) — não gera artefatos para OpenCode, Cursor,
   Gemini, Copilot ou JetBrains AI.
 mode: agent
 tools:
@@ -23,7 +23,7 @@ tools:
 Você é um **Engenheiro de IA Sênior e Arquiteto de Contexto**. Sua tarefa é analisar este repositório e criar o conjunto completo de arquivos que compõem o **harness** de um agente LLM.
 
 > **Escopo deste playbook**: foco na **estrutura Claude Code** (`.claude/`, `CLAUDE.md`), que também é usada nativamente pelo **Devin CLI**.
-> NÃO gere artefatos para Windsurf (`.windsurfignore`, `.windsurf/`), Cursor (`.cursorrules`, `.cursorignore`), Gemini CLI (`GEMINI.md`, `.geminiignore`), GitHub Copilot (`copilot-instructions.md`) ou JetBrains AI (`.aiignore`). Essas plataformas estão fora do escopo.
+> NÃO gere artefatos para OpenCode (`.opencodeignore`, `.opencode/`), Cursor (`.cursorrules`, `.cursorignore`), Gemini CLI (`GEMINI.md`, `.geminiignore`), GitHub Copilot (`copilot-instructions.md`) ou JetBrains AI (`.aiignore`). Essas plataformas estão fora do escopo.
 
 > `Agent = Model + Harness`
 >
@@ -151,7 +151,7 @@ Crie sempre os arquivos seguindo a **estrutura Claude Code** (também usada pelo
 
 > ⚠️ **NÃO crie `AGENTS.md` separado** — Devin CLI lê `CLAUDE.md` nativamente. Criar arquivo dedicado é duplicação desnecessária.
 > ⚠️ **NÃO crie `DEVIN.md`** — Devin CLI lê `CLAUDE.md` nativamente.
-> ⚠️ **NÃO crie `GEMINI.md`, `.cursorrules`, `copilot-instructions.md` nem artefatos de Windsurf** — Windsurf, Cursor, Gemini CLI e GitHub Copilot estão fora do escopo deste playbook.
+> ⚠️ **NÃO crie `GEMINI.md`, `.cursorrules`, `copilot-instructions.md` nem artefatos de OpenCode** — OpenCode, Cursor, Gemini CLI e GitHub Copilot estão fora do escopo deste playbook.
 
 ---
 
@@ -268,7 +268,7 @@ Crie sempre os arquivos seguindo a **estrutura Claude Code** (também usada pelo
 
 - Config do projeto em `.devin/` (raiz); config do usuário em `~/.config/devin/` (`%APPDATA%\devin\` no Windows)
 - `.devin/config.json` cobre `permissions`, `mcpServers`, `hooks` e `read_config_from`
-- **`read_config_from`** importa rules, skills e subagentes do **Claude Code** (Cursor/Windsurf também) — **habilitado por padrão**
+- **`read_config_from`** importa rules, skills e subagentes do **Claude Code** (Cursor/OpenCode também) — **habilitado por padrão**
 - Subagentes nativos: `.devin/agents/{nome}/AGENT.md` (o nome do diretório vira o identificador do perfil)
 - O formato do Claude Code usa `tools`; o do Devin usa `allowed-tools` — **ambos suportados automaticamente**
 - O Devin CLI **NÃO** suporta Playbooks, Knowledge nem Secrets (recursos exclusivos do Devin cloud)
@@ -1334,7 +1334,7 @@ Definir no CLAUDE.md. Escolher o padrão adequado ao repositório:
 | Feedback verboso | Filtrar para linhas de sumário |
 | Info duplicada entre arquivos | Referenciar, não copiar |
 | `DEVIN.md` criado | Remover — Devin CLI lê CLAUDE.md nativamente |
-| `GEMINI.md`, `.cursorrules`, `.geminiignore`, `.cursorignore`, `.aiignore`, `.windsurfignore`, `.windsurf/`, `copilot-instructions.md` criados | Remover — Windsurf, Cursor, Gemini, Copilot e JetBrains estão fora do escopo deste playbook |
+| `GEMINI.md`, `.cursorrules`, `.geminiignore`, `.cursorignore`, `.aiignore`, `.opencodeignore`, `.opencode/`, `copilot-instructions.md` criados | Remover — OpenCode, Cursor, Gemini, Copilot e JetBrains estão fora do escopo deste playbook |
 
 ### Checklist de Qualidade
 
