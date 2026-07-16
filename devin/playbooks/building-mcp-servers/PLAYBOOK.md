@@ -120,14 +120,17 @@ const server = new McpServer({
 });
 
 // Tool example: deploy a service
-server.tool(
+server.registerTool(
   'deploy-service',
-  'Deploys a service to the specified environment',
   {
-    service: z.string().describe('Service name (e.g. my-api-authentication)'),
-    environment: z.enum(['dev', 'hom', 'prod']).describe('Target environment'),
-    version: z.string().optional().describe('Version to deploy'),
-    dryRun: z.boolean().default(false).describe('Simulate without executing'),
+    title: 'Deploy Service',
+    description: 'Deploys a service to the specified environment',
+    inputSchema: {
+      service: z.string().describe('Service name (e.g. my-api-authentication)'),
+      environment: z.enum(['dev', 'hom', 'prod']).describe('Target environment'),
+      version: z.string().optional().describe('Version to deploy'),
+      dryRun: z.boolean().default(false).describe('Simulate without executing'),
+    },
   },
   async ({ service, environment, version, dryRun }) => {
     if (dryRun) {
@@ -150,9 +153,14 @@ server.tool(
 );
 
 // Static resource example
-server.resource(
+server.registerResource(
   'service-catalog',
-  '{API_DOMAIN}://services/catalog',
+  {
+    uri: '{API_DOMAIN}://services/catalog',
+    name: 'Service Catalog',
+    description: 'Catalog of available services',
+    mimeType: 'application/json',
+  },
   async (uri) => ({
     contents: [{
       uri: uri.href,
@@ -163,12 +171,14 @@ server.resource(
 );
 
 // Prompt example
-server.prompt(
+server.registerPrompt(
   'generate-service',
-  'Generate boilerplate code for a new service',
   {
-    serviceName: z.string().describe('Service name'),
-    technology: z.enum(['dotnet', 'java', 'angular']).describe('Technology stack'),
+    description: 'Generate boilerplate code for a new service',
+    argsSchema: {
+      serviceName: z.string().describe('Service name'),
+      technology: z.enum(['dotnet', 'java', 'angular']).describe('Technology stack'),
+    },
   },
   ({ serviceName, technology }) => ({
     messages: [{
@@ -235,14 +245,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.ComponentModel;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddMcpServer()
-    .WithStreamableHttpTransport()
-    .WithToolsFromAssembly();
+    .WithHttpTransport()
+    .WithToolsFromAssembly()
+    .WithPromptsFromAssembly()
+    .WithResourcesFromAssembly();
 
 var app = builder.Build();
+app.MapMcp();
 await app.RunAsync();
 
 // Tools/DeployServiceTool.cs
@@ -276,6 +289,7 @@ public static class DeployServiceTool
 ```typescript
 // src/transport.ts
 const app = express();
+app.use(express.json());
 
 app.post('/mcp', async (req, res) => {
   const transport = new StreamableHTTPServerTransport({
