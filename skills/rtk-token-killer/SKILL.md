@@ -45,10 +45,10 @@ After installing the binary, configure hooks for your IDE:
 rtk init -g                    # Install hook + RTK.md
 ```
 
-### Cursor / Windsurf
+### Cursor / Devin Desktop
 ```bash
 rtk init -g --agent cursor     # Cursor
-rtk init -g --agent windsurf   # Windsurf
+rtk init -g --agent devin      # Devin Desktop
 ```
 
 ### Codex / Gemini

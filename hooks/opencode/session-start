@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# SessionStart hook for OpenCode
+# Injects Agent Skills catalog context at session start.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/session-start-base.sh"
+
+# OpenCode: additionalContext (SDK standard)
+printf '{\n  "additionalContext": "%s"\n}\n' "$SESSION_CONTEXT"
+exit 0

@@ -31,10 +31,14 @@ Skills are discovered in the following order (highest to lowest priority):
 
 Each IDE/CLI has its own skill discovery path:
 
-- **Devin / Devin CLI**: `~/.devin/skills/`, `~/.config/devin/skills/`
+- **Devin**: `~/.devin/skills/`, `~/.cognition/skills/`
+- **Devin CLI**: `~/.config/devin/skills/`
+- **Devin Desktop**: `~/.devin/skills/`
 - **Claude Code**: `~/.claude/skills/`
 - **Cursor**: `~/.cursor/skills/`
-- **Windsurf**: `~/.windsurf/skills/`
+- **OpenCode**: `~/.opencode/skills/`, `~/.config/opencode/skills/`
+- **OpenCode Desktop**: `~/.opencode/skills/`
+- **OpenCode CLI**: `~/.config/opencode/skills/`
 - **VS Code (Copilot)**: `~/.github/skills/`
 - **Gemini CLI**: `~/.gemini/skills/`
 - **OpenCode**: `~/.config/opencode/skills/`
@@ -67,10 +71,10 @@ triggers: [optional]
 
 ### Root-Level Context
 
-- **AGENTS.md**: Cross-tool agent context (single source of truth) — lido por Devin e Windsurf
+- **AGENTS.md**: Cross-tool agent context (single source of truth) — lido por Devin, OpenCode, Cursor e VS Code
 - **CLAUDE.md**: Claude-specific delta com `@import AGENTS.md`
 - **llms.txt**: LLM discoverability for web crawlers
-- **.claudeignore / .devinignore / .windsurfignore**: File exclusion patterns por plataforma
+- **.claudeignore / .devinignore / .opencodeignore**: File exclusion patterns por plataforma
 
 ### Memory System
 
@@ -122,7 +126,8 @@ The `install.sh` script handles cross-platform installation:
 ./install.sh --all
 
 # Install for specific tools
-./install.sh --vscode --windsurf --claude
+./install.sh --vscode --devin --claude
+./install.sh --devin-desktop --devin-cli --opencode
 
 # Clean up backups
 ./rm-backup.sh

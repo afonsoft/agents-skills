@@ -2,7 +2,7 @@
 
 # Script para remover todos os backups criados pelo install.sh
 # Remove diretórios e arquivos terminados em .backup.* nos diretórios HOME dos agentes
-# Suporta: VS Code, Devin Desktop, Windsurf, Cursor, Devin, Claude, Gemini CLI, Google Antigravity, OpenClaw, OpenCode
+# Suporta: VS Code, Devin Desktop, Devin CLI, Cursor, Devin, Claude, Gemini CLI, Google Antigravity, OpenClaw, OpenCode
 # Opção --uninstall remove backups e instalações completas
 
 set -e
@@ -43,16 +43,14 @@ show_help() {
     echo "  --uninstall, -u  Remove backups E instalações completas (cuidado!)"
     echo
     echo -e "${YELLOW}O que sera limpo (modo padrao - apenas backups):${NC}"
-    echo "  - Backups de skills em ~/.agents/, ~/.devin/, ~/.windsurf/, ~/.cursor/, ~/.config/opencode/, etc."
-    echo "  - Backups de rules consolidadas (.cursorrules, .windsurfrules, etc.)"
+    echo "  - Backups de skills em ~/.agents/, ~/.devin/, ~/.cursor/, etc."
+    echo "  - Backups de rules consolidadas (.cursorrules, .devinrules.md, etc.)"
     echo "  - Backups de arquivos de conhecimento (knowledge/)"
-    echo "  - Backups de arquivos de memoria (OpenClaw, Gemini)"
+    echo "  - Backups de arquivos de memoria (OpenClaw, OpenCode, Gemini)"
     echo "  - Backups do Visual Studio (Windows)"
-    echo "  - Backups de Windsurf global rules (~/.windsurf/rules/global_rules.md)"
     echo "  - Backups de Claude CLAUDE.md, settings.json, commands/"
     echo "  - Backups de Google Antigravity ANTIGRAVITY.md, AGY.md"
-    echo "  - Backups de OpenCode AGENTS.md, opencode.json"
-    echo "  - Backups de Devin Desktop skills e rules"
+    echo "  - Backups de Devin Desktop, Devin CLI, OpenCode Desktop e OpenCode CLI"
     echo
     echo -e "${YELLOW}O que sera removido (modo --uninstall):${NC}"
     echo "  - Todos os backups (como acima)"
@@ -77,7 +75,6 @@ remove_backups() {
         "$HOME/.agents"
         "$HOME/.devin"
         "$HOME/.claude"
-        "$HOME/.windsurf"
         "$HOME/.github"
         "$HOME/.copilot"
         "$HOME/.cursor"
@@ -87,9 +84,9 @@ remove_backups() {
         "$HOME/.config/cognition"
         "$HOME/.config/devin"
         "$HOME/.config/Devin"
-        "$HOME/.openclaw"
         "$HOME/.config/opencode"
-        "$HOME/.codeium"
+        "$HOME/.opencode"
+        "$HOME/.openclaw"
     )
 
     log_info "Iniciando limpeza de backups..."
@@ -129,14 +126,13 @@ remove_backups() {
     # Remove backups de arquivos consolidados no nível HOME
     local consolidated_files=(
         ".cursorrules.backup.*"
-        ".windsurfrules.backup.*"
         ".devinrules.backup.*"
+        ".opencodeignore.backup.*"
         "AGENTS.md.backup.*"
         "CLAUDE.md.backup.*"
         "GEMINI.md.backup.*"
         "ANTIGRAVITY.md.backup.*"
         "AGY.md.backup.*"
-        "opencode.json.backup.*"
         "settings.json.backup.*"
         "config.json.backup.*"
         "rules.md.backup.*"
@@ -257,24 +253,63 @@ remove_backups() {
         done
     fi
 
-    # Remove backups de Windsurf global rules
-    if [ -d "$HOME/.windsurf/rules" ]; then
-        log_info "Verificando backups de Windsurf global rules..."
-        
-        if [ "$DRY_RUN" = true ]; then
-            found_files=$(find "$HOME/.windsurf/rules" -name 'global_rules.md.backup.*' 2>/dev/null || true)
-            if [ -n "$found_files" ]; then
-                echo "$found_files"
-                total_removed=$((total_removed + $(echo "$found_files" | wc -l)))
+    # Remove backups de OpenCode
+    if [ -d "$HOME/.opencode" ]; then
+        log_info "Verificando backups de OpenCode Desktop..."
+
+        local opencode_patterns=(
+            "*.backup.*"
+            "rules/*.backup.*"
+            "knowledge/*.backup.*"
+            "skills/*/*.backup.*"
+        )
+
+        for pattern in "${opencode_patterns[@]}"; do
+            local found_files
+            if [ "$DRY_RUN" = true ]; then
+                found_files=$(find "$HOME/.opencode" -name "$pattern" 2>/dev/null || true)
+                if [ -n "$found_files" ]; then
+                    echo "$found_files"
+                    total_removed=$((total_removed + $(echo "$found_files" | wc -l)))
+                fi
+            else
+                local removed_count
+                removed_count=$(find "$HOME/.opencode" -name "$pattern" -exec rm -rf {} + 2>/dev/null | wc -l || true)
+                if [ "$removed_count" -gt 0 ]; then
+                    log_success "Removidos $removed_count backups de OpenCode Desktop ($pattern)"
+                    total_removed=$((total_removed + removed_count))
+                fi
             fi
-        else
-            local removed_count
-            removed_count=$(find "$HOME/.windsurf/rules" -name 'global_rules.md.backup.*' -exec rm -f {} + 2>/dev/null | wc -l || true)
-            if [ "$removed_count" -gt 0 ]; then
-                log_success "Removidos $removed_count backups de Windsurf global rules"
-                total_removed=$((total_removed + removed_count))
+        done
+    fi
+
+    if [ -d "$HOME/.config/opencode" ]; then
+        log_info "Verificando backups de OpenCode CLI..."
+
+        local opencode_cli_patterns=(
+            "*.backup.*"
+            "rules/*.backup.*"
+            "knowledge/*.backup.*"
+            "skills/*/*.backup.*"
+        )
+
+        for pattern in "${opencode_cli_patterns[@]}"; do
+            local found_files
+            if [ "$DRY_RUN" = true ]; then
+                found_files=$(find "$HOME/.config/opencode" -name "$pattern" 2>/dev/null || true)
+                if [ -n "$found_files" ]; then
+                    echo "$found_files"
+                    total_removed=$((total_removed + $(echo "$found_files" | wc -l)))
+                fi
+            else
+                local removed_count
+                removed_count=$(find "$HOME/.config/opencode" -name "$pattern" -exec rm -rf {} + 2>/dev/null | wc -l || true)
+                if [ "$removed_count" -gt 0 ]; then
+                    log_success "Removidos $removed_count backups de OpenCode CLI ($pattern)"
+                    total_removed=$((total_removed + removed_count))
+                fi
             fi
-        fi
+        done
     fi
 
     # Remove backups de OpenClaw
@@ -397,7 +432,6 @@ complete_uninstall() {
         "$HOME/.agents"
         "$HOME/.devin"
         "$HOME/.claude"
-        "$HOME/.windsurf"
         "$HOME/.github"
         "$HOME/.copilot"
         "$HOME/.cursor"
@@ -406,9 +440,9 @@ complete_uninstall() {
         "$HOME/.config/cognition"
         "$HOME/.config/devin"
         "$HOME/.config/Devin"
-        "$HOME/.openclaw"
         "$HOME/.config/opencode"
-        "$HOME/.codeium"
+        "$HOME/.opencode"
+        "$HOME/.openclaw"
     )
     
     for dir in "${install_dirs[@]}"; do
@@ -428,8 +462,8 @@ complete_uninstall() {
     # Remove arquivos consolidados no nível HOME
     local consolidated_files=(
         "$HOME/.cursorrules"
-        "$HOME/.windsurfrules"
         "$HOME/.devinrules"
+        "$HOME/.opencodeignore"
         "$HOME/AGENTS.md"
         "$HOME/CLAUDE.md"
         "$HOME/GEMINI.md"

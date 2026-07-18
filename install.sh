@@ -7,16 +7,17 @@
 #   ./install.sh --all, -a        Instala para todas as IDEs/CLIs
 #   ./install.sh --devin, -d      Instala para Devin / Devin Review / Devin CLI
 #   ./install.sh --claude, -c     Instala para Claude Code
-#   ./install.sh --devin-desktop, -dd   Instala para Devin Desktop (formerly Windsurf)
-#   ./install.sh --windsurf, -w   Instala para Windsurf (Cascade) - legado, use --devin-desktop
+#   ./install.sh --devin-desktop, -dd   Instala para Devin Desktop
+#   ./install.sh --devin-cli, -dc        Instala para Devin CLI
+#   ./install.sh --opencode-desktop, -od Instala para OpenCode Desktop
+#   ./install.sh --opencode-cli, -oc     Instala para OpenCode CLI
+#   ./install.sh --opencode, -o          Instala para OpenCode Desktop + CLI (atalho)
 #   ./install.sh --vscode, -v     Instala para VS Code (GitHub Copilot)
 #   ./install.sh --cursor         Instala para Cursor
 #   ./install.sh --gemini, -g     Instala para Gemini CLI (Google)
 #   ./install.sh --antigravity    Instala para Google Antigravity IDE
 #   ./install.sh --agy            Instala para Google Antigravity CLI (agy)
 #   ./install.sh --openclaw, -o   Instala para OpenClaw
-#   ./install.sh --opencode, -p   Instala para OpenCode
-#   ./install.sh --dry-run        Visualiza o que seria instalado (nao altera)
 #   ./install.sh --github-token <TOKEN>  Token GitHub para download do RTK
 #   ./install.sh --help, -h       Exibe ajuda
 #
@@ -56,8 +57,8 @@ log_error() {
 
 # Flags de IDEs selecionadas
 INSTALL_VSCODE=false
-INSTALL_WINDSURF=false
 INSTALL_DEVIN_DESKTOP=false
+INSTALL_DEVIN_CLI=false
 INSTALL_CURSOR=false
 INSTALL_DEVIN=false
 INSTALL_CLAUDE=false
@@ -65,10 +66,8 @@ INSTALL_GEMINI=false
 INSTALL_ANTIGRAVITY=false
 INSTALL_AGY=false
 INSTALL_OPENCLAW=false
-INSTALL_OPENCODE=false
-
-# Modo dry-run (nao faz alteracoes, apenas preview)
-DRY_RUN=false
+INSTALL_OPENCODE_DESKTOP=false
+INSTALL_OPENCODE_CLI=false
 
 # GitHub Token para download do RTK (parametro --github-token ou env GITHUB_TOKEN)
 GITHUB_TOKEN_PARAM=""
@@ -86,20 +85,21 @@ show_help() {
     echo
     echo -e "${YELLOW}Opcoes de IDE:${NC}"
     echo "  --devin,    -d          Instala para Devin / Devin Review / Devin CLI"
+    echo "  --devin-desktop, -dd    Instala para Devin Desktop"
+    echo "  --devin-cli, -dc        Instala para Devin CLI (terminal)"
     echo "  --claude,   -c          Instala para Claude Code"
-    echo "  --devin-desktop, -dd   Instala para Devin Desktop (formerly Windsurf)"
-    echo "  --windsurf, -w          Instala para Windsurf (Cascade) - legado"
     echo "  --vscode,   -v          Instala para VS Code (GitHub Copilot)"
     echo "  --cursor                Instala para Cursor"
+    echo "  --opencode, -o          Instala para OpenCode Desktop + OpenCode CLI"
+    echo "  --opencode-desktop, -od Instala para OpenCode Desktop"
+    echo "  --opencode-cli, -oc     Instala para OpenCode CLI (terminal)"
+    echo "  --openclaw              Instala para OpenClaw (legado, use --opencode)"
     echo "  --gemini,   -g          Instala para Gemini CLI (Google)"
     echo "  --antigravity           Instala para Google Antigravity IDE"
     echo "  --agy                   Instala para Google Antigravity CLI (agy)"
-    echo "  --openclaw, -o          Instala para OpenClaw"
-    echo "  --opencode, -p          Instala para OpenCode"
     echo "  --all,      -a          Instala para todas as IDEs/CLIs"
     echo
     echo -e "${YELLOW}Outras opcoes:${NC}"
-    echo "  --dry-run               Visualiza o que seria instalado (nao altera)"
     echo "  --github-token <TOKEN>  Token GitHub para download do RTK (evita rate-limit)"
     echo "  --help, -h              Exibe esta mensagem de ajuda"
     echo
@@ -107,68 +107,55 @@ show_help() {
     echo "  GITHUB_TOKEN            Token GitHub para download do RTK (alternativa ao --github-token)"
     echo
     echo -e "${YELLOW}Exemplos:${NC}"
-    echo "  ./install.sh --all                    # Todas as IDEs"
-    echo "  ./install.sh --vscode                 # Apenas VS Code"
-    echo "  ./install.sh --devin --claude         # Devin + Claude"
-    echo "  ./install.sh --devin-desktop --vscode # Devin Desktop + VS Code"
-    echo "  ./install.sh --gemini                 # Apenas Gemini CLI"
-    echo "  ./install.sh -a                       # Todas as IDEs/CLIs (atalho)"
-    echo "  ./install.sh -d -c -dd                # Devin + Claude + Devin Desktop (atalho)"
-    echo "  ./install.sh -c                       # Apenas Claude Code (atalho)"
-    echo "  ./install.sh --all --github-token ghp_xxx  # Com token GitHub para RTK"
-    echo "  GITHUB_TOKEN=ghp_xxx ./install.sh --all    # Mesmo via env var"
+    echo "  ./install.sh --all                              # Todas as IDEs/CLIs"
+    echo "  ./install.sh --vscode                           # Apenas VS Code"
+    echo "  ./install.sh --devin --claude --devin-desktop   # Devin + Claude + Devin Desktop"
+    echo "  ./install.sh --opencode-desktop --vscode        # OpenCode Desktop + VS Code"
+    echo "  ./install.sh --devin-cli                        # Apenas Devin CLI"
+    echo "  ./install.sh -a                                 # Todas as IDEs/CLIs (atalho)"
+    echo "  ./install.sh -d -c -dd                          # Devin + Claude + Devin Desktop (atalho)"
+    echo "  ./install.sh -od -oc                            # OpenCode Desktop + CLI (atalho)"
+    echo "  ./install.sh --all --github-token ghp_xxx       # Com token GitHub para RTK"
+    echo "  GITHUB_TOKEN=ghp_xxx ./install.sh --all         # Mesmo via env var"
     echo
     echo -e "${YELLOW}O que sera instalado:${NC}"
     echo
-    echo "  IDE/CLI          Skills              Rules                    Knowledge"
-    echo "  --------------- ------------------- ------------------------ -------------------"
-    echo "  VS Code          ~/.github/skills    ~/.copilot/instructions  ~/.copilot/knowledge"
-    echo "                                       ~/.github/copilot-instructions.md (consolidado)"
-    echo "  Devin Desktop    ~/.devin/skills     ~/.devin/rules           ~/.devin/knowledge"
-    echo "  (formerly       ~/.codeium/windsurf/skills (legacy read)    ~/.codeium/windsurf/knowledge (legacy)"
-    echo "   Windsurf)       ~/.agents/skills (universal)                ~/.devin/AGENTS.md"
-    echo "  Windsurf         ~/.windsurf/skills  ~/.windsurf/rules        ~/.windsurf/knowledge"
-    echo "  (legacy)         ~/.windsurfrules (consolidado)"
-    echo "                   ~/.codeium/windsurf/memories/global_rules.md (global, sempre ativo)"
-    echo "  Cursor           ~/.cursor/skills    ~/.cursor/rules          ~/.cursor/knowledge"
-    echo "                                       ~/.cursorrules (consolidado)"
-    echo "  Devin            ~/.agents/skills     (via Cursor/Devin Desktop) ~/.devin/knowledge"
-    echo "                   + ~/.cognition/skills  (Devin-specific)"
-    echo "                   + ~/.devin/skills  (compatibilidade)"
-    echo "                   + ~/.config/devin/skills  (Devin CLI)"
-    echo "                   + ~/.config/devin/knowledge  (Devin CLI)"
-    echo "                   + AGENTS.md -> ~/.devin/AGENTS.md"
-    echo "  Claude           ~/.claude/skills    ~/.claude/rules          ~/.claude/knowledge"
-    echo "                                       ~/.claude/CLAUDE.md (instrucoes globais)"
-    echo "                                       ~/.claude/settings.json (permissoes)"
-    echo "                                       ~/.claude/commands/ (slash commands)"
-    echo "  Gemini CLI       ~/.gemini/skills    ~/.gemini/GEMINI.md      ~/.gemini/knowledge"
-    echo "  Google Antigravity ~/.gemini/skills    ~/.gemini/ANTIGRAVITY.md ~/.gemini/knowledge"
-    echo "  IDE              .agent/skills (workspace) .agent/CLAUDE.md .agent/knowledge"
-    echo "  Google Antigravity ~/.gemini/antigravity-cli/skills  (CLI-specific)"
-    echo "  CLI (agy)        .agent/skills (workspace) .agent/CLAUDE.md .agent/knowledge"
-    echo "                  ~/.gemini/antigravity-cli/AGY.md  (CLI-specific)"
-    echo "  OpenClaw         ~/.openclaw/skills   ~/.openclaw/rules        ~/.openclaw/knowledge"
-    echo "  OpenCode         ~/.config/opencode/skills  ~/.config/opencode/AGENTS.md  —"
+    echo "  IDE/CLI          Skills                        Rules                        Knowledge"
+    echo "  --------------- ----------------------------- ---------------------------- -------------------"
+    echo "  VS Code          ~/.github/skills              ~/.copilot/instructions      ~/.copilot/knowledge"
+    echo "                                                 ~/.github/copilot-         (via Copilot settings)"
+    echo "                                                 instructions.md"
+    echo "  Devin Desktop    ~/.devin/skills               ~/.devin/rules.md            ~/.devin/knowledge"
+    echo "                   ~/.agents/skills (universal)  ~/.devin/AGENTS.md"
+    echo "  Devin CLI        ~/.config/devin/skills        ~/.config/devin/rules*.md    ~/.config/devin/knowledge"
+    echo "                   ~/.devin/skills (compat)      ~/.cursor/rules (fallback)"
+    echo "  Cursor           ~/.cursor/skills              ~/.cursor/rules              ~/.cursor/knowledge"
+    echo "                                                 ~/.cursorrules"
+    echo "  OpenCode Desktop ~/.opencode/skills            ~/.opencode/rules.md         ~/.opencode/knowledge"
+    echo "  OpenCode CLI     ~/.config/opencode/skills     ~/.config/opencode/rules*.md ~/.config/opencode/knowledge"
+    echo "  OpenClaw (leg.)  ~/.openclaw/skills            ~/.openclaw/rules            ~/.openclaw/knowledge"
+    echo "  Claude           ~/.claude/skills               ~/.claude/rules             ~/.claude/knowledge"
+    echo "                                                 ~/.claude/CLAUDE.md"
+    echo "                                                 ~/.claude/settings.json"
+    echo "                                                 ~/.claude/commands/"
+    echo "  Gemini CLI       ~/.gemini/skills               ~/.gemini/GEMINI.md         ~/.gemini/knowledge"
+    echo "  Google Antigrav. ~/.gemini/skills               ~/.gemini/ANTIGRAVITY.md    ~/.gemini/knowledge"
+    echo "  AGY CLI          ~/.gemini/antigravity-cli/    ~/.gemini/antigravity-cli/  ~/.gemini/antigravity-cli/"
+    echo "                   skills                        AGY.md                      knowledge"
     echo
     echo "  Base: ~/.agents/skills (sempre instalado)"
     echo "  Base: ~/.agents/harness/ (templates do Agent Harness)"
     echo "  Base: ~/.agents/AGENTS_CLI.md (instrucoes genericas)"
     echo
     echo -e "${YELLOW}Documentacao:${NC}"
-    echo "  VS Code:      https://code.visualstudio.com/docs/copilot/customization/custom-instructions"
-    echo "  Devin Desktop: https://docs.devin.ai/desktop/devin-desktop-faq"
-    echo "  Windsurf:     https://docs.windsurf.com/windsurf/cascade/agents-md (legacy)"
-    echo "  Cursor:       https://docs.cursor.com/context/rules"
-    echo "  Devin:        https://docs.devin.ai/work-with-devin/devin-review"
-    echo "  Devin CLI:    https://cli.devin.ai/docs/extensibility/skills/overview"
-    echo "  Claude:       https://docs.anthropic.com/en/docs/claude-code"
-    echo "                https://docs.anthropic.com/en/docs/claude-code/slash-commands"
-    echo "  Gemini:       https://geminicli.com/docs/"
-    echo "  Antigravity:  https://antigravity.google/docs/cli-overview"
-    echo "                https://antigravity.google/docs/ide-overview"
-    echo "  OpenClaw:     https://openclaw.dev/docs/"
-    echo "  OpenCode:     https://opencode.ai/docs/"
+    echo "  VS Code:        https://code.visualstudio.com/docs/copilot/customization/custom-instructions"
+    echo "  Devin Desktop:  https://docs.devin.ai/desktop/devin-desktop-faq"
+    echo "  Devin CLI:      https://cli.devin.ai/docs"
+    echo "  Cursor:         https://docs.cursor.com/context/rules"
+    echo "  OpenCode:       https://opencode.dev/docs (ajustar conforme doc oficial)"
+    echo "  OpenClaw:       https://openclaw.dev/docs/"
+    echo "  Claude:         https://docs.anthropic.com/en/docs/claude-code"
+    echo "  Gemini:         https://geminicli.com/docs/"
     echo
 }
 
@@ -190,8 +177,8 @@ parse_args() {
                 ;;
             --all|-a)
                 INSTALL_VSCODE=true
-                INSTALL_WINDSURF=true
                 INSTALL_DEVIN_DESKTOP=true
+                INSTALL_DEVIN_CLI=true
                 INSTALL_CURSOR=true
                 INSTALL_DEVIN=true
                 INSTALL_CLAUDE=true
@@ -199,7 +186,8 @@ parse_args() {
                 INSTALL_ANTIGRAVITY=true
                 INSTALL_AGY=true
                 INSTALL_OPENCLAW=true
-                INSTALL_OPENCODE=true
+                INSTALL_OPENCODE_DESKTOP=true
+                INSTALL_OPENCODE_CLI=true
                 ;;
             --vscode|-v)
                 INSTALL_VSCODE=true
@@ -207,8 +195,8 @@ parse_args() {
             --devin-desktop|-dd)
                 INSTALL_DEVIN_DESKTOP=true
                 ;;
-            --windsurf|-w)
-                INSTALL_WINDSURF=true
+            --devin-cli|-dc)
+                INSTALL_DEVIN_CLI=true
                 ;;
             --cursor)
                 INSTALL_CURSOR=true
@@ -228,14 +216,18 @@ parse_args() {
             --agy)
                 INSTALL_AGY=true
                 ;;
-            --openclaw|-o)
+            --opencode-desktop|-od)
+                INSTALL_OPENCODE_DESKTOP=true
+                ;;
+            --opencode-cli|-oc)
+                INSTALL_OPENCODE_CLI=true
+                ;;
+            --opencode|-o)
+                INSTALL_OPENCODE_DESKTOP=true
+                INSTALL_OPENCODE_CLI=true
+                ;;
+            --openclaw)
                 INSTALL_OPENCLAW=true
-                ;;
-            --opencode|-p)
-                INSTALL_OPENCODE=true
-                ;;
-            --dry-run)
-                DRY_RUN=true
                 ;;
             --github-token)
                 shift
@@ -262,7 +254,8 @@ parse_args() {
 backup_dir_if_exists() {
     local dir_path="$1"
     if [ -d "$dir_path" ] && [ -n "$(ls -A "$dir_path" 2>/dev/null)" ]; then
-        local backup_path="${dir_path}.backup.$(date +%Y%m%d_%H%M%S)"
+        local backup_path
+        backup_path="${dir_path}.backup.$(date +%Y%m%d_%H%M%S)"
         log_info "Backup: $dir_path -> $backup_path"
         mv "$dir_path" "$backup_path"
     fi
@@ -272,7 +265,8 @@ backup_dir_if_exists() {
 backup_file_if_exists() {
     local file_path="$1"
     if [ -f "$file_path" ]; then
-        local backup_path="${file_path}.backup.$(date +%Y%m%d_%H%M%S)"
+        local backup_path
+        backup_path="${file_path}.backup.$(date +%Y%m%d_%H%M%S)"
         log_info "Backup: $file_path -> $backup_path"
         cp "$file_path" "$backup_path"
     fi
@@ -296,14 +290,16 @@ generate_consolidated_rules() {
     case "$platform" in
         vscode)        ide_row="| VS Code / Copilot | \`~/.github/skills/\` | \`~/.copilot/instructions/\` | \`~/.copilot/knowledge/\` |" ;;
         devin-desktop) ide_row="| Devin Desktop | \`~/.devin/skills/\` | \`~/.devin/rules/\` | \`~/.devin/knowledge/\` |" ;;
-        windsurf)      ide_row="| Windsurf | \`~/.windsurf/skills/\` | \`~/.windsurf/rules/\` | \`~/.windsurf/knowledge/\` |" ;;
+        devin-cli)     ide_row="| Devin CLI | \`~/.config/devin/skills/\` | \`~/.config/devin/rules*.md\` | \`~/.config/devin/knowledge/\` |" ;;
         cursor)        ide_row="| Cursor | \`~/.cursor/skills/\` | \`~/.cursor/rules/\` | \`~/.cursor/knowledge/\` |" ;;
         claude)        ide_row="| Claude Code | \`~/.claude/skills/\` | \`~/.claude/rules/\` | \`~/.claude/knowledge/\` |" ;;
         devin)         ide_row="| Devin | \`~/.devin/skills/\` | — | \`~/.devin/knowledge/\` |" ;;
+        opencode-desktop) ide_row="| OpenCode Desktop | \`~/.opencode/skills/\` | \`~/.opencode/rules.md\` | \`~/.opencode/knowledge/\` |" ;;
+        opencode-cli)  ide_row="| OpenCode CLI | \`~/.config/opencode/skills/\` | \`~/.config/opencode/rules*.md\` | \`~/.config/opencode/knowledge/\` |" ;;
+        openclaw)      ide_row="| OpenClaw | \`~/.openclaw/skills/\` | \`~/.openclaw/rules/\` | \`~/.openclaw/knowledge/\` |" ;;
         gemini)        ide_row="| Gemini CLI | \`~/.gemini/skills/\` | \`~/.gemini/GEMINI.md\` | \`~/.gemini/knowledge/\` |" ;;
         antigravity)   ide_row="| Google Antigravity IDE | \`~/.gemini/skills/\` | \`~/.gemini/ANTIGRAVITY.md\` | \`~/.gemini/knowledge/\` |" ;;
         agy)           ide_row="| Google Antigravity CLI (agy) | \`~/.gemini/antigravity-cli/skills/\` | \`~/.gemini/antigravity-cli/AGY.md\` | \`~/.gemini/antigravity-cli/knowledge/\` |" ;;
-        opencode)      ide_row="| OpenCode | \`~/.config/opencode/skills/\` | \`~/.config/opencode/AGENTS.md\` | — |" ;;
     esac
     if [ -n "$ide_row" ]; then
         sed -i "/| Base (todas)/a\\$ide_row" "$output_file"
@@ -365,7 +361,8 @@ install_base() {
     log_info "Instalando base (~/.agents/skills)..."
 
     if [ -d "$HOME/.agents/skills" ]; then
-        local backup_dir="$HOME/.agents/skills.backup.$(date +%Y%m%d_%H%M%S)"
+        local backup_dir
+        backup_dir="$HOME/.agents/skills.backup.$(date +%Y%m%d_%H%M%S)"
         log_info "Backup: ~/.agents/skills -> $backup_dir"
         mv "$HOME/.agents/skills" "$backup_dir"
     fi
@@ -385,7 +382,7 @@ install_base() {
     install_harness_templates
 
     # Ignore files -> ~/.agents/ (templates para otimizacao de tokens LLM)
-    local ignore_files=(".aiignore" ".cursorignore" ".geminiignore" ".devinignore" ".claudeignore" ".windsurfignore")
+    local ignore_files=(".aiignore" ".cursorignore" ".geminiignore" ".devinignore" ".claudeignore" ".opencodeignore")
     local copied_ignores=0
     for ignore_file in "${ignore_files[@]}"; do
         if [ -f "$ignore_file" ]; then
@@ -643,7 +640,10 @@ para agentes IA operarem em um repositorio com confiabilidade.
 |------------|-------------|-------------|--------|-------|
 | Devin | Sim | Sim | Sim | Via .cursor/rules |
 | Claude Code | Sim (CLAUDE.md) | Sim | Sim | Sim |
-| Windsurf | Sim | Sim | Sim | Sim |
+| Devin Desktop | Sim | Sim | Sim | Sim |
+| Devin CLI | Sim | Sim | Sim | Via ~/.config/devin/rules |
+| OpenCode Desktop | Sim | Sim | Sim | Sim |
+| OpenCode CLI | Sim | Sim | Sim | Via ~/.config/opencode/rules |
 | VS Code | Sim | Parcial | Sim | Via copilot-instructions |
 | Cursor | Sim | Sim | Sim | Sim |
 HARNESS_EOF
@@ -722,76 +722,61 @@ install_vscode() {
     log_success "VS Code (GitHub Copilot) instalado!"
 }
 
-install_windsurf() {
-    log_info "=== Instalando para Windsurf (Cascade) ==="
+install_devin_cli() {
+    log_info "=== Instalando para Devin CLI ==="
 
-    # Skills -> ~/.windsurf/skills
-    backup_dir_if_exists "$HOME/.windsurf/skills"
-    cp -a skills/* "$HOME/.windsurf/skills/" 2>/dev/null || true
-    log_success "Skills -> ~/.windsurf/skills"
+    # Devin CLI (terminal): https://cli.devin.ai/docs
+    # Ref: https://cli.devin.ai/docs/extensibility/skills/overview
 
-    # Rules -> ~/.windsurf/rules + consolidados
-    if [ -d "rules" ]; then
-        backup_dir_if_exists "$HOME/.windsurf/rules"
-        cp -a rules/*.instructions.md "$HOME/.windsurf/rules/" 2>/dev/null || true
-        log_success "Rules -> ~/.windsurf/rules"
+    # Skills -> ~/.config/devin/skills
+    backup_dir_if_exists "$HOME/.config/devin/skills"
+    cp -a skills/* "$HOME/.config/devin/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.config/devin/skills"
 
-        generate_consolidated_rules "$HOME/.windsurfrules" "windsurf"
-        log_success "Rules consolidadas -> ~/.windsurfrules"
-
-        # Global Rules -> ~/.codeium/windsurf/memories/global_rules.md
-        # Ref: https://docs.windsurf.com/windsurf/cascade/memories
-        # Escopo global (todos os workspaces), sempre ativo, limite 6.000 chars
-        mkdir -p "$HOME/.codeium/windsurf/memories"
-        backup_file_if_exists "$HOME/.codeium/windsurf/memories/global_rules.md"
-        generate_consolidated_rules "$HOME/.codeium/windsurf/memories/global_rules.md" "windsurf"
-        log_success "Global Rules -> ~/.codeium/windsurf/memories/global_rules.md"
-        local rules_size
-        rules_size=$(wc -c < "$HOME/.codeium/windsurf/memories/global_rules.md" 2>/dev/null || echo 0)
-        if [ "$rules_size" -gt 6000 ]; then
-            log_warning "global_rules.md excede o limite de 6.000 chars (${rules_size} chars). Windsurf pode truncar o conteudo."
-        fi
-    fi
-
-    # Knowledge -> ~/.windsurf/knowledge
+    # Knowledge -> ~/.config/devin/knowledge
     if [ -d "devin/knowledge_sources" ]; then
-        backup_dir_if_exists "$HOME/.windsurf/knowledge"
-        copy_knowledge_sources "$HOME/.windsurf/knowledge/"
-        log_success "Knowledge -> ~/.windsurf/knowledge"
+        backup_dir_if_exists "$HOME/.config/devin/knowledge"
+        copy_knowledge_sources "$HOME/.config/devin/knowledge/"
+        log_success "Knowledge -> ~/.config/devin/knowledge"
     fi
 
-    # AGENTS_CLI.md -> ~/.windsurf/AGENTS.md (instrucoes genericas do harness)
-    if [ -f "AGENTS_CLI.md" ]; then
-        mkdir -p "$HOME/.windsurf"
-        backup_file_if_exists "$HOME/.windsurf/AGENTS.md"
-        cp AGENTS_CLI.md "$HOME/.windsurf/AGENTS.md"
-        log_success "AGENTS_CLI.md -> ~/.windsurf/AGENTS.md"
-    elif [ -f "AGENTS.md" ]; then
-        mkdir -p "$HOME/.windsurf"
-        backup_file_if_exists "$HOME/.windsurf/AGENTS.md"
-        cp AGENTS.md "$HOME/.windsurf/AGENTS.md"
-        log_success "AGENTS.md -> ~/.windsurf/AGENTS.md"
+    # Rules -> ~/.config/devin/rules + rules.md consolidado
+    if [ -d "rules" ]; then
+        backup_dir_if_exists "$HOME/.config/devin/rules"
+        cp -a rules/*.instructions.md "$HOME/.config/devin/rules/" 2>/dev/null || true
+        log_success "Rules -> ~/.config/devin/rules"
+
+        generate_consolidated_rules "$HOME/.config/devin/rules.md" "devin-cli"
+        log_success "Rules consolidadas -> ~/.config/devin/rules.md"
     fi
 
-    # .windsurfignore -> ~/.windsurf/.windsurfignore
-    if [ -f ".windsurfignore" ]; then
-        cp ".windsurfignore" "$HOME/.windsurf/.windsurfignore"
-        log_success ".windsurfignore -> ~/.windsurf/.windsurfignore"
+    # AGENTS.md -> ~/.config/devin/AGENTS.md
+    if [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.config/devin"
+        backup_file_if_exists "$HOME/.config/devin/AGENTS.md"
+        cp AGENTS.md "$HOME/.config/devin/AGENTS.md"
+        log_success "AGENTS.md -> ~/.config/devin/AGENTS.md"
     fi
 
-    # Hooks -> ~/.windsurf/hooks
-    install_hooks_for_ide "windsurf" "$HOME/.windsurf/hooks"
+    # .devinignore -> ~/.config/devin/.devinignore
+    if [ -f ".devinignore" ]; then
+        cp ".devinignore" "$HOME/.config/devin/.devinignore"
+        log_success ".devinignore -> ~/.config/devin/.devinignore"
+    fi
 
-    log_success "Windsurf (Cascade) instalado!"
+    # Hooks -> ~/.config/devin/hooks
+    install_hooks_for_ide "devin" "$HOME/.config/devin/hooks"
+
+    log_success "Devin CLI instalado!"
 }
 
 install_devin_desktop() {
-    log_info "=== Instalando para Devin Desktop (formerly Windsurf) ==="
+    log_info "=== Instalando para Devin Desktop ==="
 
-    # Devin Desktop uses new paths but also reads legacy Windsurf paths
+    # Devin Desktop: local IDE successor to Windsurf/Cascade
     # Ref: https://docs.devin.ai/desktop/devin-desktop-faq
 
-    # Skills -> ~/.devin/skills (new primary path)
+    # Skills -> ~/.devin/skills
     backup_dir_if_exists "$HOME/.devin/skills"
     cp -a skills/* "$HOME/.devin/skills/" 2>/dev/null || true
     log_success "Skills -> ~/.devin/skills"
@@ -827,24 +812,8 @@ install_devin_desktop() {
         log_success ".devinignore -> ~/.devin/.devinignore"
     fi
 
-    # Also install to legacy Windsurf paths for backward compatibility
-    # Devin Desktop reads from legacy paths during transition
-    log_info "Instalando tambem em paths legados do Windsurf para compatibilidade..."
-
-    # Skills -> ~/.codeium/windsurf/skills (legacy read)
-    backup_dir_if_exists "$HOME/.codeium/windsurf/skills"
-    cp -a skills/* "$HOME/.codeium/windsurf/skills/" 2>/dev/null || true
-    log_success "Skills -> ~/.codeium/windsurf/skills (legacy)"
-
-    # Knowledge -> ~/.codeium/windsurf/knowledge (legacy read)
-    if [ -d "devin/knowledge_sources" ]; then
-        backup_dir_if_exists "$HOME/.codeium/windsurf/knowledge"
-        copy_knowledge_sources "$HOME/.codeium/windsurf/knowledge/"
-        log_success "Knowledge -> ~/.codeium/windsurf/knowledge (legacy)"
-    fi
-
     # Hooks -> ~/.devin/hooks
-    install_hooks_for_ide "devin-desktop" "$HOME/.devin/hooks"
+    install_hooks_for_ide "devin" "$HOME/.devin/hooks"
 
     log_success "Devin Desktop instalado!"
 }
@@ -899,6 +868,108 @@ install_cursor() {
     log_success "Cursor instalado!"
 }
 
+install_opencode_desktop() {
+    log_info "=== Instalando para OpenCode Desktop ==="
+
+    # OpenCode Desktop: local IDE with agent support
+    # Ref: https://opencode.dev/docs
+
+    # Skills -> ~/.opencode/skills
+    backup_dir_if_exists "$HOME/.opencode/skills"
+    cp -a skills/* "$HOME/.opencode/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.opencode/skills"
+
+    # Rules -> ~/.opencode/rules + rules.md consolidado
+    if [ -d "rules" ]; then
+        backup_dir_if_exists "$HOME/.opencode/rules"
+        cp -a rules/*.instructions.md "$HOME/.opencode/rules/" 2>/dev/null || true
+        log_success "Rules -> ~/.opencode/rules"
+
+        generate_consolidated_rules "$HOME/.opencode/rules.md" "opencode-desktop"
+        log_success "Rules consolidadas -> ~/.opencode/rules.md"
+    fi
+
+    # Knowledge -> ~/.opencode/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.opencode/knowledge"
+        copy_knowledge_sources "$HOME/.opencode/knowledge/"
+        log_success "Knowledge -> ~/.opencode/knowledge"
+    fi
+
+    # AGENTS.md -> ~/.opencode/AGENTS.md
+    if [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.opencode"
+        backup_file_if_exists "$HOME/.opencode/AGENTS.md"
+        cp AGENTS.md "$HOME/.opencode/AGENTS.md"
+        log_success "AGENTS.md -> ~/.opencode/AGENTS.md"
+    fi
+
+    # .devinignore -> ~/.opencode/.opencodeignore (fallback ignore template)
+    if [ -f ".opencodeignore" ]; then
+        cp ".opencodeignore" "$HOME/.opencode/.opencodeignore"
+        log_success ".opencodeignore -> ~/.opencode/.opencodeignore"
+    elif [ -f ".devinignore" ]; then
+        cp ".devinignore" "$HOME/.opencode/.opencodeignore"
+        log_success ".devinignore -> ~/.opencode/.opencodeignore"
+    fi
+
+    # Hooks -> ~/.opencode/hooks
+    install_hooks_for_ide "opencode" "$HOME/.opencode/hooks"
+
+    log_success "OpenCode Desktop instalado!"
+}
+
+install_opencode_cli() {
+    log_info "=== Instalando para OpenCode CLI ==="
+
+    # OpenCode CLI: terminal agent
+    # Ref: https://opencode.dev/docs/cli
+
+    # Skills -> ~/.config/opencode/skills
+    backup_dir_if_exists "$HOME/.config/opencode/skills"
+    cp -a skills/* "$HOME/.config/opencode/skills/" 2>/dev/null || true
+    log_success "Skills -> ~/.config/opencode/skills"
+
+    # Knowledge -> ~/.config/opencode/knowledge
+    if [ -d "devin/knowledge_sources" ]; then
+        backup_dir_if_exists "$HOME/.config/opencode/knowledge"
+        copy_knowledge_sources "$HOME/.config/opencode/knowledge/"
+        log_success "Knowledge -> ~/.config/opencode/knowledge"
+    fi
+
+    # Rules -> ~/.config/opencode/rules + rules.md consolidado
+    if [ -d "rules" ]; then
+        backup_dir_if_exists "$HOME/.config/opencode/rules"
+        cp -a rules/*.instructions.md "$HOME/.config/opencode/rules/" 2>/dev/null || true
+        log_success "Rules -> ~/.config/opencode/rules"
+
+        generate_consolidated_rules "$HOME/.config/opencode/rules.md" "opencode-cli"
+        log_success "Rules consolidadas -> ~/.config/opencode/rules.md"
+    fi
+
+    # AGENTS.md -> ~/.config/opencode/AGENTS.md
+    if [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.config/opencode"
+        backup_file_if_exists "$HOME/.config/opencode/AGENTS.md"
+        cp AGENTS.md "$HOME/.config/opencode/AGENTS.md"
+        log_success "AGENTS.md -> ~/.config/opencode/AGENTS.md"
+    fi
+
+    # .devinignore -> ~/.config/opencode/.opencodeignore (fallback ignore template)
+    if [ -f ".opencodeignore" ]; then
+        cp ".opencodeignore" "$HOME/.config/opencode/.opencodeignore"
+        log_success ".opencodeignore -> ~/.config/opencode/.opencodeignore"
+    elif [ -f ".devinignore" ]; then
+        cp ".devinignore" "$HOME/.config/opencode/.opencodeignore"
+        log_success ".devinignore -> ~/.config/opencode/.opencodeignore"
+    fi
+
+    # Hooks -> ~/.config/opencode/hooks
+    install_hooks_for_ide "opencode" "$HOME/.config/opencode/hooks"
+
+    log_success "OpenCode CLI instalado!"
+}
+
 install_devin() {
     log_info "=== Instalando para Devin / Devin Review / Devin CLI ==="
 
@@ -911,7 +982,6 @@ install_devin() {
     #   .cursor/skills/<name>/SKILL.md
     #   .codex/skills/<name>/SKILL.md
     #   .cognition/skills/<name>/SKILL.md
-    #   .windsurf/skills/<name>/SKILL.md
 
     # Skills -> ~/.agents/skills (path recomendado pela doc oficial)
     # Ja instalado pelo install_base(), verificamos aqui
@@ -949,8 +1019,8 @@ install_devin() {
         log_success "Knowledge -> ~/.config/devin/knowledge (Devin CLI)"
     fi
 
-    # Rules -> ~/.cursor/rules e ~/.windsurfrules (para Devin Review)
-    # Devin CLI le rules de .cursor/rules/*.md, .cursorrules, .windsurf/rules/*.md, AGENTS.md
+    # Rules -> ~/.cursor/rules e ~/.config/devin/rules (para Devin Review / CLI)
+    # Devin CLI le rules de .cursor/rules/*.md, .cursorrules e ~/.config/devin/rules/*.md
     # Ref: https://cli.devin.ai/docs/extensibility/rules
     if [ -d "rules" ]; then
         if [ ! -d "$HOME/.cursor/rules" ] || [ -z "$(ls -A "$HOME/.cursor/rules" 2>/dev/null)" ]; then
@@ -958,14 +1028,18 @@ install_devin() {
             cp -a rules/*.instructions.md "$HOME/.cursor/rules/" 2>/dev/null || true
             log_success "Rules -> ~/.cursor/rules (para Devin Review / Devin CLI)"
         else
-            log_info "~/.cursor/rules ja existe, pulando (instale --cursor para atualizar)"
+            log_info "$HOME/.cursor/rules ja existe, pulando (instale --cursor para atualizar)"
         fi
 
-        if [ ! -f "$HOME/.windsurfrules" ]; then
-            generate_consolidated_rules "$HOME/.windsurfrules" "devin"
-            log_success "Rules consolidadas -> ~/.windsurfrules (para Devin Review / Devin CLI)"
+        backup_dir_if_exists "$HOME/.config/devin/rules"
+        cp -a rules/*.instructions.md "$HOME/.config/devin/rules/" 2>/dev/null || true
+        log_success "Rules -> ~/.config/devin/rules (Devin CLI)"
+
+        if [ ! -f "$HOME/.config/devin/rules.md" ]; then
+            generate_consolidated_rules "$HOME/.config/devin/rules.md" "devin-cli"
+            log_success "Rules consolidadas -> ~/.config/devin/rules.md (Devin CLI)"
         else
-            log_info "~/.windsurfrules ja existe, pulando (instale --windsurf para atualizar)"
+            log_info "$HOME/.config/devin/rules.md ja existe, pulando"
         fi
     fi
 
@@ -982,10 +1056,24 @@ install_devin() {
         log_success "AGENTS.md -> ~/.devin/AGENTS.md"
     fi
 
+    # AGENTS.md tambem no Devin CLI
+    if [ -f "AGENTS.md" ]; then
+        mkdir -p "$HOME/.config/devin"
+        backup_file_if_exists "$HOME/.config/devin/AGENTS.md"
+        cp AGENTS.md "$HOME/.config/devin/AGENTS.md"
+        log_success "AGENTS.md -> ~/.config/devin/AGENTS.md"
+    fi
+
     # .devinignore -> ~/.devin/.devinignore
     if [ -f ".devinignore" ]; then
         cp ".devinignore" "$HOME/.devin/.devinignore"
         log_success ".devinignore -> ~/.devin/.devinignore"
+    fi
+
+    # .devinignore -> ~/.config/devin/.devinignore
+    if [ -f ".devinignore" ]; then
+        cp ".devinignore" "$HOME/.config/devin/.devinignore"
+        log_success ".devinignore -> ~/.config/devin/.devinignore"
     fi
 
     # registry.json e exclusivo do AI Marketplace (AI Marketplace) - nao copiado na instalacao
@@ -1013,6 +1101,9 @@ install_devin() {
 
     # Hooks -> ~/.devin/hooks
     install_hooks_for_ide "devin" "$HOME/.devin/hooks"
+
+    # Hooks -> ~/.config/devin/hooks (Devin CLI)
+    install_hooks_for_ide "devin" "$HOME/.config/devin/hooks"
 
     log_success "Devin / Devin Review / Devin CLI instalado!"
 }
@@ -1097,7 +1188,7 @@ install_claude() {
 SETTINGS_EOF
         log_success "settings.json -> ~/.claude/settings.json"
     else
-        log_info "~/.claude/settings.json ja existe, mantendo configuracoes do usuario"
+        log_info "$HOME/.claude/settings.json ja existe, mantendo configuracoes do usuario"
     fi
 
     # commands/ -> ~/.claude/commands (slash commands customizados)
@@ -1170,7 +1261,7 @@ install_gemini() {
 
     # Rules -> ~/.gemini/GEMINI.md (contexto global consolidado)
     # Gemini CLI usa GEMINI.md como arquivo de contexto e instrucoes globais
-    # Similar ao .cursorrules e .windsurfrules para outros agentes
+    # Similar ao .cursorrules e .devinrules.md para outros agentes
     if [ -d "rules" ]; then
         generate_consolidated_rules "$HOME/.gemini/GEMINI.md" "gemini"
         log_success "Rules consolidadas -> ~/.gemini/GEMINI.md"
@@ -1219,7 +1310,7 @@ install_antigravity() {
     # Cada skill e um diretorio contendo SKILL.md
     # Ref: https://antigravity.google/docs/ide-overview
     # Nota: Este diretorio e compartilhado com todos os produtos Antigravity (IDE, CLI, SDK)
-    if [ ! -d "$HOME/.gemini/skills" ] || [ -z "$(ls -A $HOME/.gemini/skills 2>/dev/null)" ]; then
+    if [ ! -d "$HOME/.gemini/skills" ] || [ -z "$(ls -A "$HOME/.gemini/skills" 2>/dev/null)" ]; then
         backup_dir_if_exists "$HOME/.gemini/skills"
         cp -a skills/* "$HOME/.gemini/skills/" 2>/dev/null || true
         log_success "Skills -> ~/.gemini/skills (global - compartilhado IDE/CLI/SDK)"
@@ -1261,7 +1352,7 @@ install_antigravity() {
 
     # Knowledge -> ~/.gemini/knowledge (compartilhado com Gemini CLI)
     if [ -d "devin/knowledge_sources" ]; then
-        if [ ! -d "$HOME/.gemini/knowledge" ] || [ -z "$(ls -A $HOME/.gemini/knowledge 2>/dev/null)" ]; then
+        if [ ! -d "$HOME/.gemini/knowledge" ] || [ -z "$(ls -A "$HOME/.gemini/knowledge" 2>/dev/null)" ]; then
             backup_dir_if_exists "$HOME/.gemini/knowledge"
             copy_knowledge_sources "$HOME/.gemini/knowledge/"
             log_success "Knowledge -> ~/.gemini/knowledge"
@@ -1323,7 +1414,7 @@ install_antigravity() {
     # Hooks -> ~/.gemini/hooks (compartilhado com Gemini CLI)
     # Nota: Antigravity e Gemini CLI compartilham o mesmo diretorio de hooks
     # Se ja existir hooks do Gemini, mantemos eles (sao compativeis)
-    if [ ! -d "$HOME/.gemini/hooks" ] || [ -z "$(ls -A $HOME/.gemini/hooks 2>/dev/null)" ]; then
+    if [ ! -d "$HOME/.gemini/hooks" ] || [ -z "$(ls -A "$HOME/.gemini/hooks" 2>/dev/null)" ]; then
         install_hooks_for_ide "antigravity" "$HOME/.gemini/hooks"
         log_success "Hooks -> ~/.gemini/hooks"
     else
@@ -1355,21 +1446,19 @@ install_agy() {
         backup_dir_if_exists ".agent/skills"
         mkdir -p .agent
         cp -a skills/* ".agent/skills/" 2>/dev/null || true
-        log_success "Skills -> .agent/skills (workspace - compartilhado com IDE)"
+        log_success "Skills -> .agent/skills (workspace - especifico do projeto)"
     else
         log_info "Skills -> .agent/skills (ja existe, pulando)"
     fi
 
     # Rules -> ~/.gemini/antigravity-cli/AGY.md (contexto global consolidado)
     # Antigravity CLI usa AGY.md como arquivo de contexto e instrucoes globais
-    # Nota: Antigravity tambem e compativel com CLAUDE.md (99% compatibilidade)
     if [ -d "rules" ]; then
         generate_consolidated_rules "$HOME/.gemini/antigravity-cli/AGY.md" "agy"
         log_success "Rules consolidadas -> ~/.gemini/antigravity-cli/AGY.md"
     fi
 
     # CLAUDE.md -> .agent/CLAUDE.md (workspace-specific, compativel com Antigravity)
-    # Antigravity CLI e 99% compativel com Claude Code - pode usar CLAUDE.md nativamente
     if [ -f "CLAUDE.md" ] && [ ! -f ".agent/CLAUDE.md" ]; then
         mkdir -p .agent
         backup_file_if_exists ".agent/CLAUDE.md"
@@ -1386,7 +1475,7 @@ install_agy() {
         log_success "Knowledge -> ~/.gemini/antigravity-cli/knowledge"
     fi
 
-    # Knowledge -> .agent/knowledge (workspace-specific, compartilhado com IDE)
+    # Knowledge -> .agent/knowledge (workspace-specific)
     if [ -d "devin/knowledge_sources" ]; then
         if [ ! -d ".agent/knowledge" ] || [ -z "$(ls -A .agent/knowledge 2>/dev/null)" ]; then
             backup_dir_if_exists ".agent/knowledge"
@@ -1411,7 +1500,7 @@ install_agy() {
         log_success "AGENTS.md -> ~/.gemini/antigravity-cli/AGENTS.md"
     fi
 
-    # AGENTS.md -> .agent/AGENTS.md (workspace-specific, compartilhado com IDE)
+    # AGENTS.md -> .agent/AGENTS.md (workspace-specific)
     if [ ! -f ".agent/AGENTS.md" ]; then
         if [ -f "AGENTS.md" ]; then
             mkdir -p .agent
@@ -1433,7 +1522,6 @@ install_agy() {
     install_hooks_for_ide "agy" "$HOME/.gemini/antigravity-cli/hooks"
 
     log_success "Google Antigravity CLI (agy) instalado!"
-    log_info "Nota: Antigravity CLI e 99% compativel com Claude Code - skills podem ser compartilhadas"
 }
 
 install_openclaw() {
@@ -1475,107 +1563,6 @@ install_openclaw() {
     fi
 
     log_success "OpenClaw instalado!"
-}
-
-install_opencode() {
-    log_info "=== Instalando para OpenCode ==="
-
-    # Garantir que o diretorio base existe
-    mkdir -p "$HOME/.config/opencode"
-
-    # Skills -> ~/.config/opencode/skills (primary path)
-    # OpenCode also reads ~/.agents/skills (universal) and ~/.claude/skills (compat)
-    backup_dir_if_exists "$HOME/.config/opencode/skills"
-    cp -a skills/* "$HOME/.config/opencode/skills/" 2>/dev/null || true
-    log_success "Skills -> ~/.config/opencode/skills"
-
-    # Create global opencode.json with $schema if not present
-    if [ ! -f "$HOME/.config/opencode/opencode.json" ]; then
-        cat > "$HOME/.config/opencode/opencode.json" << 'OPENCODE_CONFIG_EOF'
-{
-  "$schema": "https://opencode.ai/config.json"
-}
-OPENCODE_CONFIG_EOF
-        log_success "opencode.json -> ~/.config/opencode/opencode.json"
-    else
-        log_info "~/.config/opencode/opencode.json ja existe, mantendo configuracao do usuario"
-    fi
-
-    # AGENTS.md -> ~/.config/opencode/AGENTS.md (global rules for OpenCode)
-    # Also append stripped rules/*.instructions.md so OpenCode loads the rules without relying on the instructions field.
-    if [ -f "AGENTS_CLI.md" ]; then
-        backup_file_if_exists "$HOME/.config/opencode/AGENTS.md"
-        cp AGENTS_CLI.md "$HOME/.config/opencode/AGENTS.md"
-        log_success "AGENTS_CLI.md -> ~/.config/opencode/AGENTS.md"
-    elif [ -f "AGENTS.md" ]; then
-        backup_file_if_exists "$HOME/.config/opencode/AGENTS.md"
-        cp AGENTS.md "$HOME/.config/opencode/AGENTS.md"
-        log_success "AGENTS.md -> ~/.config/opencode/AGENTS.md"
-    fi
-    if [ -f "$HOME/.config/opencode/AGENTS.md" ] && [ -d "rules" ]; then
-        for rule_file in rules/*.instructions.md; do
-            [ -f "$rule_file" ] || continue
-            {
-                echo
-                echo "---"
-                awk 'BEGIN{fm=0} /^---$/{fm++; if(fm<=2) next} fm>=2||fm==0{print}' "$rule_file" \
-                    | sed '/^---$/d' \
-                    | cat -s
-            } >> "$HOME/.config/opencode/AGENTS.md"
-        done
-        log_success "Regras consolidadas -> ~/.config/opencode/AGENTS.md"
-    fi
-
-    # .opencodeignore -> ~/.config/opencode/.opencodeignore
-    if [ -f ".opencodeignore" ]; then
-        cp ".opencodeignore" "$HOME/.config/opencode/.opencodeignore"
-        log_success ".opencodeignore -> ~/.config/opencode/.opencodeignore"
-    fi
-
-    # Workspace-specific config (per-project) -> .opencode/
-    if [ ! -d ".opencode/skills" ] || [ -z "$(ls -A .opencode/skills 2>/dev/null)" ]; then
-        backup_dir_if_exists ".opencode/skills"
-        mkdir -p .opencode
-        cp -a skills/* ".opencode/skills/" 2>/dev/null || true
-        log_success "Skills -> .opencode/skills (workspace)"
-    else
-        log_info "Skills -> .opencode/skills (ja existe, pulando)"
-    fi
-
-    if [ ! -f ".opencode/AGENTS.md" ]; then
-        if [ -f "AGENTS.md" ]; then
-            mkdir -p .opencode
-            backup_file_if_exists ".opencode/AGENTS.md"
-            cp AGENTS.md ".opencode/AGENTS.md"
-            log_success "AGENTS.md -> .opencode/AGENTS.md (workspace)"
-        fi
-    else
-        log_info "AGENTS.md -> .opencode/AGENTS.md (ja existe, pulando)"
-    fi
-    if [ -f ".opencode/AGENTS.md" ] && [ -d "rules" ]; then
-        for rule_file in rules/*.instructions.md; do
-            [ -f "$rule_file" ] || continue
-            {
-                echo
-                echo "---"
-                awk 'BEGIN{fm=0} /^---$/{fm++; if(fm<=2) next} fm>=2||fm==0{print}' "$rule_file" \
-                    | sed '/^---$/d' \
-                    | cat -s
-            } >> ".opencode/AGENTS.md"
-        done
-        log_success "Regras consolidadas -> .opencode/AGENTS.md (workspace)"
-    fi
-
-    # Optional: install OpenCode plugins if present
-    if [ -d "hooks/opencode/plugins" ]; then
-        mkdir -p "$HOME/.config/opencode/plugins"
-        cp -a hooks/opencode/plugins/* "$HOME/.config/opencode/plugins/" 2>/dev/null || true
-        log_success "Plugins -> ~/.config/opencode/plugins"
-    fi
-
-    log_success "OpenCode instalado!"
-    log_info "Nota: OpenCode carrega skills automaticamente via ~/.config/opencode/skills/ e ~/.agents/skills/"
-    log_info "Nota: OpenCode nao usa hooks shell; use plugins em ~/.config/opencode/plugins/ se necessario"
 }
 
 # ============================================================================
@@ -1815,27 +1802,24 @@ verify_installation() {
         [ -f "$HOME/.github/AGENTS.md" ] && log_success "  AGENTS.md: ~/.github/AGENTS.md"
     fi
 
-    if [ "$INSTALL_WINDSURF" = true ]; then
-        echo
-        log_info "Windsurf (Cascade):"
-        [ -d "$HOME/.windsurf/skills" ] && log_success "  Skills: ~/.windsurf/skills"
-        [ -d "$HOME/.windsurf/rules" ] && log_success "  Rules: ~/.windsurf/rules"
-        [ -f "$HOME/.windsurfrules" ] && log_success "  Rules consolidadas: ~/.windsurfrules"
-        [ -f "$HOME/.codeium/windsurf/memories/global_rules.md" ] && log_success "  Global Rules: ~/.codeium/windsurf/memories/global_rules.md"
-        [ -d "$HOME/.windsurf/knowledge" ] && log_success "  Knowledge: ~/.windsurf/knowledge"
-        [ -f "$HOME/.windsurf/AGENTS.md" ] && log_success "  AGENTS.md: ~/.windsurf/AGENTS.md"
-    fi
-
     if [ "$INSTALL_DEVIN_DESKTOP" = true ]; then
         echo
-        log_info "Devin Desktop (formerly Windsurf):"
+        log_info "Devin Desktop:"
         [ -d "$HOME/.devin/skills" ] && log_success "  Skills: ~/.devin/skills"
         [ -d "$HOME/.devin/rules" ] && log_success "  Rules: ~/.devin/rules"
         [ -f "$HOME/.devin/rules.md" ] && log_success "  Rules consolidadas: ~/.devin/rules.md"
         [ -d "$HOME/.devin/knowledge" ] && log_success "  Knowledge: ~/.devin/knowledge"
         [ -f "$HOME/.devin/AGENTS.md" ] && log_success "  AGENTS.md: ~/.devin/AGENTS.md"
-        [ -d "$HOME/.codeium/windsurf/skills" ] && log_success "  Skills (legacy): ~/.codeium/windsurf/skills"
-        [ -d "$HOME/.codeium/windsurf/knowledge" ] && log_success "  Knowledge (legacy): ~/.codeium/windsurf/knowledge"
+    fi
+
+    if [ "$INSTALL_DEVIN_CLI" = true ]; then
+        echo
+        log_info "Devin CLI:"
+        [ -d "$HOME/.config/devin/skills" ] && log_success "  Skills: ~/.config/devin/skills"
+        [ -d "$HOME/.config/devin/rules" ] && log_success "  Rules: ~/.config/devin/rules"
+        [ -f "$HOME/.config/devin/rules.md" ] && log_success "  Rules consolidadas: ~/.config/devin/rules.md"
+        [ -d "$HOME/.config/devin/knowledge" ] && log_success "  Knowledge: ~/.config/devin/knowledge"
+        [ -f "$HOME/.config/devin/AGENTS.md" ] && log_success "  AGENTS.md: ~/.config/devin/AGENTS.md"
     fi
 
     if [ "$INSTALL_CURSOR" = true ]; then
@@ -1860,10 +1844,12 @@ verify_installation() {
         [ -d "$HOME/.devin/playbooks" ] && log_success "  Playbooks: ~/.devin/playbooks"
         [ -d "$HOME/.devin/knowledge_sources" ] && log_success "  Knowledge Sources: ~/.devin/knowledge_sources"
         [ -d "$HOME/.config/devin/skills" ] && log_success "  Skills (Devin CLI): ~/.config/devin/skills"
+        [ -d "$HOME/.config/devin/rules" ] && log_success "  Rules (Devin CLI): ~/.config/devin/rules"
+        [ -f "$HOME/.config/devin/rules.md" ] && log_success "  Rules consolidadas (Devin CLI): ~/.config/devin/rules.md"
         [ -d "$HOME/.config/devin/knowledge" ] && log_success "  Knowledge (Devin CLI): ~/.config/devin/knowledge"
         [ -d "$HOME/.cursor/rules" ] && log_success "  Rules (Devin Review/CLI): ~/.cursor/rules"
-        [ -f "$HOME/.windsurfrules" ] && log_success "  Rules (Devin Review/CLI): ~/.windsurfrules"
         [ -f "$HOME/.devin/AGENTS.md" ] && log_success "  AGENTS.md: ~/.devin/AGENTS.md"
+        [ -f "$HOME/.config/devin/AGENTS.md" ] && log_success "  AGENTS.md (Devin CLI): ~/.config/devin/AGENTS.md"
     fi
 
     if [ "$INSTALL_CLAUDE" = true ]; then
@@ -1890,46 +1876,43 @@ verify_installation() {
     if [ "$INSTALL_ANTIGRAVITY" = true ]; then
         echo
         log_info "Google Antigravity IDE:"
-        [ -d "$HOME/.gemini/skills" ] && log_success "  Skills (global): ~/.gemini/skills"
-        [ -d ".agent/skills" ] && log_success "  Skills (workspace): .agent/skills"
+        [ -d "$HOME/.gemini/skills" ] && log_success "  Skills: ~/.gemini/skills"
         [ -f "$HOME/.gemini/ANTIGRAVITY.md" ] && log_success "  Rules consolidadas: ~/.gemini/ANTIGRAVITY.md"
-        [ -f ".agent/CLAUDE.md" ] && log_success "  CLAUDE.md (workspace): .agent/CLAUDE.md"
-        [ -d "$HOME/.gemini/knowledge" ] && log_success "  Knowledge (global): ~/.gemini/knowledge"
-        [ -d ".agent/knowledge" ] && log_success "  Knowledge (workspace): .agent/knowledge"
-        [ -f "$HOME/.gemini/AGENTS.md" ] && log_success "  AGENTS.md (global): ~/.gemini/AGENTS.md"
-        [ -f ".agent/AGENTS.md" ] && log_success "  AGENTS.md (workspace): .agent/AGENTS.md"
+        [ -d "$HOME/.gemini/knowledge" ] && log_success "  Knowledge: ~/.gemini/knowledge"
+        [ -f "$HOME/.gemini/AGENTS.md" ] && log_success "  AGENTS.md: ~/.gemini/AGENTS.md"
     fi
 
     if [ "$INSTALL_AGY" = true ]; then
         echo
         log_info "Google Antigravity CLI (agy):"
-        [ -d "$HOME/.gemini/antigravity-cli/skills" ] && log_success "  Skills (CLI-specific): ~/.gemini/antigravity-cli/skills"
-        [ -d ".agent/skills" ] && log_success "  Skills (workspace): .agent/skills"
+        [ -d "$HOME/.gemini/antigravity-cli/skills" ] && log_success "  Skills: ~/.gemini/antigravity-cli/skills"
         [ -f "$HOME/.gemini/antigravity-cli/AGY.md" ] && log_success "  Rules consolidadas: ~/.gemini/antigravity-cli/AGY.md"
-        [ -f ".agent/CLAUDE.md" ] && log_success "  CLAUDE.md (workspace): .agent/CLAUDE.md"
-        [ -d "$HOME/.gemini/antigravity-cli/knowledge" ] && log_success "  Knowledge (CLI-specific): ~/.gemini/antigravity-cli/knowledge"
-        [ -d ".agent/knowledge" ] && log_success "  Knowledge (workspace): .agent/knowledge"
-        [ -f "$HOME/.gemini/antigravity-cli/AGENTS.md" ] && log_success "  AGENTS.md (CLI-specific): ~/.gemini/antigravity-cli/AGENTS.md"
-        [ -f ".agent/AGENTS.md" ] && log_success "  AGENTS.md (workspace): .agent/AGENTS.md"
+        [ -d "$HOME/.gemini/antigravity-cli/knowledge" ] && log_success "  Knowledge: ~/.gemini/antigravity-cli/knowledge"
+        [ -f "$HOME/.gemini/antigravity-cli/AGENTS.md" ] && log_success "  AGENTS.md: ~/.gemini/antigravity-cli/AGENTS.md"
+    fi
+
+    if [ "$INSTALL_OPENCODE_DESKTOP" = true ] || [ "$INSTALL_OPENCODE_CLI" = true ]; then
+        echo
+        log_info "OpenCode:"
+        [ -d "$HOME/.opencode/skills" ] && log_success "  Skills (Desktop): ~/.opencode/skills"
+        [ -d "$HOME/.opencode/rules" ] && log_success "  Rules (Desktop): ~/.opencode/rules"
+        [ -f "$HOME/.opencode/rules.md" ] && log_success "  Rules consolidadas (Desktop): ~/.opencode/rules.md"
+        [ -d "$HOME/.opencode/knowledge" ] && log_success "  Knowledge (Desktop): ~/.opencode/knowledge"
+        [ -f "$HOME/.opencode/AGENTS.md" ] && log_success "  AGENTS.md (Desktop): ~/.opencode/AGENTS.md"
+        [ -d "$HOME/.config/opencode/skills" ] && log_success "  Skills (CLI): ~/.config/opencode/skills"
+        [ -d "$HOME/.config/opencode/rules" ] && log_success "  Rules (CLI): ~/.config/opencode/rules"
+        [ -f "$HOME/.config/opencode/rules.md" ] && log_success "  Rules consolidadas (CLI): ~/.config/opencode/rules.md"
+        [ -d "$HOME/.config/opencode/knowledge" ] && log_success "  Knowledge (CLI): ~/.config/opencode/knowledge"
+        [ -f "$HOME/.config/opencode/AGENTS.md" ] && log_success "  AGENTS.md (CLI): ~/.config/opencode/AGENTS.md"
     fi
 
     if [ "$INSTALL_OPENCLAW" = true ]; then
         echo
-        log_info "OpenClaw:"
+        log_info "OpenClaw (legacy):"
         [ -d "$HOME/.openclaw/skills" ] && log_success "  Skills: ~/.openclaw/skills"
         [ -d "$HOME/.openclaw/rules" ] && log_success "  Rules: ~/.openclaw/rules"
         [ -d "$HOME/.openclaw/knowledge" ] && log_success "  Knowledge: ~/.openclaw/knowledge"
         [ -f "$HOME/.openclaw/AGENTS.md" ] && log_success "  AGENTS.md: ~/.openclaw/AGENTS.md"
-    fi
-
-    if [ "$INSTALL_OPENCODE" = true ]; then
-        echo
-        log_info "OpenCode:"
-        [ -d "$HOME/.config/opencode/skills" ] && log_success "  Skills: ~/.config/opencode/skills"
-        [ -f "$HOME/.config/opencode/AGENTS.md" ] && log_success "  AGENTS.md: ~/.config/opencode/AGENTS.md"
-        [ -f "$HOME/.config/opencode/opencode.json" ] && log_success "  opencode.json: ~/.config/opencode/opencode.json"
-        [ -d ".opencode/skills" ] && log_success "  Skills (workspace): .opencode/skills"
-        [ -f ".opencode/AGENTS.md" ] && log_success "  AGENTS.md (workspace): .opencode/AGENTS.md"
     fi
 
     echo
@@ -1955,15 +1938,13 @@ show_post_install() {
         echo "  rm -rf ~/.github/skills ~/.copilot/instructions ~/.copilot/knowledge"
         echo "  rm -f ~/.github/copilot-instructions.md ~/.github/AGENTS.md"
     fi
-    if [ "$INSTALL_WINDSURF" = true ]; then
-        echo "  rm -rf ~/.windsurf/skills ~/.windsurf/rules ~/.windsurf/knowledge"
-        echo "  rm -f ~/.windsurfrules ~/.windsurf/AGENTS.md"
-        echo "  rm -f ~/.codeium/windsurf/memories/global_rules.md"
-    fi
     if [ "$INSTALL_DEVIN_DESKTOP" = true ]; then
         echo "  rm -rf ~/.devin/skills ~/.devin/rules ~/.devin/knowledge"
         echo "  rm -f ~/.devin/rules.md ~/.devin/AGENTS.md"
-        echo "  rm -rf ~/.codeium/windsurf/skills ~/.codeium/windsurf/knowledge"
+    fi
+    if [ "$INSTALL_DEVIN_CLI" = true ]; then
+        echo "  rm -rf ~/.config/devin/skills ~/.config/devin/rules ~/.config/devin/knowledge"
+        echo "  rm -f ~/.config/devin/rules.md ~/.config/devin/AGENTS.md"
     fi
     if [ "$INSTALL_CURSOR" = true ]; then
         echo "  rm -rf ~/.cursor/skills ~/.cursor/rules ~/.cursor/knowledge"
@@ -1987,74 +1968,27 @@ show_post_install() {
     if [ "$INSTALL_ANTIGRAVITY" = true ]; then
         echo "  rm -rf ~/.gemini/skills ~/.gemini/knowledge"
         echo "  rm -f ~/.gemini/ANTIGRAVITY.md ~/.gemini/AGENTS.md"
-        echo "  rm -rf .agent/skills .agent/knowledge"
-        echo "  rm -f .agent/CLAUDE.md .agent/AGENTS.md"
     fi
     if [ "$INSTALL_AGY" = true ]; then
         echo "  rm -rf ~/.gemini/antigravity-cli/skills ~/.gemini/antigravity-cli/knowledge"
         echo "  rm -f ~/.gemini/antigravity-cli/AGY.md ~/.gemini/antigravity-cli/AGENTS.md"
-        echo "  rm -rf .agent/skills .agent/knowledge"
-        echo "  rm -f .agent/CLAUDE.md .agent/AGENTS.md"
     fi
     if [ "$INSTALL_OPENCLAW" = true ]; then
         echo "  rm -rf ~/.openclaw/skills ~/.openclaw/rules ~/.openclaw/knowledge"
         echo "  rm -f ~/.openclaw/AGENTS.md"
     fi
-    if [ "$INSTALL_OPENCODE" = true ]; then
-        echo "  rm -rf ~/.config/opencode/skills"
-        echo "  rm -f ~/.config/opencode/AGENTS.md ~/.config/opencode/opencode.json"
-        echo "  rm -rf .opencode/skills"
-        echo "  rm -f .opencode/AGENTS.md"
+    if [ "$INSTALL_OPENCODE_DESKTOP" = true ]; then
+        echo "  rm -rf ~/.opencode/skills ~/.opencode/rules ~/.opencode/knowledge"
+        echo "  rm -f ~/.opencode/rules.md ~/.opencode/AGENTS.md"
+    fi
+    if [ "$INSTALL_OPENCODE_CLI" = true ]; then
+        echo "  rm -rf ~/.config/opencode/skills ~/.config/opencode/rules ~/.config/opencode/knowledge"
+        echo "  rm -f ~/.config/opencode/rules.md ~/.config/opencode/AGENTS.md"
     fi
 
     echo
     echo "  Para limpar backups: ./rm-backup.sh"
     echo
-}
-
-# ============================================================================
-# PREVIEW (dry-run)
-# ============================================================================
-
-show_preview() {
-    echo "========================================"
-    echo "  Agent Skills - Preview (dry-run)"
-    echo "========================================"
-    echo
-
-    local ides_selecionadas=""
-    [ "$INSTALL_VSCODE" = true ] && ides_selecionadas="${ides_selecionadas} VS-Code"
-    [ "$INSTALL_WINDSURF" = true ] && ides_selecionadas="${ides_selecionadas} Windsurf"
-    [ "$INSTALL_DEVIN_DESKTOP" = true ] && ides_selecionadas="${ides_selecionadas} Devin-Desktop"
-    [ "$INSTALL_CURSOR" = true ] && ides_selecionadas="${ides_selecionadas} Cursor"
-    [ "$INSTALL_DEVIN" = true ] && ides_selecionadas="${ides_selecionadas} Devin"
-    [ "$INSTALL_CLAUDE" = true ] && ides_selecionadas="${ides_selecionadas} Claude"
-    [ "$INSTALL_GEMINI" = true ] && ides_selecionadas="${ides_selecionadas} Gemini"
-    [ "$INSTALL_ANTIGRAVITY" = true ] && ides_selecionadas="${ides_selecionadas} Antigravity"
-    [ "$INSTALL_AGY" = true ] && ides_selecionadas="${ides_selecionadas} AGY"
-    [ "$INSTALL_OPENCLAW" = true ] && ides_selecionadas="${ides_selecionadas} OpenClaw"
-    [ "$INSTALL_OPENCODE" = true ] && ides_selecionadas="${ides_selecionadas} OpenCode"
-    log_info "IDEs/CLIs selecionadas:${ides_selecionadas}"
-
-    echo
-    log_info "Acoes que seriam executadas:"
-    echo "  - Copiar skills para ~/.agents/skills/"
-    [ "$INSTALL_VSCODE" = true ] && echo "  - Copiar skills para ~/.github/skills/ e ~/.copilot/instructions/"
-    [ "$INSTALL_WINDSURF" = true ] && echo "  - Copiar skills para ~/.windsurf/skills/ e ~/.windsurf/rules/"
-    [ "$INSTALL_DEVIN_DESKTOP" = true ] && echo "  - Copiar skills para ~/.devin/skills/ e ~/.devin/rules/"
-    [ "$INSTALL_CURSOR" = true ] && echo "  - Copiar skills para ~/.cursor/skills/ e ~/.cursor/rules/"
-    [ "$INSTALL_DEVIN" = true ] && echo "  - Copiar skills para ~/.devin/skills/ e ~/.config/devin/skills/"
-    [ "$INSTALL_CLAUDE" = true ] && echo "  - Copiar skills para ~/.claude/skills/ e ~/.claude/rules/"
-    [ "$INSTALL_GEMINI" = true ] && echo "  - Copiar skills para ~/.gemini/skills/ e regras para ~/.gemini/GEMINI.md"
-    [ "$INSTALL_ANTIGRAVITY" = true ] && echo "  - Copiar skills para ~/.gemini/skills/ e .agent/skills/"
-    [ "$INSTALL_AGY" = true ] && echo "  - Copiar skills para ~/.gemini/antigravity-cli/skills/"
-    [ "$INSTALL_OPENCLAW" = true ] && echo "  - Copiar skills para ~/.openclaw/skills/ e ~/.openclaw/rules/"
-    [ "$INSTALL_OPENCODE" = true ] && echo "  - Copiar skills para ~/.config/opencode/skills/ (e ~/.agents/skills/ como universal)"
-    [ "$INSTALL_OPENCODE" = true ] && echo "  - Criar/atualizar ~/.config/opencode/opencode.json e ~/.config/opencode/AGENTS.md"
-    [ "$INSTALL_OPENCODE" = true ] && echo "  - Criar .opencode/skills/ e .opencode/AGENTS.md (workspace)"
-    echo "  - Instalar/atualizar RTK (binario global)"
-    echo
-    log_info "Nenhuma alteracao foi feita."
 }
 
 # ============================================================================
@@ -2069,8 +2003,8 @@ main() {
 
     local ides_selecionadas=""
     [ "$INSTALL_VSCODE" = true ] && ides_selecionadas="${ides_selecionadas} VS-Code"
-    [ "$INSTALL_WINDSURF" = true ] && ides_selecionadas="${ides_selecionadas} Windsurf"
     [ "$INSTALL_DEVIN_DESKTOP" = true ] && ides_selecionadas="${ides_selecionadas} Devin-Desktop"
+    [ "$INSTALL_DEVIN_CLI" = true ] && ides_selecionadas="${ides_selecionadas} Devin-CLI"
     [ "$INSTALL_CURSOR" = true ] && ides_selecionadas="${ides_selecionadas} Cursor"
     [ "$INSTALL_DEVIN" = true ] && ides_selecionadas="${ides_selecionadas} Devin"
     [ "$INSTALL_CLAUDE" = true ] && ides_selecionadas="${ides_selecionadas} Claude"
@@ -2078,23 +2012,18 @@ main() {
     [ "$INSTALL_ANTIGRAVITY" = true ] && ides_selecionadas="${ides_selecionadas} Antigravity"
     [ "$INSTALL_AGY" = true ] && ides_selecionadas="${ides_selecionadas} AGY"
     [ "$INSTALL_OPENCLAW" = true ] && ides_selecionadas="${ides_selecionadas} OpenClaw"
-    [ "$INSTALL_OPENCODE" = true ] && ides_selecionadas="${ides_selecionadas} OpenCode"
+    [ "$INSTALL_OPENCODE_DESKTOP" = true ] && ides_selecionadas="${ides_selecionadas} OpenCode-Desktop"
+    [ "$INSTALL_OPENCODE_CLI" = true ] && ides_selecionadas="${ides_selecionadas} OpenCode-CLI"
     log_info "IDEs/CLIs selecionadas:${ides_selecionadas}"
     echo
 
     check_directory
-
-    if [ "$DRY_RUN" = true ]; then
-        show_preview
-        exit 0
-    fi
-
     install_base
     install_rtk
 
     [ "$INSTALL_VSCODE" = true ] && install_vscode
-    [ "$INSTALL_WINDSURF" = true ] && install_windsurf
     [ "$INSTALL_DEVIN_DESKTOP" = true ] && install_devin_desktop
+    [ "$INSTALL_DEVIN_CLI" = true ] && install_devin_cli
     [ "$INSTALL_CURSOR" = true ] && install_cursor
     [ "$INSTALL_DEVIN" = true ] && install_devin
     [ "$INSTALL_CLAUDE" = true ] && install_claude
@@ -2102,7 +2031,8 @@ main() {
     [ "$INSTALL_ANTIGRAVITY" = true ] && install_antigravity
     [ "$INSTALL_AGY" = true ] && install_agy
     [ "$INSTALL_OPENCLAW" = true ] && install_openclaw
-    [ "$INSTALL_OPENCODE" = true ] && install_opencode
+    [ "$INSTALL_OPENCODE_DESKTOP" = true ] && install_opencode_desktop
+    [ "$INSTALL_OPENCODE_CLI" = true ] && install_opencode_cli
 
     verify_installation
     show_post_install

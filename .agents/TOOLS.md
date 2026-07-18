@@ -17,10 +17,12 @@
 # install.sh
 --all          # Instala para todos os IDEs
 --base         # Apenas ~/.agents/skills
---devin        # Devin / Devin CLI
+--devin        # Devin / Devin Desktop
+--devin-cli    # Devin CLI
 --claude       # Claude Code
 --cursor       # Cursor
---windsurf     # Windsurf
+--opencode     # OpenCode / OpenCode Desktop
+--opencode-cli # OpenCode CLI
 --vscode       # VS Code / GitHub Copilot
 --gemini       # Gemini CLI
 --dry-run      # Simula execução sem modificar

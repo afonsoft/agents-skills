@@ -1,8 +1,13 @@
-# Hooks — OpenCode
+# OpenCode Hooks
 
-> OpenCode does **not** use shell session-start hooks. It uses a native plugin system (JavaScript/TypeScript) and the built-in `skill` tool to discover skills.
+OpenCode can load skills through its native `skill` tool (no session hook required), or use a shell session-start hook via `hooks.json`.
 
-This directory is a placeholder. `install.sh --opencode` does **not** copy `hooks/opencode/` to `~/.config/opencode/hooks/` because that is not a standard OpenCode path. If `hooks/opencode/plugins/` exists, the installer copies plugins to `~/.config/opencode/plugins/`.
+## Files
+
+| Arquivo | Funcao |
+|---------|--------|
+| `hooks.json` | Configuracao de hooks do OpenCode (sessionStart) |
+| `session-start` | Script que injeta catalogo de skills no inicio da sessao |
 
 ## How OpenCode loads skills
 
@@ -11,6 +16,16 @@ This directory is a placeholder. `install.sh --opencode` does **not** copy `hook
 - Project: `.opencode/skills/<name>/SKILL.md` or `.agents/skills/<name>/SKILL.md`
 
 OpenCode reads `SKILL.md` files and makes them available through the `skill` tool automatically. No session hook is required.
+
+## Instalacao
+
+```bash
+./install.sh --opencode
+./install.sh --opencode-desktop
+./install.sh --opencode-cli
+```
+
+Copia hooks para `~/.opencode/hooks/` (Desktop) ou `~/.config/opencode/hooks/` (CLI).
 
 ## Plugin hook (optional)
 

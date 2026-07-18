@@ -6,7 +6,7 @@ applyTo: '**'
 
 # Agent Skills — Global Rules
 
-> **Compatível com:** Devin, GitHub Copilot, Windsurf, Claude
+> **Compatível com:** Devin, Devin Desktop, Devin CLI, OpenCode, GitHub Copilot, Claude
 
 Você é um assistente de desenvolvimento. Siga estas regras ao gerar código, revisar PRs ou responder perguntas.
 

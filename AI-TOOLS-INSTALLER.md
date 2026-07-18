@@ -50,6 +50,19 @@ chmod +x install-ai-tools.sh
 ./install-ai-tools.sh --rtk
 ./install-ai-tools.sh --caveman
 ./install-ai-tools.sh --superpowers
+
+# Install for specific agents
+./install-ai-tools.sh --devin
+./install-ai-tools.sh --devin-cli
+./install-ai-tools.sh --devin-desktop
+./install-ai-tools.sh --opencode
+./install-ai-tools.sh --opencode-cli
+./install-ai-tools.sh --opencode-desktop
+./install-ai-tools.sh --claude
+./install-ai-tools.sh --cursor
+
+# Install all tools for all agents
+./install-ai-tools.sh --all --all-agents
 ```
 
 ## Tool Descriptions
@@ -179,7 +192,7 @@ rtk gain
 **Configuration paths**:
 - Config: `~/.config/devin/config.json` (Linux/Mac)
 - Config: `%APPDATA%\devin\config.json` (Windows)
-- Skills: `~/.config/devin/skills/` or `~/.devin/skills/`
+- Skills: `~/.config/devin/skills/`
 - AGENTS.md: `~/.config/devin/AGENTS.md`
 
 **RTK Configuration**:
@@ -224,10 +237,10 @@ rtk gain
 ### Devin Desktop
 
 **Configuration paths**:
-- Config: `~/.config/devin/config.json` (Linux/Mac)
+- Config: `~/.devin/config.json` (Linux/Mac)
 - Config: `%APPDATA%\devin\config.json` (Windows)
-- Skills: `~/.devin/skills/` or `~/.codeium/windsurf/skills/` (legacy)
-- Legacy paths: `~/.windsurf/skills/` (Windsurf compatibility)
+- Skills: `~/.devin/skills/`
+- AGENTS.md: `~/.devin/AGENTS.md`
 
 **RTK Configuration**:
 ```bash
@@ -235,8 +248,8 @@ rtk gain
 ```
 
 **What gets installed**:
-- Same as Devin CLI (AGENTS.md instructions)
-- Located at `~/.config/devin/AGENTS.md`
+- `~/.devin/AGENTS.md` - Manual RTK instructions
+- No native hook support yet (manual usage required)
 
 **Caveman Configuration**:
 ```bash
@@ -245,7 +258,6 @@ rtk gain
 
 **What gets installed**:
 - Auto-detects Devin Desktop installation
-- Also detects legacy Windsurf paths for compatibility
 - Skills: `/caveman`, `/caveman-commit`, `/caveman-compress`, `/caveman-review`
 
 **Superpowers Configuration**:
@@ -254,9 +266,57 @@ rtk gain
 ```
 
 **What gets installed**:
-- Use Claude Code integration (Devin Desktop uses Claude Code backend)
-- Install via Claude Code plugin marketplace
-- Skills available in Devin Desktop sessions
+- Manual skill installation instructions
+- Requires copying skills from Superpowers repository
+- No native support yet
+
+### OpenCode
+
+**Configuration paths**:
+- Config: `~/.opencode/config.json` (Linux/Mac)
+- Config: `~/.config/opencode/config.json` (Linux/Mac CLI)
+- Config: `%APPDATA%\opencode\config.json` (Windows)
+- Skills: `~/.opencode/skills/` (Desktop) or `~/.config/opencode/skills/` (CLI)
+- AGENTS.md: `~/.opencode/AGENTS.md` or `~/.config/opencode/AGENTS.md`
+
+**RTK Configuration**:
+```bash
+./install-ai-tools.sh --rtk --opencode
+```
+
+**What gets installed**:
+- `~/.opencode/AGENTS.md` - Manual RTK instructions
+- No native hook support yet (manual usage required)
+
+**Usage**:
+```bash
+# Manual usage (prefix with rtk)
+rtk git status
+rtk cargo test
+rtk npm test
+
+# Check savings
+rtk gain
+```
+
+**Caveman Configuration**:
+```bash
+./install-ai-tools.sh --caveman --opencode
+```
+
+**What gets installed**:
+- Manual skill installation instructions
+- Skills: `/caveman`, `/caveman-commit`, `/caveman-compress`, `/caveman-review`
+
+**Superpowers Configuration**:
+```bash
+./install-ai-tools.sh --superpowers --opencode
+```
+
+**What gets installed**:
+- Manual skill installation instructions
+- Requires copying skills from Superpowers repository
+- No native support yet
 
 ### Claude Code
 
@@ -490,6 +550,9 @@ Multiple options can be combined:
 
 # Install Caveman for Devin CLI and Claude Code
 ./install-ai-tools.sh --caveman --devin --claude
+
+# Install RTK for OpenCode
+./install-ai-tools.sh --rtk --opencode
 ```
 
 ### Error Handling
@@ -515,6 +578,9 @@ Install only specific tools for specific agents:
 
 # Caveman for Devin CLI only
 ./install-ai-tools.sh --caveman --devin
+
+# Caveman for OpenCode
+./install-ai-tools.sh --caveman --opencode
 
 # Superpowers for Claude Code only
 ./install-ai-tools.sh --superpowers --claude

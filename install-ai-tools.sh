@@ -36,7 +36,6 @@ INSTALL_FOR_GEMINI=false
 INSTALL_FOR_DEVIN=false
 INSTALL_FOR_CURSOR=false
 INSTALL_FOR_OPENCODE=false
-INSTALL_FOR_ALL_AGENTS=false
 
 # Funções de log
 log_info() {
@@ -95,9 +94,11 @@ show_help() {
     echo "  --gemini               Configura para Gemini CLI"
     echo "  --devin                Configura para Devin CLI"
     echo "  --devin-desktop        Configura para Devin Desktop"
+    echo "  --opencode             Configura para OpenCode Desktop + CLI"
+    echo "  --opencode-desktop     Configura para OpenCode Desktop"
+    echo "  --opencode-cli         Configura para OpenCode CLI"
     echo "  --claude               Configura para Claude Code"
     echo "  --cursor               Configura para Cursor"
-    echo "  --opencode             Configura para OpenCode"
     echo "  --all-agents           Configura para todos os agentes disponiveis"
     echo
     echo -e "${YELLOW}Outras opcoes:${NC}"
@@ -172,14 +173,14 @@ parse_args() {
             --devin-desktop)
                 INSTALL_FOR_DEVIN=true
                 ;;
+            --opencode|--opencode-desktop|--opencode-cli)
+                INSTALL_FOR_OPENCODE=true
+                ;;
             --claude)
                 INSTALL_FOR_CLAUDE=true
                 ;;
             --cursor)
                 INSTALL_FOR_CURSOR=true
-                ;;
-            --opencode)
-                INSTALL_FOR_OPENCODE=true
                 ;;
             --all-agents)
                 INSTALL_FOR_CLAUDE=true
@@ -187,7 +188,6 @@ parse_args() {
                 INSTALL_FOR_DEVIN=true
                 INSTALL_FOR_CURSOR=true
                 INSTALL_FOR_OPENCODE=true
-                INSTALL_FOR_ALL_AGENTS=true
                 ;;
             --dry-run|-d)
                 DRY_RUN=true
@@ -325,7 +325,8 @@ install_rtk() {
                 log_info "Tentando instalar RTK via binário pré-compilado..."
                 
                 local rtk_url="https://github.com/rtk-ai/rtk/releases/latest/download/rtk-x86_64-pc-windows-msvc.zip"
-                local temp_dir=$(mktemp -d)
+                local temp_dir
+                temp_dir=$(mktemp -d)
                 
                 if command_exists curl; then
                     log_info "Baixando RTK binário..."
@@ -503,7 +504,7 @@ install_caveman() {
                     
                     # Instala para Devin CLI (suporta --yes)
                     log_info "Instalando Caveman para Devin CLI..."
-                    if npx -y skills add JuliusBrussee/caveman --skill * -a devin --yes; then
+                    if npx -y skills add JuliusBrussee/caveman --skill ./* -a devin --yes; then
                         log_success "Caveman instalado para Devin CLI"
                         caveman_installed=true
                     else
@@ -512,7 +513,7 @@ install_caveman() {
                     
                     # Instala para OpenHands (suporta --yes)
                     log_info "Instalando Caveman para OpenHands..."
-                    if npx -y skills add JuliusBrussee/caveman --skill * -a openhands --yes; then
+                    if npx -y skills add JuliusBrussee/caveman --skill ./* -a openhands --yes; then
                         log_success "Caveman instalado para OpenHands"
                         caveman_installed=true
                     else
@@ -737,39 +738,6 @@ EOF
     fi
 }
 
-# Configura RTK para OpenCode
-configure_rtk_opencode() {
-    log_info "=== Configurando RTK para OpenCode ==="
-    
-    if [ "$DRY_RUN" = true ]; then
-        log_warning "DRY RUN: RTK seria configurado para OpenCode"
-        return 0
-    fi
-    
-    if ! command_exists rtk; then
-        log_error "RTK não instalado. Instale RTK primeiro com --rtk"
-        HAS_ERRORS=true
-        return 0
-    fi
-    
-    log_info "Executando: rtk init -g --opencode"
-    if rtk init -g --opencode; then
-        log_success "RTK configurado para OpenCode"
-        log_info "Arquivos criados (global):"
-        log_info "  - ~/.config/opencode/plugins/rtk.ts"
-        log_info "  - ~/.config/opencode/rules/rtk.md"
-        log_info "Reinicie OpenCode para ativar o plugin"
-    else
-        log_warning "Falha ao configurar RTK para OpenCode via init --opencode"
-        log_info "Alternativa manual:"
-        log_info "  1. Instale o plugin: npm install -g opencode-rtk"
-        log_info "  2. Adicione ao ~/.config/opencode/opencode.json:"
-        log_info '     { "plugin": ["opencode-rtk"] }'
-        log_info "  3. Certifique-se de que o binário 'rtk' está no PATH"
-        HAS_ERRORS=true
-    fi
-}
-
 # Configura Caveman para Devin CLI
 configure_caveman_devin() {
     log_info "=== Configurando Caveman para Devin CLI ==="
@@ -788,33 +756,6 @@ configure_caveman_devin() {
             log_info "Reinicie Devin CLI para ativar"
         else
             log_error "Falha ao instalar Caveman para Devin CLI"
-            HAS_ERRORS=true
-        fi
-    else
-        log_error "npx não encontrado. Instale Node.js primeiro"
-        HAS_ERRORS=true
-    fi
-}
-
-# Configura Caveman para OpenCode
-configure_caveman_opencode() {
-    log_info "=== Configurando Caveman para OpenCode ==="
-    
-    if [ "$DRY_RUN" = true ]; then
-        log_warning "DRY RUN: Caveman seria configurado para OpenCode"
-        return 0
-    fi
-    
-    log_info "Instalando Caveman para OpenCode..."
-    
-    if command_exists npx; then
-        if npx -y github:JuliusBrussee/caveman -- --only opencode; then
-            log_success "Caveman instalado para OpenCode"
-            log_info "Skills disponíveis: /caveman, /caveman-commit, /caveman-compress, /caveman-review"
-            log_info "Reinicie OpenCode para ativar"
-        else
-            log_warning "Falha ao instalar Caveman para OpenCode via npx"
-            log_info "Alternativa: execute manualmente 'npx -y github:JuliusBrussee/caveman -- --only opencode'"
             HAS_ERRORS=true
         fi
     else
@@ -862,21 +803,70 @@ configure_superpowers_devin() {
     fi
 }
 
+# Configura RTK para OpenCode
+configure_rtk_opencode() {
+    log_info "=== Configurando RTK para OpenCode ==="
+
+    if ! command_exists rtk; then
+        log_warning "RTK não está instalado. Instale com: $0 --rtk"
+        return 1
+    fi
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: RTK seria configurado para OpenCode"
+        return 0
+    fi
+
+    log_warning "RTK não tem suporte nativo para OpenCode ainda"
+    log_info "Alternativas:"
+    log_info "  1. Use AGENTS.md com instruções RTK em ~/.opencode/ ou ~/.config/opencode/"
+    log_info "  2. Configure manualmente hooks em ~/.opencode/hooks/ ou ~/.config/opencode/hooks/"
+    log_info "  3. Solicite suporte RTK para OpenCode em: https://github.com/rtk-ai/rtk"
+
+    local opencode_config_dir=""
+    if [ "$OS" = "Windows" ]; then
+        opencode_config_dir="$APPDATA/opencode"
+    else
+        opencode_config_dir="$HOME/.opencode"
+    fi
+
+    if [ -d "$opencode_config_dir" ]; then
+        mkdir -p "$opencode_config_dir"
+    fi
+
+    log_info "Para usar RTK com OpenCode, adicione ao PATH e execute via shell: rtk <comando>"
+}
+
+# Configura Caveman para OpenCode
+configure_caveman_opencode() {
+    log_info "=== Configurando Caveman para OpenCode ==="
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: Caveman seria configurado para OpenCode"
+        return 0
+    fi
+
+    log_warning "Caveman não tem suporte nativo para OpenCode ainda"
+    log_info "Alternativas:"
+    log_info "  1. Instale skills do Caveman manualmente em ~/.opencode/skills/ ou ~/.config/opencode/skills/"
+    log_info "  2. Use Claude Code ou Cursor para Caveman (suporte nativo)"
+    log_info "  3. Acompanhe: https://getcaveman.dev"
+}
+
 # Configura Superpowers para OpenCode
 configure_superpowers_opencode() {
     log_info "=== Configurando Superpowers para OpenCode ==="
-    
+
     if [ "$DRY_RUN" = true ]; then
         log_warning "DRY RUN: Superpowers seria configurado para OpenCode"
         return 0
     fi
-    
-    # Superpowers é um plugin de Claude Code; no OpenCode use as skills do repositório agents-skills
-    log_warning "Superpowers não tem plugin nativo para OpenCode"
+
+    log_warning "Superpowers não tem suporte nativo para OpenCode ainda"
     log_info "Alternativas:"
-    log_info "  1. As skills do agents-skills já são copiadas para ~/.config/opencode/skills/"
-    log_info "  2. Clone https://github.com/obra/superpowers.git e copie skills/ para ~/.config/opencode/skills/"
-    log_info "  3. Use o comando 'skill' no OpenCode para carregar a skill desejada"
+    log_info "  1. Copie skills manualmente para ~/.opencode/skills/ ou ~/.config/opencode/skills/"
+    log_info "  2. Use Claude Code para Superpowers (suporte nativo)"
+    log_info "  3. Acompanhe: https://github.com/obra/superpowers"
 }
 
 # Função principal
@@ -941,7 +931,7 @@ main() {
             echo
         fi
     fi
-    
+
     if [ "$INSTALL_FOR_OPENCODE" = true ]; then
         if [ "$INSTALL_RTK" = true ]; then
             configure_rtk_opencode
@@ -956,7 +946,7 @@ main() {
             echo
         fi
     fi
-    
+
     # Resumo
     echo "========================================"
     echo "  Resumo da Instalação"
@@ -1019,11 +1009,11 @@ main() {
             echo "  - Configurado para Devin CLI (via AGENTS.md)"
         fi
         if [ "$INSTALL_FOR_OPENCODE" = true ]; then
-            echo "  - Configurado para OpenCode (plugin rtk.ts)"
+            echo "  - Configurado para OpenCode (AGENTS.md em ~/.opencode/ e ~/.config/opencode/)"
         fi
         echo
     fi
-    
+
     if [ "$INSTALL_CAVEMAN" = true ] && [ "$CAVEMAN_SUCCESS" = true ]; then
         echo "Caveman:"
         echo "  - Instalado para todos os agentes detectados"
@@ -1031,12 +1021,12 @@ main() {
             echo "  - Configurado especificamente para Devin CLI"
         fi
         if [ "$INSTALL_FOR_OPENCODE" = true ]; then
-            echo "  - Configurado para OpenCode"
+            echo "  - Configurado para OpenCode (instalação manual de skills)"
         fi
         echo "  - Skills disponíveis: /caveman, /caveman-commit, /caveman-compress, etc."
         echo
     fi
-    
+
     if [ "$INSTALL_SUPERPOWERS" = true ] && [ "$SUPERPOWERS_SUCCESS" = true ]; then
         echo "Superpowers:"
         if [ "$INSTALL_FOR_CLAUDE" = true ]; then
@@ -1050,7 +1040,7 @@ main() {
             echo "  - Reinicie Devin CLI para ativar"
         fi
         if [ "$INSTALL_FOR_OPENCODE" = true ]; then
-            echo "  - Configurado para OpenCode (via skills em ~/.config/opencode/skills/)"
+            echo "  - Configurado para OpenCode (via skills manuais)"
             echo "  - Skills: brainstorming, TDD, systematic debugging"
             echo "  - Reinicie OpenCode para ativar"
         fi

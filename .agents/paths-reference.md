@@ -8,8 +8,18 @@ The installer copies **skills + session hooks + AGENTS.md** — there are no rul
 ### Base (always installed)
 - **Skills**: `~/.agents/skills/`
 
-### Devin / Devin CLI
-- **Skills**: `~/.devin/skills/`, `~/.cognition/skills/`, `~/.config/devin/skills/`
+### Devin
+- **Skills**: `~/.devin/skills/`, `~/.cognition/skills/`
+- **Hooks**: `~/.devin/hooks/`
+- **Context**: `~/.devin/AGENTS.md`
+
+### Devin CLI
+- **Skills**: `~/.config/devin/skills/`
+- **Hooks**: `~/.config/devin/hooks/`
+- **Context**: `~/.config/devin/AGENTS.md`
+
+### Devin Desktop
+- **Skills**: `~/.devin/skills/`
 - **Hooks**: `~/.devin/hooks/`
 - **Context**: `~/.devin/AGENTS.md`
 
@@ -23,10 +33,20 @@ The installer copies **skills + session hooks + AGENTS.md** — there are no rul
 - **Hooks**: `~/.cursor/hooks/`
 - **Context**: `~/.cursor/AGENTS.md`
 
-### Windsurf (Cascade)
-- **Skills**: `~/.windsurf/skills/`
-- **Hooks**: `~/.windsurf/hooks/`
-- **Context**: `~/.windsurf/AGENTS.md`
+### OpenCode
+- **Skills**: `~/.opencode/skills/`, `~/.config/opencode/skills/`
+- **Hooks**: `~/.opencode/hooks/`, `~/.config/opencode/hooks/`
+- **Context**: `~/.opencode/AGENTS.md` or `~/.config/opencode/AGENTS.md`
+
+### OpenCode Desktop
+- **Skills**: `~/.opencode/skills/`
+- **Hooks**: `~/.opencode/hooks/`
+- **Context**: `~/.opencode/AGENTS.md`
+
+### OpenCode CLI
+- **Skills**: `~/.config/opencode/skills/`
+- **Hooks**: `~/.config/opencode/hooks/`
+- **Context**: `~/.config/opencode/AGENTS.md`
 
 ### VS Code (GitHub Copilot)
 - **Skills**: `~/.github/skills/`
@@ -78,6 +98,9 @@ The `install.sh` script:
 ```bash
 # After installation, skills are available at:
 ~/.agents/skills/your-skill/SKILL.md          # Universal
-~/.windsurf/skills/your-skill/SKILL.md        # Windsurf specific
+~/.devin/skills/your-skill/SKILL.md           # Devin Desktop
+~/.config/devin/skills/your-skill/SKILL.md    # Devin CLI
+~/.opencode/skills/your-skill/SKILL.md        # OpenCode Desktop
+~/.config/opencode/skills/your-skill/SKILL.md # OpenCode CLI
 ~/.claude/skills/your-skill/SKILL.md          # Claude specific
 ```

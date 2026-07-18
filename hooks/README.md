@@ -8,7 +8,7 @@ Cada subdiretorio contem os artefatos especificos de uma IDE/agente:
 
 - **[`claude/`](claude/)** — Shell hook (`SessionStart`), hooks.json, RTK rewrite/suggest hooks
 - **[`cursor/`](cursor/)** — Shell hook (`sessionStart`), hooks.json (formato Cursor)
-- **[`windsurf/`](windsurf/)** — Shell hook (`sessionStart`), hooks.json (formato Cursor/Windsurf)
+- **[`opencode/`](opencode/)** — Shell hook (`sessionStart`), hooks.json (formato Cursor/OpenCode)
 - **[`vscode/`](vscode/)** — Shell hook (`sessionStart`), hooks.json (formato Copilot)
 - **[`devin/`](devin/)** — Shell hook de session-start
 - **[`gemini/`](gemini/)** — Shell hook de session-start
@@ -41,9 +41,9 @@ O `install.sh` copia os hooks do subdiretorio correspondente para o diretorio de
 |--------|-----------|-------------|-------------|
 | Claude Code | Shell hook (`SessionStart`) | Sim | Sim (rewrite + suggest) |
 | Cursor | Shell hook (`sessionStart`) | Sim | Sim (rewrite) |
-| Windsurf | Shell hook (`sessionStart`) | Sim | Nao (rules file) |
+| OpenCode | Shell hook (`sessionStart`) | Sim | Nao (rules file) |
 | VS Code / Copilot | Shell hook (`sessionStart`) | Sim | Nao |
-| Devin | Shell hook | Sim | Nao |
+| Devin / Devin Desktop / Devin CLI | Shell hook | Sim | Nao |
 | Gemini CLI | Shell hook | Sim | Nao |
 | Google Antigravity IDE | Shell hook | Sim | Nao |
 | Google Antigravity CLI (agy) | Shell hook | Sim | Nao |

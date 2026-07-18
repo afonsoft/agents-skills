@@ -12,16 +12,17 @@ Baseado na documentação oficial do RTK (https://www.rtk-ai.app/docs/getting-st
 | VS Code Copilot | Shell hook (PreToolUse) | ✅ Sim | ✅ Hooks instalados |
 | GitHub Copilot CLI | Shell hook (preToolUse) | ✅ Sim | ✅ Hooks instalados |
 | Gemini CLI | Rust binary (BeforeTool) | ✅ Sim | ❌ Sem hooks específicos |
-| OpenCode | TypeScript plugin | ✅ Sim | ✅ Plugin configurado por rtk init -g --opencode |
+| OpenCode Desktop | TypeScript plugin | ✅ Sim | ✅ Plugin configurado por rtk init -g --opencode |
+| OpenCode CLI | TypeScript plugin | ✅ Sim | ✅ Plugin configurado por rtk init -g --opencode |
 | OpenClaw | TypeScript plugin | ✅ Sim | ❌ Sem suporte |
 | Pi | TypeScript extension | ✅ Sim | ❌ Sem suporte |
 | Hermes | Python plugin | ✅ Sim | ❌ Sem suporte |
 | Cline / Roo Code | Rules file (prompt-level) | ❌ N/A | ❌ Sem suporte |
-| Windsurf (Devin Desktop) | Rules file (prompt-level) | ❌ N/A | ❌ Sem suporte |
+| Devin Desktop | Rules file (prompt-level) | ❌ N/A | ❌ Sem suporte |
 | Codex CLI | AGENTS.md instructions | ❌ N/A | ❌ Sem suporte |
 | Kilo Code | Rules file (prompt-level) | ❌ N/A | ❌ Sem suporte |
 | Google Antigravity | Rules file (prompt-level) | ❌ N/A | ❌ Sem suporte |
-| Devin (Cloud/Desktop/CLI) | ❌ Não suportado | ❌ N/A | ❌ Sem suporte oficial |
+| Devin / Devin CLI | AGENTS.md instructions | ❌ N/A | ❌ Sem suporte oficial |
 
 ### Instalação RTK no agents-skills
 
@@ -35,7 +36,8 @@ Baseado na documentação oficial do RTK (https://www.rtk-ai.app/docs/getting-st
 - Hooks RTK para Gemini CLI (usaria Rust binary BeforeTool)
 - Hooks RTK para Google Antigravity (usa rules file, não hooks)
 - Hooks RTK para Devin (não suportado oficialmente)
-- Configuração RTK para Windsurf/Devin Desktop (usa rules file)
+- Configuração RTK para Devin Desktop (usa rules file)
+- Configuração RTK para OpenCode (usa AGENTS.md/rules file)
 
 ### Como configurar RTK manualmente
 
@@ -49,9 +51,14 @@ rtk init -g --gemini
 rtk init --agent antigravity    # Cria .agents/rules/antigravity-rtk-rules.md
 ```
 
-**Para Windsurf/Devin Desktop:**
+**Para Devin Desktop:**
 ```bash
-rtk init -g --agent windsurf
+rtk init -g --agent devin
+```
+
+**Para OpenCode:**
+```bash
+rtk init -g --agent opencode
 ```
 
 **Para Devin:**
@@ -70,7 +77,8 @@ Caveman é uma skill de comunicação comprimida que funciona em **qualquer agen
 **Plataformas suportadas:**
 - ✅ Claude Code
 - ✅ Cursor
-- ✅ Windsurf (Devin Desktop)
+- ✅ Devin Desktop
+- ✅ OpenCode
 - ✅ VS Code Copilot
 - ✅ Gemini CLI
 - ✅ Google Antigravity (IDE e CLI)
@@ -108,10 +116,10 @@ Caveman é uma skill de comunicação comprimida que funciona em **qualquer agen
 
 **Status:** Não corrigido - O usuário deve executar `rtk init --agent antigravity` manualmente após a instalação.
 
-### 4. Falta de configuração RTK para Windsurf/Devin Desktop
-**Problema:** RTK usa rules file para Windsurf, não hooks. O install.sh não configura isso automaticamente.
+### 4. Falta de configuração RTK para Devin Desktop e OpenCode
+**Problema:** RTK usa rules file para Devin Desktop e OpenCode, não hooks. O install.sh não configura isso automaticamente.
 
-**Status:** Não corrigido - O usuário deve executar `rtk init -g --agent windsurf` manualmente após a instalação.
+**Status:** Não corrigido - O usuário deve executar `rtk init -g --agent devin` (Devin Desktop) ou `rtk init -g --agent opencode` (OpenCode) manualmente após a instalação.
 
 ## Recomendações
 
@@ -122,8 +130,8 @@ Caveman é uma skill de comunicação comprimida que funciona em **qualquer agen
    # Configurar RTK para plataformas adicionais
    rtk init -g --gemini              # Gemini CLI
    rtk init --agent antigravity      # Google Antigravity
-   rtk init -g --agent windsurf      # Windsurf/Devin Desktop
-   rtk init -g --opencode            # OpenCode
+   rtk init -g --agent devin         # Devin Desktop
+   rtk init -g --agent opencode      # OpenCode
    ```
 
 2. **Para Devin:**

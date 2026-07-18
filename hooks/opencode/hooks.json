@@ -3,7 +3,7 @@
   "hooks": {
     "sessionStart": [
       {
-        "command": "./hooks/windsurf/session-start"
+        "command": "./hooks/opencode/session-start"
       }
     ]
   }
