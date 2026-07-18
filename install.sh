@@ -69,8 +69,20 @@ INSTALL_OPENCLAW=false
 INSTALL_OPENCODE_DESKTOP=false
 INSTALL_OPENCODE_CLI=false
 
+# Modo dry-run: simula sem alterar nada
+DRY_RUN=false
+
 # GitHub Token para download do RTK (parametro --github-token ou env GITHUB_TOKEN)
 GITHUB_TOKEN_PARAM=""
+
+# Verifica dry-run e retorna se ativo
+check_dry_run() {
+    if [ "$DRY_RUN" = true ]; then
+        log_info "Dry run: pulando $1"
+        return 0
+    fi
+    return 1
+}
 
 # ============================================================================
 # HELP
@@ -100,6 +112,7 @@ show_help() {
     echo "  --all,      -a          Instala para todas as IDEs/CLIs"
     echo
     echo -e "${YELLOW}Outras opcoes:${NC}"
+    echo "  --dry-run               Simula a instalacao sem alterar nada"
     echo "  --github-token <TOKEN>  Token GitHub para download do RTK (evita rate-limit)"
     echo "  --help, -h              Exibe esta mensagem de ajuda"
     echo
@@ -174,6 +187,9 @@ parse_args() {
             --help|-help|--h|-h)
                 show_help
                 exit 0
+                ;;
+            --dry-run)
+                DRY_RUN=true
                 ;;
             --all|-a)
                 INSTALL_VSCODE=true
@@ -358,6 +374,7 @@ check_directory() {
 # ============================================================================
 
 install_base() {
+    check_dry_run "install_base" && return
     log_info "Instalando base (~/.agents/skills)..."
 
     if [ -d "$HOME/.agents/skills" ]; then
@@ -658,6 +675,7 @@ HARNESS_EOF
 # ============================================================================
 
 install_vscode() {
+    check_dry_run "install_vscode" && return
     log_info "=== Instalando para VS Code (GitHub Copilot) ==="
 
     # Skills -> ~/.github/skills
@@ -723,6 +741,7 @@ install_vscode() {
 }
 
 install_devin_cli() {
+    check_dry_run "install_devin_cli" && return
     log_info "=== Instalando para Devin CLI ==="
 
     # Devin CLI (terminal): https://cli.devin.ai/docs
@@ -786,6 +805,7 @@ DEVIN_CONFIG_EOF
 }
 
 install_devin_desktop() {
+    check_dry_run "install_devin_desktop" && return
     log_info "=== Instalando para Devin Desktop ==="
 
     # Devin Desktop: local IDE successor to Windsurf/Cascade
@@ -834,6 +854,7 @@ install_devin_desktop() {
 }
 
 install_cursor() {
+    check_dry_run "install_cursor" && return
     log_info "=== Instalando para Cursor ==="
 
     # Skills -> ~/.cursor/skills
@@ -884,6 +905,7 @@ install_cursor() {
 }
 
 install_opencode_desktop() {
+    check_dry_run "install_opencode_desktop" && return
     log_info "=== Instalando para OpenCode Desktop ==="
 
     # OpenCode Desktop: local IDE with agent support
@@ -935,6 +957,7 @@ install_opencode_desktop() {
 }
 
 install_opencode_cli() {
+    check_dry_run "install_opencode_cli" && return
     log_info "=== Instalando para OpenCode CLI ==="
 
     # OpenCode CLI: terminal agent
@@ -986,6 +1009,7 @@ install_opencode_cli() {
 }
 
 install_devin() {
+    check_dry_run "install_devin" && return
     log_info "=== Instalando para Devin / Devin Review / Devin CLI ==="
 
     # Devin suporta skills em repo-relative paths que tambem funcionam em ~/.devin/
@@ -1139,6 +1163,7 @@ DEVIN_CONFIG_EOF
 }
 
 install_claude() {
+    check_dry_run "install_claude" && return
     log_info "=== Instalando para Claude Code ==="
 
     # Garantir que o diretorio base existe
@@ -1276,6 +1301,7 @@ CMD_EOF
 }
 
 install_gemini() {
+    check_dry_run "install_gemini" && return
     log_info "=== Instalando para Gemini CLI (Google) ==="
 
     # Garantir que o diretorio base existe
@@ -1330,6 +1356,7 @@ install_gemini() {
 }
 
 install_antigravity() {
+    check_dry_run "install_antigravity" && return
     log_info "=== Instalando para Google Antigravity IDE ==="
 
     # Garantir que o diretorio base existe
@@ -1456,6 +1483,7 @@ install_antigravity() {
 }
 
 install_agy() {
+    check_dry_run "install_agy" && return
     log_info "=== Instalando para Google Antigravity CLI (agy) ==="
 
     # Garantir que o diretorio base existe
@@ -1555,6 +1583,7 @@ install_agy() {
 }
 
 install_openclaw() {
+    check_dry_run "install_openclaw" && return
     log_info "=== Instalando para OpenClaw ==="
 
     # Garantir que o diretorio base existe
@@ -1600,6 +1629,7 @@ install_openclaw() {
 # ============================================================================
 
 install_rtk() {
+    check_dry_run "install_rtk" && return
     log_info "=== Instalando RTK (Rust Token Killer) ==="
 
     local RTK_VERSION="${RTK_VERSION:-0.42.0}"
