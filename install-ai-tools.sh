@@ -19,10 +19,8 @@ NC='\033[0m' # No Color
 INSTALL_RTK=false
 INSTALL_CAVEMAN=false
 INSTALL_SUPERPOWERS=false
-INSTALL_ALL=false
 DRY_RUN=false
 VERBOSE=false
-GITHUB_TOKEN=""
 
 # Variáveis de rastreamento de erros
 RTK_SUCCESS=false
@@ -104,7 +102,6 @@ show_help() {
     echo -e "${YELLOW}Outras opcoes:${NC}"
     echo "  --dry-run, -d          Simula instalacao sem executar"
     echo "  --verbose, -v          Modo detalhado"
-    echo "  --github-token <TOKEN> Token GitHub para evitar rate-limit"
     echo "  --help, -h             Exibe esta mensagem de ajuda"
     echo
     echo -e "${YELLOW}Exemplos:${NC}"
@@ -162,7 +159,6 @@ parse_args() {
                 INSTALL_RTK=true
                 INSTALL_CAVEMAN=true
                 INSTALL_SUPERPOWERS=true
-                INSTALL_ALL=true
                 ;;
             --gemini)
                 INSTALL_FOR_GEMINI=true
@@ -194,14 +190,6 @@ parse_args() {
                 ;;
             --verbose|-v)
                 VERBOSE=true
-                ;;
-            --github-token)
-                shift
-                if [ $# -eq 0 ]; then
-                    log_error "--github-token requer um valor. Ex: --github-token ghp_xxx"
-                    exit 1
-                fi
-                GITHUB_TOKEN="$1"
                 ;;
             *)
                 log_error "Opcao desconhecida: $1"

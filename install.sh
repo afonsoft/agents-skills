@@ -758,6 +758,21 @@ install_devin_cli() {
         log_success "AGENTS.md -> ~/.config/devin/AGENTS.md"
     fi
 
+    # config.json -> ~/.config/devin/config.json
+    # Necessario para Devin CLI importar rules/skills do Claude Code
+    if [ ! -f "$HOME/.config/devin/config.json" ]; then
+        cat > "$HOME/.config/devin/config.json" << 'DEVIN_CONFIG_EOF'
+{
+  "read_config_from": {
+    "claude": true
+  }
+}
+DEVIN_CONFIG_EOF
+        log_success "config.json -> ~/.config/devin/config.json"
+    else
+        log_info "config.json -> ~/.config/devin/config.json (ja existe, pulando)"
+    fi
+
     # .devinignore -> ~/.config/devin/.devinignore
     if [ -f ".devinignore" ]; then
         cp ".devinignore" "$HOME/.config/devin/.devinignore"
@@ -1062,6 +1077,21 @@ install_devin() {
         backup_file_if_exists "$HOME/.config/devin/AGENTS.md"
         cp AGENTS.md "$HOME/.config/devin/AGENTS.md"
         log_success "AGENTS.md -> ~/.config/devin/AGENTS.md"
+    fi
+
+    # config.json -> ~/.config/devin/config.json
+    # Necessario para Devin CLI importar rules/skills do Claude Code
+    if [ ! -f "$HOME/.config/devin/config.json" ]; then
+        cat > "$HOME/.config/devin/config.json" << 'DEVIN_CONFIG_EOF'
+{
+  "read_config_from": {
+    "claude": true
+  }
+}
+DEVIN_CONFIG_EOF
+        log_success "config.json -> ~/.config/devin/config.json"
+    else
+        log_info "config.json -> ~/.config/devin/config.json (ja existe, pulando)"
     fi
 
     # .devinignore -> ~/.devin/.devinignore
