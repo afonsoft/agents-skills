@@ -857,6 +857,159 @@ configure_superpowers_opencode() {
     log_info "  3. Acompanhe: https://github.com/obra/superpowers"
 }
 
+# Configura RTK para Claude Code
+configure_rtk_claude() {
+    log_info "=== Configurando RTK para Claude Code ==="
+
+    if ! command_exists rtk; then
+        log_warning "RTK não está instalado. Instale com: $0 --rtk"
+        return 1
+    fi
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: RTK seria configurado para Claude Code"
+        return 0
+    fi
+
+    if ! command_exists claude; then
+        log_warning "Claude Code não encontrado. RTK já foi configurado globalmente durante a instalação."
+        log_info "Para ativar, instale Claude Code: https://code.claude.com"
+        return 0
+    fi
+
+    if rtk init --global; then
+        log_success "RTK configurado para Claude Code"
+    else
+        log_warning "Falha ao configurar RTK para Claude Code"
+    fi
+}
+
+# Configura Caveman para Claude Code
+configure_caveman_claude() {
+    log_info "=== Configurando Caveman para Claude Code ==="
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: Caveman seria configurado para Claude Code"
+        return 0
+    fi
+
+    if ! command_exists npx; then
+        log_error "npx não encontrado. Instale Node.js primeiro"
+        HAS_ERRORS=true
+        return 0
+    fi
+
+    if command_exists claude; then
+        log_info "Instalando Caveman para Claude Code..."
+        if npx -y github:JuliusBrussee/caveman -- --only claude 2>/dev/null || \
+           npx -y skills add JuliusBrussee/caveman -a claude 2>/dev/null; then
+            log_success "Caveman configurado para Claude Code"
+        else
+            log_warning "Falha ao configurar Caveman para Claude Code"
+        fi
+    else
+        log_warning "Claude Code não encontrado. Caveman requer Claude Code para configuração nativa."
+        log_info "Instale Claude Code: https://code.claude.com"
+    fi
+}
+
+# Configura Superpowers para Claude Code
+configure_superpowers_claude() {
+    log_info "=== Configurando Superpowers para Claude Code ==="
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: Superpowers seria configurado para Claude Code"
+        return 0
+    fi
+
+    if ! command_exists claude; then
+        log_warning "Claude Code não encontrado. Superpowers requer Claude Code."
+        log_info "Instale Claude Code: https://code.claude.com"
+        return 0
+    fi
+
+    log_info "Superpowers já é instalado/atualizado pelo plugin do Claude Code."
+    log_info "Verifique com: claude plugin list"
+}
+
+# Configura RTK para Cursor
+configure_rtk_cursor() {
+    log_info "=== Configurando RTK para Cursor ==="
+
+    if ! command_exists rtk; then
+        log_warning "RTK não está instalado. Instale com: $0 --rtk"
+        return 1
+    fi
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: RTK seria configurado para Cursor"
+        return 0
+    fi
+
+    if [ ! -d "$HOME/.cursor" ]; then
+        log_warning "Cursor não encontrado. RTK já foi configurado globalmente durante a instalação."
+        log_info "Para ativar, instale Cursor: https://cursor.com"
+        return 0
+    fi
+
+    if rtk init --global --cursor; then
+        log_success "RTK configurado para Cursor"
+    else
+        log_warning "Falha ao configurar RTK para Cursor"
+    fi
+}
+
+# Configura Caveman para Cursor
+configure_caveman_cursor() {
+    log_info "=== Configurando Caveman para Cursor ==="
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: Caveman seria configurado para Cursor"
+        return 0
+    fi
+
+    if ! command_exists npx; then
+        log_error "npx não encontrado. Instale Node.js primeiro"
+        HAS_ERRORS=true
+        return 0
+    fi
+
+    if [ -d "$HOME/.cursor" ]; then
+        log_info "Instalando Caveman para Cursor..."
+        if npx -y github:JuliusBrussee/caveman -- --only cursor 2>/dev/null || \
+           npx -y skills add JuliusBrussee/caveman -a cursor 2>/dev/null; then
+            log_success "Caveman configurado para Cursor"
+        else
+            log_warning "Falha ao configurar Caveman para Cursor"
+        fi
+    else
+        log_warning "Cursor não encontrado. Caveman requer Cursor para configuração nativa."
+        log_info "Instale Cursor: https://cursor.com"
+    fi
+}
+
+# Configura Superpowers para Cursor
+configure_superpowers_cursor() {
+    log_info "=== Configurando Superpowers para Cursor ==="
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warning "DRY RUN: Superpowers seria configurado para Cursor"
+        return 0
+    fi
+
+    log_warning "Superpowers não tem suporte nativo para Cursor ainda"
+    log_info "Alternativas:"
+    log_info "  1. Copie skills manualmente para ~/.cursor/skills/"
+    log_info "  2. Use Claude Code para Superpowers (suporte nativo)"
+    log_info "  3. Acompanhe: https://github.com/obra/superpowers"
+
+    if [ -d "$HOME/.cursor" ]; then
+        log_info "Diretório de skills Cursor encontrado: $HOME/.cursor/skills"
+    else
+        log_info "Instale Cursor para usar Superpowers manualmente: https://cursor.com"
+    fi
+}
+
 # Função principal
 main() {
     echo "========================================"
@@ -903,6 +1056,36 @@ main() {
     if [ "$INSTALL_FOR_GEMINI" = true ] && [ "$INSTALL_RTK" = true ]; then
         configure_rtk_gemini
         echo
+    fi
+
+    if [ "$INSTALL_FOR_CLAUDE" = true ]; then
+        if [ "$INSTALL_RTK" = true ]; then
+            configure_rtk_claude
+            echo
+        fi
+        if [ "$INSTALL_CAVEMAN" = true ]; then
+            configure_caveman_claude
+            echo
+        fi
+        if [ "$INSTALL_SUPERPOWERS" = true ]; then
+            configure_superpowers_claude
+            echo
+        fi
+    fi
+
+    if [ "$INSTALL_FOR_CURSOR" = true ]; then
+        if [ "$INSTALL_RTK" = true ]; then
+            configure_rtk_cursor
+            echo
+        fi
+        if [ "$INSTALL_CAVEMAN" = true ]; then
+            configure_caveman_cursor
+            echo
+        fi
+        if [ "$INSTALL_SUPERPOWERS" = true ]; then
+            configure_superpowers_cursor
+            echo
+        fi
     fi
     
     if [ "$INSTALL_FOR_DEVIN" = true ]; then
@@ -1005,6 +1188,12 @@ main() {
     if [ "$INSTALL_CAVEMAN" = true ] && [ "$CAVEMAN_SUCCESS" = true ]; then
         echo "Caveman:"
         echo "  - Instalado para todos os agentes detectados"
+        if [ "$INSTALL_FOR_CLAUDE" = true ]; then
+            echo "  - Configurado para Claude Code"
+        fi
+        if [ "$INSTALL_FOR_CURSOR" = true ]; then
+            echo "  - Configurado para Cursor"
+        fi
         if [ "$INSTALL_FOR_DEVIN" = true ]; then
             echo "  - Configurado especificamente para Devin CLI"
         fi
@@ -1021,6 +1210,11 @@ main() {
             echo "  - Plugin instalado no Claude Code"
             echo "  - Skills: brainstorming, test-driven-development, systematic-debugging"
             echo "  - Reinicie Claude Code para ativar"
+        fi
+        if [ "$INSTALL_FOR_CURSOR" = true ]; then
+            echo "  - Configurado para Cursor (via skills manuais)"
+            echo "  - Skills: brainstorming, TDD, systematic debugging"
+            echo "  - Reinicie Cursor para ativar"
         fi
         if [ "$INSTALL_FOR_DEVIN" = true ]; then
             echo "  - Configurado para Devin CLI (via skills manuais)"
