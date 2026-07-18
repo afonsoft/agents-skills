@@ -12,8 +12,8 @@ Baseado na documentação oficial do RTK (https://www.rtk-ai.app/docs/getting-st
 | VS Code Copilot | Shell hook (PreToolUse) | ✅ Sim | ✅ Hooks instalados |
 | GitHub Copilot CLI | Shell hook (preToolUse) | ✅ Sim | ✅ Hooks instalados |
 | Gemini CLI | Rust binary (BeforeTool) | ✅ Sim | ❌ Sem hooks específicos |
-| OpenCode Desktop | Rules file (prompt-level) | ❌ N/A | ❌ Sem suporte |
-| OpenCode CLI | AGENTS.md instructions | ❌ N/A | ❌ Sem suporte |
+| OpenCode Desktop | TypeScript plugin | ✅ Sim | ✅ Plugin configurado por rtk init -g --opencode |
+| OpenCode CLI | TypeScript plugin | ✅ Sim | ✅ Plugin configurado por rtk init -g --opencode |
 | OpenClaw | TypeScript plugin | ✅ Sim | ❌ Sem suporte |
 | Pi | TypeScript extension | ✅ Sim | ❌ Sem suporte |
 | Hermes | Python plugin | ✅ Sim | ❌ Sem suporte |
@@ -152,7 +152,8 @@ Caveman é uma skill de comunicação comprimida que funciona em **qualquer agen
 
 ## Conclusão
 
-- **RTK:** Suporte parcial no agents-skills. Hooks instalados apenas para Claude Code e Cursor. Outras plataformas requerem configuração manual.
+- **RTK:** Suporte parcial no agents-skills. Hooks/plugins instalados para Claude Code, Cursor e OpenCode. Outras plataformas requerem configuração manual.
 - **Caveman:** Suporte completo. Funciona como skill normal em todas as plataformas sem configuração adicional.
 - **Google Antigravity:** RTK suportado via rules file (configuração manual necessária). Caveman funciona automaticamente.
 - **Devin:** RTK não suportado oficialmente. Caveman funciona automaticamente.
+- **OpenCode:** RTK suportado via plugin (`rtk init -g --opencode`). Caveman funciona como skill/plugin.

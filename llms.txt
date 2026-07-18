@@ -32,7 +32,7 @@ README.md - Project documentation and quick start guide
 This repository specializes in:
 - AI agent skills and session hooks
 - Agent workflows and engineering patterns (brainstorming, planning, TDD, code review)
-- Multi-IDE compatibility (Devin, Devin Desktop, Devin CLI, OpenCode, Claude Code, Cursor, VS Code/Copilot, Gemini CLI)
+- Multi-IDE compatibility (Devin, Devin Desktop, Devin CLI, OpenCode, Claude Code, Cursor, VS Code/Copilot, Gemini CLI, Google Antigravity)
 - .NET / ABP Framework and SQL guidance
 
 ## Standards

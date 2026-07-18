@@ -69,8 +69,20 @@ INSTALL_OPENCLAW=false
 INSTALL_OPENCODE_DESKTOP=false
 INSTALL_OPENCODE_CLI=false
 
+# Modo dry-run: simula sem alterar nada
+DRY_RUN=false
+
 # GitHub Token para download do RTK (parametro --github-token ou env GITHUB_TOKEN)
 GITHUB_TOKEN_PARAM=""
+
+# Verifica dry-run e retorna se ativo
+check_dry_run() {
+    if [ "$DRY_RUN" = true ]; then
+        log_info "Dry run: pulando $1"
+        return 0
+    fi
+    return 1
+}
 
 # ============================================================================
 # HELP
@@ -100,6 +112,7 @@ show_help() {
     echo "  --all,      -a          Instala para todas as IDEs/CLIs"
     echo
     echo -e "${YELLOW}Outras opcoes:${NC}"
+    echo "  --dry-run               Simula a instalacao sem alterar nada"
     echo "  --github-token <TOKEN>  Token GitHub para download do RTK (evita rate-limit)"
     echo "  --help, -h              Exibe esta mensagem de ajuda"
     echo
@@ -174,6 +187,9 @@ parse_args() {
             --help|-help|--h|-h)
                 show_help
                 exit 0
+                ;;
+            --dry-run)
+                DRY_RUN=true
                 ;;
             --all|-a)
                 INSTALL_VSCODE=true
@@ -358,6 +374,7 @@ check_directory() {
 # ============================================================================
 
 install_base() {
+    check_dry_run "install_base" && return
     log_info "Instalando base (~/.agents/skills)..."
 
     if [ -d "$HOME/.agents/skills" ]; then
@@ -658,6 +675,7 @@ HARNESS_EOF
 # ============================================================================
 
 install_vscode() {
+    check_dry_run "install_vscode" && return
     log_info "=== Instalando para VS Code (GitHub Copilot) ==="
 
     # Skills -> ~/.github/skills
@@ -723,6 +741,7 @@ install_vscode() {
 }
 
 install_devin_cli() {
+    check_dry_run "install_devin_cli" && return
     log_info "=== Instalando para Devin CLI ==="
 
     # Devin CLI (terminal): https://cli.devin.ai/docs
@@ -758,6 +777,21 @@ install_devin_cli() {
         log_success "AGENTS.md -> ~/.config/devin/AGENTS.md"
     fi
 
+    # config.json -> ~/.config/devin/config.json
+    # Necessario para Devin CLI importar rules/skills do Claude Code
+    if [ ! -f "$HOME/.config/devin/config.json" ]; then
+        cat > "$HOME/.config/devin/config.json" << 'DEVIN_CONFIG_EOF'
+{
+  "read_config_from": {
+    "claude": true
+  }
+}
+DEVIN_CONFIG_EOF
+        log_success "config.json -> ~/.config/devin/config.json"
+    else
+        log_info "config.json -> ~/.config/devin/config.json (ja existe, pulando)"
+    fi
+
     # .devinignore -> ~/.config/devin/.devinignore
     if [ -f ".devinignore" ]; then
         cp ".devinignore" "$HOME/.config/devin/.devinignore"
@@ -771,6 +805,7 @@ install_devin_cli() {
 }
 
 install_devin_desktop() {
+    check_dry_run "install_devin_desktop" && return
     log_info "=== Instalando para Devin Desktop ==="
 
     # Devin Desktop: local IDE successor to Windsurf/Cascade
@@ -819,6 +854,7 @@ install_devin_desktop() {
 }
 
 install_cursor() {
+    check_dry_run "install_cursor" && return
     log_info "=== Instalando para Cursor ==="
 
     # Skills -> ~/.cursor/skills
@@ -869,6 +905,7 @@ install_cursor() {
 }
 
 install_opencode_desktop() {
+    check_dry_run "install_opencode_desktop" && return
     log_info "=== Instalando para OpenCode Desktop ==="
 
     # OpenCode Desktop: local IDE with agent support
@@ -920,6 +957,7 @@ install_opencode_desktop() {
 }
 
 install_opencode_cli() {
+    check_dry_run "install_opencode_cli" && return
     log_info "=== Instalando para OpenCode CLI ==="
 
     # OpenCode CLI: terminal agent
@@ -971,6 +1009,7 @@ install_opencode_cli() {
 }
 
 install_devin() {
+    check_dry_run "install_devin" && return
     log_info "=== Instalando para Devin / Devin Review / Devin CLI ==="
 
     # Devin suporta skills em repo-relative paths que tambem funcionam em ~/.devin/
@@ -1064,6 +1103,21 @@ install_devin() {
         log_success "AGENTS.md -> ~/.config/devin/AGENTS.md"
     fi
 
+    # config.json -> ~/.config/devin/config.json
+    # Necessario para Devin CLI importar rules/skills do Claude Code
+    if [ ! -f "$HOME/.config/devin/config.json" ]; then
+        cat > "$HOME/.config/devin/config.json" << 'DEVIN_CONFIG_EOF'
+{
+  "read_config_from": {
+    "claude": true
+  }
+}
+DEVIN_CONFIG_EOF
+        log_success "config.json -> ~/.config/devin/config.json"
+    else
+        log_info "config.json -> ~/.config/devin/config.json (ja existe, pulando)"
+    fi
+
     # .devinignore -> ~/.devin/.devinignore
     if [ -f ".devinignore" ]; then
         cp ".devinignore" "$HOME/.devin/.devinignore"
@@ -1109,6 +1163,7 @@ install_devin() {
 }
 
 install_claude() {
+    check_dry_run "install_claude" && return
     log_info "=== Instalando para Claude Code ==="
 
     # Garantir que o diretorio base existe
@@ -1246,6 +1301,7 @@ CMD_EOF
 }
 
 install_gemini() {
+    check_dry_run "install_gemini" && return
     log_info "=== Instalando para Gemini CLI (Google) ==="
 
     # Garantir que o diretorio base existe
@@ -1300,6 +1356,7 @@ install_gemini() {
 }
 
 install_antigravity() {
+    check_dry_run "install_antigravity" && return
     log_info "=== Instalando para Google Antigravity IDE ==="
 
     # Garantir que o diretorio base existe
@@ -1309,20 +1366,45 @@ install_antigravity() {
     # Antigravity IDE descobre skills em ~/.gemini/skills/ (shared across all Antigravity tools)
     # Cada skill e um diretorio contendo SKILL.md
     # Ref: https://antigravity.google/docs/ide-overview
-    # Nota: Este diretorio e compartilhado com Gemini CLI
+    # Nota: Este diretorio e compartilhado com todos os produtos Antigravity (IDE, CLI, SDK)
     if [ ! -d "$HOME/.gemini/skills" ] || [ -z "$(ls -A "$HOME/.gemini/skills" 2>/dev/null)" ]; then
         backup_dir_if_exists "$HOME/.gemini/skills"
         cp -a skills/* "$HOME/.gemini/skills/" 2>/dev/null || true
-        log_success "Skills -> ~/.gemini/skills"
+        log_success "Skills -> ~/.gemini/skills (global - compartilhado IDE/CLI/SDK)"
     else
         log_info "Skills -> ~/.gemini/skills (ja existe, pulando)"
     fi
 
+    # Skills -> .agent/skills (workspace-specific)
+    # Antigravity tambem suporta skills no workspace em .agent/skills/
+    # Ref: https://codelabs.developers.google.com/getting-started-with-antigravity-skills
+    # Nota: Skills no workspace sao especificas do projeto atual
+    if [ ! -d ".agent/skills" ] || [ -z "$(ls -A .agent/skills 2>/dev/null)" ]; then
+        backup_dir_if_exists ".agent/skills"
+        mkdir -p .agent
+        cp -a skills/* ".agent/skills/" 2>/dev/null || true
+        log_success "Skills -> .agent/skills (workspace - especifico do projeto)"
+    else
+        log_info "Skills -> .agent/skills (ja existe, pulando)"
+    fi
+
     # Rules -> ~/.gemini/ANTIGRAVITY.md (contexto global consolidado)
     # Antigravity IDE usa ANTIGRAVITY.md como arquivo de contexto e instrucoes globais
+    # Nota: Antigravity tambem e compativel com CLAUDE.md (99% compatibilidade)
     if [ -d "rules" ]; then
         generate_consolidated_rules "$HOME/.gemini/ANTIGRAVITY.md" "antigravity"
         log_success "Rules consolidadas -> ~/.gemini/ANTIGRAVITY.md"
+    fi
+
+    # CLAUDE.md -> .agent/CLAUDE.md (workspace-specific, compativel com Antigravity)
+    # Antigravity e 99% compativel com Claude Code - pode usar CLAUDE.md nativamente
+    if [ -f "CLAUDE.md" ] && [ ! -f ".agent/CLAUDE.md" ]; then
+        mkdir -p .agent
+        backup_file_if_exists ".agent/CLAUDE.md"
+        cp CLAUDE.md ".agent/CLAUDE.md"
+        log_success "CLAUDE.md -> .agent/CLAUDE.md (compatibilidade Claude Code)"
+    elif [ -f "CLAUDE.md" ]; then
+        log_info "CLAUDE.md -> .agent/CLAUDE.md (ja existe, pulando)"
     fi
 
     # Knowledge -> ~/.gemini/knowledge (compartilhado com Gemini CLI)
@@ -1336,8 +1418,20 @@ install_antigravity() {
         fi
     fi
 
+    # Knowledge -> .agent/knowledge (workspace-specific)
+    if [ -d "devin/knowledge_sources" ]; then
+        if [ ! -d ".agent/knowledge" ] || [ -z "$(ls -A .agent/knowledge 2>/dev/null)" ]; then
+            backup_dir_if_exists ".agent/knowledge"
+            mkdir -p .agent
+            copy_knowledge_sources ".agent/knowledge/"
+            log_success "Knowledge -> .agent/knowledge (workspace)"
+        else
+            log_info "Knowledge -> .agent/knowledge (ja existe, pulando)"
+        fi
+    fi
+
     # AGENTS_CLI.md -> ~/.gemini/AGENTS.md (instrucoes genericas do harness)
-    # Compartilhado com Gemini CLI
+    # Compartilhado com todos os produtos Antigravity
     if [ ! -f "$HOME/.gemini/AGENTS.md" ]; then
         if [ -f "AGENTS_CLI.md" ]; then
             mkdir -p "$HOME/.gemini"
@@ -1352,6 +1446,18 @@ install_antigravity() {
         fi
     else
         log_info "AGENTS.md -> ~/.gemini/AGENTS.md (ja existe, pulando)"
+    fi
+
+    # AGENTS.md -> .agent/AGENTS.md (workspace-specific)
+    if [ ! -f ".agent/AGENTS.md" ]; then
+        if [ -f "AGENTS.md" ]; then
+            mkdir -p .agent
+            backup_file_if_exists ".agent/AGENTS.md"
+            cp AGENTS.md ".agent/AGENTS.md"
+            log_success "AGENTS.md -> .agent/AGENTS.md (workspace)"
+        fi
+    else
+        log_info "AGENTS.md -> .agent/AGENTS.md (ja existe, pulando)"
     fi
 
     # .geminiignore -> ~/.gemini/.geminiignore (compartilhado)
@@ -1373,9 +1479,11 @@ install_antigravity() {
     fi
 
     log_success "Google Antigravity IDE instalado!"
+    log_info "Nota: Antigravity e 99% compativel com Claude Code - skills podem ser compartilhadas"
 }
 
 install_agy() {
+    check_dry_run "install_agy" && return
     log_info "=== Instalando para Google Antigravity CLI (agy) ==="
 
     # Garantir que o diretorio base existe
@@ -1387,7 +1495,19 @@ install_agy() {
     # Ref: https://antigravity.google/docs/cli-overview
     backup_dir_if_exists "$HOME/.gemini/antigravity-cli/skills"
     cp -a skills/* "$HOME/.gemini/antigravity-cli/skills/" 2>/dev/null || true
-    log_success "Skills -> ~/.gemini/antigravity-cli/skills"
+    log_success "Skills -> ~/.gemini/antigravity-cli/skills (CLI-specific)"
+
+    # Skills -> .agent/skills (workspace-specific, compartilhado com IDE)
+    # Antigravity CLI tambem suporta skills no workspace em .agent/skills/
+    # Ref: https://codelabs.developers.google.com/getting-started-with-antigravity-skills
+    if [ ! -d ".agent/skills" ] || [ -z "$(ls -A .agent/skills 2>/dev/null)" ]; then
+        backup_dir_if_exists ".agent/skills"
+        mkdir -p .agent
+        cp -a skills/* ".agent/skills/" 2>/dev/null || true
+        log_success "Skills -> .agent/skills (workspace - especifico do projeto)"
+    else
+        log_info "Skills -> .agent/skills (ja existe, pulando)"
+    fi
 
     # Rules -> ~/.gemini/antigravity-cli/AGY.md (contexto global consolidado)
     # Antigravity CLI usa AGY.md como arquivo de contexto e instrucoes globais
@@ -1396,11 +1516,33 @@ install_agy() {
         log_success "Rules consolidadas -> ~/.gemini/antigravity-cli/AGY.md"
     fi
 
+    # CLAUDE.md -> .agent/CLAUDE.md (workspace-specific, compativel com Antigravity)
+    if [ -f "CLAUDE.md" ] && [ ! -f ".agent/CLAUDE.md" ]; then
+        mkdir -p .agent
+        backup_file_if_exists ".agent/CLAUDE.md"
+        cp CLAUDE.md ".agent/CLAUDE.md"
+        log_success "CLAUDE.md -> .agent/CLAUDE.md (compatibilidade Claude Code)"
+    elif [ -f "CLAUDE.md" ]; then
+        log_info "CLAUDE.md -> .agent/CLAUDE.md (ja existe, pulando)"
+    fi
+
     # Knowledge -> ~/.gemini/antigravity-cli/knowledge
     if [ -d "devin/knowledge_sources" ]; then
         backup_dir_if_exists "$HOME/.gemini/antigravity-cli/knowledge"
         copy_knowledge_sources "$HOME/.gemini/antigravity-cli/knowledge/"
         log_success "Knowledge -> ~/.gemini/antigravity-cli/knowledge"
+    fi
+
+    # Knowledge -> .agent/knowledge (workspace-specific)
+    if [ -d "devin/knowledge_sources" ]; then
+        if [ ! -d ".agent/knowledge" ] || [ -z "$(ls -A .agent/knowledge 2>/dev/null)" ]; then
+            backup_dir_if_exists ".agent/knowledge"
+            mkdir -p .agent
+            copy_knowledge_sources ".agent/knowledge/"
+            log_success "Knowledge -> .agent/knowledge (workspace)"
+        else
+            log_info "Knowledge -> .agent/knowledge (ja existe, pulando)"
+        fi
     fi
 
     # AGENTS_CLI.md -> ~/.gemini/antigravity-cli/AGENTS.md (instrucoes genericas do harness)
@@ -1416,6 +1558,18 @@ install_agy() {
         log_success "AGENTS.md -> ~/.gemini/antigravity-cli/AGENTS.md"
     fi
 
+    # AGENTS.md -> .agent/AGENTS.md (workspace-specific)
+    if [ ! -f ".agent/AGENTS.md" ]; then
+        if [ -f "AGENTS.md" ]; then
+            mkdir -p .agent
+            backup_file_if_exists ".agent/AGENTS.md"
+            cp AGENTS.md ".agent/AGENTS.md"
+            log_success "AGENTS.md -> .agent/AGENTS.md (workspace)"
+        fi
+    else
+        log_info "AGENTS.md -> .agent/AGENTS.md (ja existe, pulando)"
+    fi
+
     # .geminiignore -> ~/.gemini/antigravity-cli/.geminiignore
     if [ -f ".geminiignore" ]; then
         cp ".geminiignore" "$HOME/.gemini/antigravity-cli/.geminiignore"
@@ -1429,6 +1583,7 @@ install_agy() {
 }
 
 install_openclaw() {
+    check_dry_run "install_openclaw" && return
     log_info "=== Instalando para OpenClaw ==="
 
     # Garantir que o diretorio base existe
@@ -1474,6 +1629,7 @@ install_openclaw() {
 # ============================================================================
 
 install_rtk() {
+    check_dry_run "install_rtk" && return
     log_info "=== Instalando RTK (Rust Token Killer) ==="
 
     local RTK_VERSION="${RTK_VERSION:-0.42.0}"

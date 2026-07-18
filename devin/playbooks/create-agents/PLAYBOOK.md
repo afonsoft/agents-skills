@@ -4,8 +4,8 @@ description: >
   Execute em qualquer repositório para gerar o conjunto completo de arquivos
   que compõem o harness de um agente LLM, seguindo convenções modernas de
   File-based Context (CLAUDE.md, SKILL.md). Escopo: estrutura Claude Code
-  (também usada pelo Devin CLI) — não gera artefatos para OpenCode, Cursor,
-  Gemini, Copilot ou JetBrains AI.
+  (também usada pelo Devin CLI e Google Antigravity) — não gera artefatos
+  para Windsurf, Cursor, Gemini CLI (legado), Copilot ou JetBrains AI.
 mode: agent
 tools:
   - read_file
@@ -22,8 +22,8 @@ tools:
 
 Você é um **Engenheiro de IA Sênior e Arquiteto de Contexto**. Sua tarefa é analisar este repositório e criar o conjunto completo de arquivos que compõem o **harness** de um agente LLM.
 
-> **Escopo deste playbook**: foco na **estrutura Claude Code** (`.claude/`, `CLAUDE.md`), que também é usada nativamente pelo **Devin CLI**.
-> NÃO gere artefatos para OpenCode (`.opencodeignore`, `.opencode/`), Cursor (`.cursorrules`, `.cursorignore`), Gemini CLI (`GEMINI.md`, `.geminiignore`), GitHub Copilot (`copilot-instructions.md`) ou JetBrains AI (`.aiignore`). Essas plataformas estão fora do escopo.
+> **Escopo deste playbook**: foco na **estrutura Claude Code** (`.claude/`, `CLAUDE.md`), que também é usada nativamente pelo **Devin CLI** e **Google Antigravity** (compatível 99% com Claude Code).
+> NÃO gere artefatos para Windsurf (`.windsurfignore`, `.windsurf/`), Cursor (`.cursorrules`, `.cursorignore`), Gemini CLI legado (`GEMINI.md`, `.geminiignore`), GitHub Copilot (`copilot-instructions.md`) ou JetBrains AI (`.aiignore`). Essas plataformas estão fora do escopo.
 
 > `Agent = Model + Harness`
 >
@@ -105,6 +105,8 @@ Linguagens, frameworks e versões.
 |---|---|---|---|---|
 | Claude Code | `CLAUDE.md` (always-on) | `.claude/skills/` | `.claude/rules/` (auto-carregado) | `.claude/knowledge/` (referenciado) |
 | Devin CLI | `CLAUDE.md` (lido nativamente) | `.claude/skills/` (importado) | `.claude/rules/` (lido nativamente) | `.claude/knowledge/` (referenciado) |
+| Google Antigravity IDE | `CLAUDE.md` (compatível) | `.agent/skills/` (workspace) ou `~/.gemini/skills/` (global) | `CLAUDE.md` (compatível) | `.agent/knowledge/` (workspace) |
+| Google Antigravity CLI (agy) | `CLAUDE.md` (compatível) | `.agent/skills/` (workspace) ou `~/.gemini/antigravity-cli/skills/` (CLI-specific) | `CLAUDE.md` (compatível) ou `AGY.md` | `.agent/knowledge/` (workspace) |
 
 ## Padrões de Código
 - DO (faça)
@@ -151,7 +153,7 @@ Crie sempre os arquivos seguindo a **estrutura Claude Code** (também usada pelo
 
 > ⚠️ **NÃO crie `AGENTS.md` separado** — Devin CLI lê `CLAUDE.md` nativamente. Criar arquivo dedicado é duplicação desnecessária.
 > ⚠️ **NÃO crie `DEVIN.md`** — Devin CLI lê `CLAUDE.md` nativamente.
-> ⚠️ **NÃO crie `GEMINI.md`, `.cursorrules`, `copilot-instructions.md` nem artefatos de OpenCode** — OpenCode, Cursor, Gemini CLI e GitHub Copilot estão fora do escopo deste playbook.
+> ⚠️ **NÃO crie `GEMINI.md` (legado), `.cursorrules`, `copilot-instructions.md` nem artefatos de Windsurf** — Windsurf, Cursor, Gemini CLI (legado) e GitHub Copilot estão fora do escopo deste playbook. Google Antigravity usa `CLAUDE.md` nativamente.
 
 ---
 
@@ -198,6 +200,8 @@ Crie sempre os arquivos seguindo a **estrutura Claude Code** (também usada pelo
 |---|---|---|---|
 | Claude Code | `.claude/skills/` | `.claude/rules/` (auto-carregado) | `.claude/knowledge/` |
 | Devin CLI | `.claude/skills/` (importado) | `.claude/rules/` (lido nativamente) | `.claude/knowledge/` |
+| Google Antigravity IDE | `.agent/skills/` (workspace) ou `~/.gemini/skills/` (global) | `CLAUDE.md` (compatível) | `.agent/knowledge/` (workspace) |
+| Google Antigravity CLI (agy) | `.agent/skills/` (workspace) ou `~/.gemini/antigravity-cli/skills/` (CLI-specific) | `CLAUDE.md` (compatível) ou `AGY.md` | `.agent/knowledge/` (workspace) |
 
 ## Claude Code
 - Rules em `.claude/rules/` (auto-carregadas; path-scoped via `paths:`)
@@ -237,19 +241,6 @@ Crie sempre os arquivos seguindo a **estrutura Claude Code** (também usada pelo
       "Edit(./.github/workflows/**)",
       "Read(./.github/workflows/**)"
     ]
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/block-protected-push.sh"
-          }
-        ]
-      }
-    ]
   }
 }
 ```
@@ -268,7 +259,7 @@ Crie sempre os arquivos seguindo a **estrutura Claude Code** (também usada pelo
 
 - Config do projeto em `.devin/` (raiz); config do usuário em `~/.config/devin/` (`%APPDATA%\devin\` no Windows)
 - `.devin/config.json` cobre `permissions`, `mcpServers`, `hooks` e `read_config_from`
-- **`read_config_from`** importa rules, skills e subagentes do **Claude Code** (Cursor/OpenCode também) — **habilitado por padrão**
+- **`read_config_from`** importa rules, skills e subagentes do **Claude Code** (Cursor/Windsurf também) — **habilitado por padrão**
 - Subagentes nativos: `.devin/agents/{nome}/AGENT.md` (o nome do diretório vira o identificador do perfil)
 - O formato do Claude Code usa `tools`; o do Devin usa `allowed-tools` — **ambos suportados automaticamente**
 - O Devin CLI **NÃO** suporta Playbooks, Knowledge nem Secrets (recursos exclusivos do Devin cloud)
@@ -310,24 +301,114 @@ Crie sempre os arquivos seguindo a **estrutura Claude Code** (também usada pelo
       "Read(**/*.pem)",
       "Read(./.github/workflows/**)"
     ]
-  },
-  "hooks": {
-    // bloquear push para branches protegidas (glob não parseia branch)
-    "PreToolUse": [
-      { "matcher": "Exec", "command": "bash .devin/hooks/block-protected-push.sh" }
-    ]
   }
 }
 ```
 
 > ⚠️ **`read_config_from: { claude: true }` é OBRIGATÓRIO** — sem isso, o Devin CLI não importará as rules, skills e subagents do Claude Code.
 
-> ⚠️ Bloqueio de push para `main`/`master`/`develop` exige **hook** (inspeciona o comando) — `permissions.deny` por glob não consegue scopar o branch. Mesmo princípio do Claude Code.
+> ⚠️ Bloqueio de push para `main`/`master`/`develop` fica em rules
 
 > ⚠️ **NÃO crie `DEVIN.md`** — Devin CLI lê `CLAUDE.md` nativamente.
 > ⚠️ **NÃO crie playbooks/knowledge** para review/plan/test — o Devin CLI não suporta esses recursos e usa os sub-agents auto-importados de `.claude/agents/`.
 >
 > **Alternativa nativa (opcional):** se preferir subagentes nativos do Devin em vez do auto-import, gerar `.devin/agents/{nome}/AGENT.md` com `allowed-tools`/`permissions` no frontmatter. Para manter fonte única, prefira `.claude/agents/`.
+
+---
+
+### B.3 Configuração Específica do Google Antigravity
+
+> **OBRIGATÓRIO.** Google Antigravity é **99% compatível com Claude Code** — usa o mesmo formato de Agent Skills (SKILL.md) e estrutura de diretórios. A principal diferença é o nome do diretório raiz: `.claude/` → `.agent/` (workspace) ou `~/.gemini/skills/` (global).
+
+**Fatos da documentação oficial:**
+
+- Google Antigravity adotou o padrão open-source da Anthropic para Agent Skills
+- Skills do Claude Code funcionam no Antigravity sem modificação (apenas mudar diretório)
+- Estrutura de skills: `.agent/skills/{skill}/SKILL.md` (workspace) ou `~/.gemini/skills/{skill}/SKILL.md` (global)
+- Skills globais funcionam em todos os produtos Antigravity (IDE, CLI, SDK)
+- Skills de workspace são específicas do projeto
+- O formato SKILL.md é idêntico: YAML frontmatter (`name`, `description`) + Markdown body
+- Subdiretórios opcionais: `scripts/`, `examples/`, `resources/` (mesmo que Claude Code)
+- Antigravity CLI (agy) usa `~/.gemini/antigravity-cli/skills/` para skills específicas do CLI
+- Antigravity IDE descobre skills em `~/.gemini/skills/` (compartilhado) e `.agent/skills/` (workspace)
+- MCP servers são configurados em `~/.gemini/config/mcp_config.json` (compartilhado entre produtos Antigravity)
+
+**Mapeamento de artefatos para Google Antigravity:**
+
+| Conceito genérico | Implementação no Antigravity IDE | Implementação no Antigravity CLI (agy) |
+|---|---|---|
+| Instruções base / rules | `CLAUDE.md` (compatível) ou `ANTIGRAVITY.md` | `CLAUDE.md` (compatível) ou `AGY.md` |
+| Skills (workspace) | `.agent/skills/` | `.agent/skills/` |
+| Skills (global) | `~/.gemini/skills/` | `~/.gemini/antigravity-cli/skills/` |
+| Skills (compartilhado) | `~/.gemini/skills/` (todos os produtos) | `~/.gemini/skills/` (todos os produtos) |
+| MCP config | `~/.gemini/config/mcp_config.json` | `~/.gemini/config/mcp_config.json` |
+
+**Estrutura recomendada (workspace):**
+
+```
+.agent/
+└── skills/                # Skills nativas (formato Claude Code)
+    └── {skill}/SKILL.md
+```
+
+**Estrutura recomendada (global):**
+
+```
+~/.gemini/
+├── skills/                # Skills globais (compartilhado IDE + CLI)
+│   └── {skill}/SKILL.md
+├── antigravity-cli/
+│   ├── skills/            # Skills específicas do CLI
+│   │   └── {skill}/SKILL.md
+│   └── AGY.md             # Instruções base do CLI
+├── config/
+│   └── mcp_config.json    # Configuração MCP compartilhada
+└── ANTIGRAVITY.md         # Instruções base do IDE (opcional)
+```
+
+**Compatibilidade com Claude Code:**
+
+```markdown
+# CLAUDE.md (pode ser usado nativamente no Antigravity)
+
+## Missão
+[Descrição do projeto e persona do agente]
+
+## Stack Tecnológica
+[Linguagens, frameworks e versões]
+
+## Caminhos por Plataforma
+| Plataforma | Skills | Rules | Knowledge |
+|---|---|---|---|
+| Claude Code | `.claude/skills/` | `.claude/rules/` | `.claude/knowledge/` |
+| Devin CLI | `.claude/skills/` (importado) | `.claude/rules/` (lido nativamente) | `.claude/knowledge/` |
+| Google Antigravity IDE | `.agent/skills/` (workspace) ou `~/.gemini/skills/` (global) | `CLAUDE.md` (compatível) | `.agent/knowledge/` (workspace) |
+| Google Antigravity CLI (agy) | `.agent/skills/` (workspace) ou `~/.gemini/antigravity-cli/skills/` (CLI-specific) | `CLAUDE.md` (compatível) ou `AGY.md` | `.agent/knowledge/` (workspace) |
+```
+
+> ⚠️ **Migração de Claude Code para Antigravity**: copie `.claude/skills/` → `.agent/skills/` (workspace) ou `~/.gemini/skills/` (global). O formato SKILL.md é idêntico.
+>
+> ⚠️ **NÃO crie `ANTIGRAVITY.md` ou `AGY.md` separados** se já tiver `CLAUDE.md` — Antigravity lê `CLAUDE.md` nativamente devido à compatibilidade.
+>
+> ⚠️ **Skills compartilhadas**: use `~/.gemini/skills/` para skills que devem funcionar em todos os produtos Antigravity (IDE, CLI, SDK).
+>
+> ⚠️ **MCP compartilhado**: configure MCP servers em `~/.gemini/config/mcp_config.json` — funciona em IDE e CLI automaticamente.
+
+**Exemplo de estrutura híbrida (Claude Code + Antigravity):**
+
+```
+# Use symlinks para manter fonte única
+.shared-skills/
+└── {skill}/SKILL.md
+
+.claude/
+└── skills -> ../shared-skills/    # Symlink para Claude Code
+
+.agent/
+└── skills -> ../shared-skills/    # Symlink para Antigravity
+```
+
+> **Princípio**: Google Antigravity é um "sibling" do Claude Code — mesmo formato, mesma filosofia de progressive disclosure. Aproveite a compatibilidade para manter skills compartilhadas entre as plataformas.
 
 ---
 
@@ -460,6 +541,7 @@ Se o repositório usa GitHub Actions, considerar **gh-aw** (Agentic Workflows) c
 |---|---|---|
 | **Claude Code** | `.claude/settings.json` | `permissions.deny` com padrões `Read(...)` (deprecou `ignorePatterns`) |
 | **Devin CLI** | `.devin/config.json` | `permissions.deny` (`Read(...)`/`Exec(...)`) |
+| **Google Antigravity** | `~/.gemini/config/mcp_config.json` | MCP config compartilhado (não tem `permissions.deny` nativo) |
 
 > Arquivos correspondentes ao `deny` são excluídos de descoberta, busca e leitura. O `.gitignore` é respeitado para descoberta de arquivos.
 
@@ -469,13 +551,10 @@ Se o repositório usa GitHub Actions, considerar **gh-aw** (Agentic Workflows) c
 {
   "permissions": {
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
       "Read(**/*.key)",
       "Read(**/*.pem)",
       "Read(**/secrets.*)",
-      "Read(./secrets/**)",
-      "Read(./.github/workflows/**)"
+      "Read(./secrets/**)"
     ]
   }
 }
@@ -489,7 +568,7 @@ Se o repositório usa GitHub Actions, considerar **gh-aw** (Agentic Workflows) c
 
 Verificar skills existentes e criar as que faltam baseando-se na stack descoberta.
 
-> **Locais nativos:** Claude Code lê `.claude/skills/`; Devin CLI lê `.devin/skills/` (e suporta o padrão `.agents`). Ambos usam o mesmo formato `SKILL.md`. O Devin CLI **recomenda Skills sobre rules** — Skills só entram no contexto quando relevantes, reduzindo custo. Skills podem rodar como subagentes com janela de contexto própria.
+> **Locais nativos:** Claude Code lê `.claude/skills/`; Devin CLI lê `.devin/skills/` (e suporta o padrão `.agents`); Google Antigravity lê `.agent/skills/` (workspace) ou `~/.gemini/skills/` (global). Todos usam o mesmo formato `SKILL.md` (compatível 99%). O Devin CLI **recomenda Skills sobre rules** — Skills só entram no contexto quando relevantes, reduzindo custo. Skills podem rodar como subagentes com janela de contexto própria.
 
 **Formato obrigatório:**
 
@@ -687,6 +766,7 @@ O agent deve consultar os diretórios de Skills e Knowledge para obter padrões,
 | Plataforma | Skills | Rules | Knowledge |
 |------------|--------|-------|-----------|
 | Base (todas) | `~/.claude/skills/` | `~/.claude/rules/` | `~/.claude/knowledge/` |
+| Google Antigravity | `.agent/skills/` (workspace) ou `~/.gemini/skills/` (global) | `CLAUDE.md` (compatível) | `.agent/knowledge/` (workspace) |
 
 - **Skills**: cada subdiretório contém um `SKILL.md` com instruções especializadas por domínio
 - **Knowledge**: arquivos `.md` com exemplos de código, padrões de arquitetura e referências
@@ -1334,14 +1414,13 @@ Definir no CLAUDE.md. Escolher o padrão adequado ao repositório:
 | Feedback verboso | Filtrar para linhas de sumário |
 | Info duplicada entre arquivos | Referenciar, não copiar |
 | `DEVIN.md` criado | Remover — Devin CLI lê CLAUDE.md nativamente |
-| `GEMINI.md`, `.cursorrules`, `.geminiignore`, `.cursorignore`, `.aiignore`, `.opencodeignore`, `.opencode/`, `copilot-instructions.md` criados | Remover — OpenCode, Cursor, Gemini, Copilot e JetBrains estão fora do escopo deste playbook |
+| `GEMINI.md`, `.cursorrules`, `.geminiignore`, `.cursorignore`, `.aiignore`, `.windsurfignore`, `.windsurf/`, `copilot-instructions.md` criados | Remover — Windsurf, Cursor, Gemini, Copilot e JetBrains estão fora do escopo deste playbook |
 
 ### Checklist de Qualidade
 
 - [ ] `CLAUDE.md` ≤ 500 linhas, sem conteúdo genérico
 - [ ] Arquivos de plataforma referenciam CLAUDE.md — sem duplicação
 - [ ] `permissions.deny` cobre secrets e `/.github/workflows` (`.claude/settings.json` + `.devin/config.json`)
-- [ ] Hook de branch protection (main/master/develop) configurado nas duas plataformas
 - [ ] Skills com descrição tripartite (What / When / Do NOT)
 - [ ] Rules em `.claude/rules/` com `paths:` para ativação por caminho (NÃO `applyTo`)
 - [ ] `.claude/rules/global-rules.md` criado e adaptado ao contexto do repositório
@@ -1404,14 +1483,17 @@ Ao concluir, listar todos os artefatos gerados organizados por localização:
 
 ### .claude/ (OBRIGATÓRIO)
 - [ ] settings.json — `permissions` (allow/ask/deny) + `hooks`
-- [ ] hooks/block-protected-push.sh — bloqueia push para main/master/develop
 - [ ] commands/{comando}.md (se aplicável)
 
 ### .devin/ (OBRIGATÓRIO)
 - [ ] config.json — `permissions`/`hooks` + `read_config_from: { claude: true }`
-- [ ] hooks/block-protected-push.sh — bloqueia push para branches protegidas
+
+### .agent/ (OBRIGATÓRIO para Google Antigravity)
+- [ ] skills/{skill}/SKILL.md — Skills compatíveis com Claude Code
+- [ ] knowledge/ (opcional) — Fontes de conhecimento específicas do workspace
 
 > Devin CLI importa os sub-agents de `.claude/agents/` automaticamente — NÃO criar playbooks/knowledge de review/plan/test (não suportados no CLI).
+> Google Antigravity é 99% compatível com Claude Code — skills podem ser copiadas de `.claude/skills/` para `.agent/skills/` sem modificação.
 ```
 
 ---
@@ -1429,6 +1511,10 @@ Ao concluir, listar todos os artefatos gerados organizados por localização:
 - [Devin CLI — Rules e AGENTS.md](https://docs.devin.ai/pt-BR/cli/extensibility/rules)
 - [Devin CLI — Skills](https://docs.devin.ai/pt-BR/cli/extensibility/skills)
 - [Devin CLI — Configuração](https://docs.devin.ai/pt-BR/cli/extensibility/configuration)
+- [Google Antigravity — Skills Documentation](https://antigravity.google/docs/skills)
+- [Google Antigravity — CLI Overview](https://antigravity.google/docs/cli-overview)
+- [Google Antigravity — IDE Overview](https://antigravity.google/docs/ide-overview)
+- [Google Codelabs — Authoring Antigravity Skills](https://codelabs.developers.google.com/getting-started-with-antigravity-skills)
 - [Martin Fowler — Harness Engineering](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html)
 - [LangChain — Anatomy of an Agent Harness](https://blog.langchain.com/the-anatomy-of-an-agent-harness/)
 - [awesome-ai-conventions](https://github.com/GuilhermeAlbert/awesome-ai-conventions)

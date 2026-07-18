@@ -41,6 +41,7 @@ Each IDE/CLI has its own skill discovery path:
 - **OpenCode CLI**: `~/.config/opencode/skills/`
 - **VS Code (Copilot)**: `~/.github/skills/`
 - **Gemini CLI**: `~/.gemini/skills/`
+- **OpenCode**: `~/.config/opencode/skills/`
 
 ### Universal Alias
 

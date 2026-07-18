@@ -191,7 +191,6 @@ parse_args() {
             --verbose|-v)
                 VERBOSE=true
                 ;;
-
             *)
                 log_error "Opcao desconhecida: $1"
                 echo "Use --help para ver as opcoes disponiveis."

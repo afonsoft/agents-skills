@@ -75,12 +75,13 @@ flowchart LR
 ./install.sh --claude
 ./install.sh --antigravity
 ./install.sh --agy
+./install.sh --opencode
 
 # Pré-visualizar sem alterar nada
 ./install.sh --devin --dry-run
 
 # Lint dos scripts
-shellcheck install.sh rm-backup.sh git-cleanup-repos.sh clear-up-linux.sh
+shellcheck install.sh install-ai-tools.sh rm-backup.sh git-cleanup-repos.sh clear-up-linux.sh
 
 # Validar instalação
 test -d ~/.agents/skills && test -f ~/.devin/AGENTS.md && echo "PASS" || echo "FAIL"

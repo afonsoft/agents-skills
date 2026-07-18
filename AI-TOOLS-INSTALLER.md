@@ -398,6 +398,52 @@ rtk gain
 - Via Cursor plugin marketplace
 - Skills: brainstorming, TDD, systematic debugging
 
+### OpenCode
+
+**Configuration paths**:
+- Config: `~/.config/opencode/opencode.json`
+- Skills: `~/.config/opencode/skills/`
+- Plugins: `~/.config/opencode/plugins/`
+- Rules: `~/.config/opencode/AGENTS.md`
+
+**RTK Configuration**:
+```bash
+./install-ai-tools.sh --rtk --opencode
+```
+
+**What gets installed**:
+- `~/.config/opencode/plugins/rtk.ts` - OpenCode plugin for command rewriting
+- `~/.config/opencode/rules/rtk.md` - RTK rules (created by `rtk init -g --opencode`)
+- Requires `rtk` binary in PATH
+
+**Usage**:
+```bash
+# Automatic rewriting (transparent)
+# When OpenCode runs: git status
+# RTK plugin intercepts and runs: rtk git status
+
+# Check savings
+rtk gain
+```
+
+**Caveman Configuration**:
+```bash
+./install-ai-tools.sh --caveman --opencode
+```
+
+**What gets installed**:
+- Via `npx -y github:JuliusBrussee/caveman -- --only opencode`
+- OpenCode plugin and skills: `/caveman`, `/caveman-commit`, `/caveman-compress`, `/caveman-review`
+
+**Superpowers Configuration**:
+```bash
+./install-ai-tools.sh --superpowers --opencode
+```
+
+**What gets installed**:
+- Manual skills installation to `~/.config/opencode/skills/`
+- Use the OpenCode `skill` tool to load them
+
 ## Platform Support
 
 ### Linux

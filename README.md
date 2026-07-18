@@ -134,6 +134,7 @@ The `install-ai-tools.sh` script provides unified installation of popular AI opt
 ./install-ai-tools.sh --rtk --gemini              # RTK for Gemini CLI
 ./install-ai-tools.sh --caveman --devin           # Caveman for Devin CLI
 ./install-ai-tools.sh --rtk --devin               # RTK for Devin CLI
+./install-ai-tools.sh --rtk --opencode            # RTK for OpenCode
 ./install-ai-tools.sh --all --all-agents          # All tools for all agents
 
 # Safe preview mode
@@ -167,15 +168,15 @@ The installer supports agent-specific configuration for optimal integration:
 - **Docs**: [Devin Desktop Setup](docs/devin-desktop-setup.md)
 
 #### OpenCode CLI
-- **RTK**: Manual configuration via AGENTS.md (no native support yet)
-- **Caveman**: Manual skill installation (no native support yet)
-- **Superpowers**: Manual skill installation (no native support yet)
+- **RTK**: Plugin support via `rtk init -g --opencode`
+- **Caveman**: Installed via `npx -y github:JuliusBrussee/caveman -- --only opencode`
+- **Superpowers**: Manual skill installation to `~/.config/opencode/skills/`
 - **Docs**: [OpenCode CLI Setup](docs/opencode-cli-setup.md)
 
 #### OpenCode Desktop
-- **RTK**: Manual configuration via AGENTS.md
-- **Caveman**: Manual skill installation (no native support yet)
-- **Superpowers**: Manual skill installation (no native support yet)
+- **RTK**: Plugin support via `rtk init -g --opencode`
+- **Caveman**: Auto-detected if OpenCode Desktop is installed
+- **Superpowers**: Manual skill installation to `~/.opencode/skills/`
 - **Docs**: [OpenCode Desktop Setup](docs/opencode-desktop-setup.md)
 
 #### Claude Code
@@ -192,8 +193,8 @@ The installer supports agent-specific configuration for optimal integration:
 
 | Tool | Gemini CLI | Devin CLI | Devin Desktop | OpenCode CLI | OpenCode Desktop | Claude Code | Cursor |
 |------|------------|-----------|---------------|--------------|------------------|-------------|--------|
-| **RTK** | ✅ Native | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native |
-| **Caveman** | ✅ Auto | ✅ npx | ✅ Auto | ⚠️ Manual | ⚠️ Manual | ✅ Auto | ✅ Auto |
+| **RTK** | ✅ Native | ⚠️ Manual | ⚠️ Manual | ✅ Plugin | ✅ Plugin | ✅ Native | ✅ Native |
+| **Caveman** | ✅ Auto | ✅ npx | ✅ Auto | ✅ Plugin | ✅ Plugin | ✅ Auto | ✅ Auto |
 | **Superpowers** | ❌ No | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native |
 
 **Legend:**
@@ -279,7 +280,7 @@ See the [Contributing Guidelines](CONTRIBUTING.md).
 ## 📝 Recent Updates
 
 ### AI Tools Installer Enhancements
-- **Agent-Specific Configuration**: Added support for Gemini CLI, Devin CLI, Devin Desktop, OpenCode CLI, and OpenCode Desktop
+- **Agent-Specific Configuration**: Added support for Gemini CLI, Devin CLI, Devin Desktop, OpenCode CLI, OpenCode Desktop, and OpenCode plugin integrations (RTK, Caveman)
 - **Shell Detection**: Improved Windows support with PowerShell, Git Bash, and WSL detection
 - **Error Handling**: Enhanced error handling with continuation on individual failures
 - **Configuration Matrix**: Added support matrix showing tool support per agent
@@ -288,7 +289,7 @@ See the [Contributing Guidelines](CONTRIBUTING.md).
 ### Tool Path Updates
 - **Devin Desktop Support**: Added support for Devin Desktop (local IDE successor to Windsurf)
 - **Devin CLI Paths**: Updated to `~/.config/devin/`
-- **OpenCode Support**: Added `~/.opencode/` and `~/.config/opencode/` paths for Desktop and CLI
+- **OpenCode Support**: Added `~/.opencode/` and `~/.config/opencode/` paths, session hooks, and RTK/Caveman plugin configuration for Desktop and CLI
 - **Legacy Cleanup**: Removed Windsurf paths; OpenClaw kept as legacy option
 
 ### Enhanced Scripts
